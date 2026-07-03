@@ -1,0 +1,1040 @@
+:root {
+  --background: #f6f7f9;
+  --card: #ffffff;
+  --card-soft: #fbfbfc;
+  --text: #111821;
+  --muted: #7b838f;
+  --muted-strong: #5e6672;
+  --line: #eaedf1;
+  --primary: #319b72;
+  --primary-dark: #247856;
+  --purple: #8d55de;
+  --blue: #5a9ee7;
+  --rail: #f3efe8;
+  --danger: #c1515a;
+  --warning: #c58b1a;
+  --shadow: 0 14px 40px rgba(17, 24, 33, 0.07);
+  --shadow-soft: 0 8px 24px rgba(17, 24, 33, 0.05);
+  --radius-xl: 24px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--background);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid rgba(49, 155, 114, 0.24);
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+.appShell {
+  width: min(100%, 940px);
+  margin: 0 auto;
+  padding: 28px 18px 44px;
+}
+
+.appHeader {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.brandLockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brandLockup p {
+  margin: 0;
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 760;
+  line-height: 1.1;
+}
+
+.brandLockup span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.brandGlyph {
+  display: inline-flex;
+  align-items: end;
+  gap: 3px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+}
+
+.brandGlyph span {
+  display: block;
+  width: 5px;
+  border-radius: 999px;
+  background: var(--text);
+}
+
+.brandGlyph span:nth-child(1) {
+  height: 13px;
+}
+
+.brandGlyph span:nth-child(2) {
+  height: 21px;
+}
+
+.brandGlyph span:nth-child(3) {
+  height: 27px;
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--text);
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+  font-size: 22px;
+  font-weight: 760;
+}
+
+.fxPill {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted-strong);
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.appCard,
+.alertCard,
+.settingsPanel {
+  border: 1px solid rgba(234, 237, 241, 0.9);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.appCard {
+  margin-bottom: 18px;
+  padding: 24px;
+}
+
+.alertCard {
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  color: #8e333b;
+  background: #fff5f6;
+}
+
+.alertCard p {
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 650;
+}
+
+.cardLabel {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 760;
+}
+
+.betaCard {
+  padding: 28px 28px 20px;
+}
+
+.betaTopline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.68fr);
+  align-items: center;
+  gap: 22px;
+}
+
+.megaNumber {
+  font-size: clamp(76px, 15vw, 142px);
+  font-weight: 820;
+  line-height: 0.88;
+  letter-spacing: 0;
+}
+
+.betaMetaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 76px;
+  border-left: 1px solid var(--line);
+}
+
+.betaMetaGrid div {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding-left: 24px;
+  border-right: 1px solid var(--line);
+}
+
+.betaMetaGrid div:last-child {
+  border-right: 0;
+}
+
+.betaMetaGrid span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 680;
+}
+
+.betaMetaGrid strong {
+  font-size: 22px;
+  font-weight: 760;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-top: 14px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 760;
+}
+
+.statusPill span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.statusPill.ok {
+  color: var(--primary-dark);
+  background: #e8f6ef;
+}
+
+.statusPill.ok span {
+  background: var(--primary);
+}
+
+.statusPill.warning {
+  color: #8e333b;
+  background: #fff0f1;
+}
+
+.statusPill.warning span {
+  background: var(--danger);
+}
+
+.betaRail {
+  position: relative;
+  height: 18px;
+  margin-top: 34px;
+  border-radius: 999px;
+  overflow: visible;
+  background: linear-gradient(
+    90deg,
+    var(--rail) 0 var(--beta-lower),
+    #dff1eb var(--beta-lower) var(--beta-upper),
+    var(--rail) var(--beta-upper) 100%
+  );
+}
+
+.targetMarker,
+.currentMarker {
+  position: absolute;
+  top: -7px;
+  width: 6px;
+  height: 32px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+
+.targetMarker {
+  left: var(--beta-target);
+  background: var(--muted);
+  opacity: 0.32;
+}
+
+.targetLabel {
+  position: absolute;
+  top: -29px;
+  left: var(--beta-target);
+  max-width: min(128px, 42vw);
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #2f7b65;
+  background: #e7f5ef;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.currentMarker {
+  left: var(--beta-current);
+  background: var(--text);
+  box-shadow: 0 0 0 7px rgba(17, 24, 33, 0.08);
+}
+
+.betaScale,
+.betaDrift {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.betaScale {
+  margin-top: 13px;
+}
+
+.betaDrift {
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0;
+}
+
+.betaDrift strong {
+  font-size: 21px;
+  font-weight: 780;
+}
+
+.betaInsightGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.betaInsightGrid .betaDrift {
+  min-height: 44px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--card-soft);
+}
+
+.buy {
+  color: var(--primary-dark);
+}
+
+.sell {
+  color: var(--danger);
+}
+
+.none {
+  color: var(--muted);
+}
+
+.adviceCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.adviceIcon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #eaf7f0;
+}
+
+.adviceIcon span {
+  width: 26px;
+  height: 18px;
+  border-left: 5px solid var(--primary);
+  border-bottom: 5px solid var(--primary);
+  transform: rotate(-45deg) translate(2px, -2px);
+  border-radius: 3px;
+}
+
+.adviceIcon.sell {
+  background: #fff0f1;
+}
+
+.adviceIcon.sell span {
+  border-color: var(--danger);
+}
+
+.adviceIcon.none {
+  background: #f0f2f5;
+}
+
+.adviceIcon.none span {
+  border-color: var(--muted);
+}
+
+.adviceContent h2 {
+  margin: 0 0 6px;
+  color: var(--primary-dark);
+  font-size: clamp(30px, 6vw, 44px);
+  font-weight: 820;
+}
+
+.adviceContent h2.sell {
+  color: var(--danger);
+}
+
+.adviceContent h2.none {
+  color: var(--text);
+}
+
+.adviceContent strong {
+  display: block;
+  color: var(--text);
+  font-size: clamp(34px, 7vw, 54px);
+  font-weight: 820;
+  line-height: 1;
+}
+
+.primaryButton,
+.secondaryButton,
+.textButton {
+  min-height: 48px;
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 0 18px;
+  font-weight: 760;
+}
+
+.primaryButton {
+  grid-column: 1 / -1;
+  width: 100%;
+  color: #ffffff;
+  background: var(--primary);
+}
+
+.secondaryButton {
+  color: var(--text);
+  background: #f1f3f5;
+}
+
+.secondaryButton.fullWidth {
+  width: 100%;
+}
+
+.secondaryButton.compact {
+  min-width: 96px;
+}
+
+.textButton {
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--primary-dark);
+  background: transparent;
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.cardHeaderRow h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 780;
+}
+
+.cardHeaderRow p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.allocationTotal {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+  min-width: 0;
+  text-align: right;
+}
+
+.allocationTotal span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.allocationTotal strong {
+  overflow-wrap: anywhere;
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 820;
+  line-height: 1.05;
+}
+
+.allocationBar {
+  display: flex;
+  height: 20px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf0f4;
+}
+
+.allocationStock,
+.allocationCash {
+  transition: width 260ms ease;
+}
+
+.allocationStock {
+  background: var(--purple);
+}
+
+.allocationCash {
+  background: var(--blue);
+}
+
+.allocationLegend {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.legendItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  font-size: 17px;
+  font-weight: 740;
+}
+
+.legendItem span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.legendItem .purple {
+  background: var(--purple);
+}
+
+.legendItem .blue {
+  background: var(--blue);
+}
+
+.legendItem em {
+  color: var(--muted-strong);
+  font-style: normal;
+}
+
+.allocationMetric {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.allocationMetric:last-child {
+  border-bottom: 0;
+}
+
+.allocationMetric small {
+  grid-column: 2 / -1;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.holdingsCard {
+  scroll-margin-top: 16px;
+}
+
+.holdingList {
+  display: grid;
+  gap: 12px;
+}
+
+.holdingRow {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(17, 24, 33, 0.06);
+  border-radius: 20px;
+  background: var(--card-soft);
+}
+
+.holdingAsset {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+}
+
+.tickerBadge {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #7f61d9;
+  font-weight: 820;
+  letter-spacing: 0;
+}
+
+.tickerBadge.sell {
+  background: #c75463;
+}
+
+.tickerBadge.none {
+  background: var(--muted);
+}
+
+.holdingIdentity {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.holdingIdentity strong {
+  overflow-wrap: anywhere;
+  font-size: 18px;
+  font-weight: 820;
+}
+
+.holdingIdentity span,
+.holdingIdentity em {
+  color: var(--muted);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 650;
+}
+
+.holdingRatioPanel {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.holdingProgress {
+  position: relative;
+  height: 12px;
+  overflow: visible;
+  border-radius: 999px;
+  background: #eceff2;
+}
+
+.holdingProgressFill {
+  display: block;
+  width: var(--current-ratio);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.holdingProgress.sell .holdingProgressFill {
+  background: var(--danger);
+}
+
+.holdingProgress.none .holdingProgressFill {
+  background: var(--muted);
+}
+
+.holdingProgressTarget {
+  position: absolute;
+  top: -5px;
+  left: var(--target-ratio);
+  width: 4px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--text);
+  box-shadow: 0 0 0 4px rgba(17, 24, 33, 0.08);
+  transform: translateX(-50%);
+}
+
+.holdingRatioLabels,
+.holdingDrift {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.holdingDrift {
+  justify-content: flex-start;
+}
+
+.holdingDrift strong {
+  font-size: 15px;
+  font-weight: 820;
+}
+
+.holdingDrift strong.buy {
+  color: var(--primary-dark);
+}
+
+.holdingDrift strong.sell {
+  color: var(--danger);
+}
+
+.holdingDrift strong.none {
+  color: var(--muted);
+}
+
+.holdingAction {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  justify-items: start;
+}
+
+.actionPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 820;
+}
+
+.actionPill.buy {
+  color: var(--primary-dark);
+  background: #e8f6ef;
+}
+
+.actionPill.sell {
+  color: var(--danger);
+  background: #fff0f1;
+}
+
+.actionPill.none {
+  color: var(--muted);
+  background: #f1f3f5;
+}
+
+.holdingAction strong {
+  overflow-wrap: anywhere;
+  font-size: clamp(24px, 5vw, 30px);
+  font-weight: 860;
+  line-height: 1.05;
+}
+
+.holdingAction em {
+  color: var(--muted);
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 760;
+}
+
+.emptyState {
+  padding: 32px 0;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 650;
+}
+
+.settingsStack {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.settingsPanel {
+  overflow: hidden;
+}
+
+.settingsPanel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 62px;
+  padding: 0 20px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.settingsPanel summary::-webkit-details-marker {
+  display: none;
+}
+
+.settingsPanel summary span {
+  font-size: 17px;
+  font-weight: 780;
+}
+
+.settingsPanel summary em {
+  color: var(--muted);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 680;
+}
+
+.settingsBody {
+  display: grid;
+  gap: 16px;
+  padding: 0 20px 20px;
+  animation: settingsIn 180ms ease;
+}
+
+.positionList {
+  display: grid;
+  gap: 12px;
+}
+
+.positionEditor {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card-soft);
+}
+
+.positionTitle,
+.buttonRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settingsBody > .buttonRow {
+  justify-content: flex-end;
+}
+
+.portfolioActions .fullWidth {
+  flex: 1;
+  width: auto;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+}
+
+label span,
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 680;
+}
+
+.hint {
+  margin: 0;
+  line-height: 1.5;
+}
+
+input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--text);
+  background: #ffffff;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@keyframes settingsIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button,
+  details,
+  input,
+  .appCard,
+  .holdingRow {
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+}
+
+@media (min-width: 900px) {
+  .appShell {
+    padding-top: 36px;
+  }
+
+  .appHeader {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .fxPill {
+    grid-column: auto;
+    min-width: 220px;
+  }
+
+  .holdingRow {
+    grid-template-columns: minmax(220px, 1fr) minmax(240px, 1.1fr) minmax(180px, 0.8fr);
+    align-items: center;
+  }
+
+  .holdingAction {
+    justify-items: end;
+    text-align: right;
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    padding: 22px 14px 36px;
+  }
+
+  .appCard {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .brandLockup p {
+    font-size: 20px;
+  }
+
+  .betaTopline {
+    grid-template-columns: 1fr;
+  }
+
+  .betaMetaGrid {
+    grid-template-columns: 1fr 1fr;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+  }
+
+  .betaMetaGrid div {
+    padding-left: 0;
+    padding-right: 16px;
+  }
+
+  .adviceCard {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .betaInsightGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .holdingRow {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .appShell {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .appCard {
+    padding: 20px;
+  }
+
+  .megaNumber {
+    font-size: 86px;
+  }
+
+  .betaMetaGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .betaMetaGrid div {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .twoCol {
+    grid-template-columns: 1fr;
+  }
+
+  .cardHeaderRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .allocationTotal {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .holdingAction {
+    grid-template-columns: 1fr;
+  }
+
+  .holdingAction em {
+    grid-column: auto;
+  }
+}
