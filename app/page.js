@@ -6,6 +6,10 @@ import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
+  applyRebalanceToState,
+  getRebalanceShareDelta,
+} from "../src/lib/rebalance-apply.js";
+import {
   getActionText,
   getEstimatedShares,
   getPositionDisplayName,
@@ -91,6 +95,21 @@ function parseNumericInput(value) {
   }
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function parseIntegerInput(value) {
+  if (value === "") {
+    return "";
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number) : 0;
+}
+
+function normalizeStoredState(state) {
+  return {
+    ...state,
+    cashTwd: parseIntegerInput(state.cashTwd),
+  };
 }
 
 function getTradeClass(item) {
@@ -193,10 +212,10 @@ function useStoredState() {
       try {
         const saved = window.localStorage.getItem(STORAGE_KEY);
         if (saved) {
-          setState({
+          setState(normalizeStoredState({
             ...DEFAULT_STATE,
             ...JSON.parse(saved),
-          });
+          }));
         }
       } catch {
         setState(DEFAULT_STATE);
@@ -223,6 +242,7 @@ export default function Home() {
   const [quoteResult, setQuoteResult] = useState(emptyQuoteResult);
   const [status, setStatus] = useState("idle");
   const [requestError, setRequestError] = useState("");
+  const [rebalancePrecision, setRebalancePrecision] = useState("shares");
   const operationsRef = useRef(null);
 
   const tickers = useMemo(
@@ -249,6 +269,10 @@ export default function Home() {
   const betaRail = createBetaRailModel(calculation);
   const primaryRecommendation = getPrimaryRecommendation(calculation.recommendations);
   const advice = getAdvice(calculation, primaryRecommendation);
+  const canApplyRebalance =
+    calculation.needsRebalance &&
+    calculation.recommendations.length > 0 &&
+    Math.abs(calculation.totalTradeAmountTwd) > 0.5;
 
   async function refreshQuotes() {
     if (tickers.length === 0) {
@@ -276,7 +300,7 @@ export default function Home() {
   function updateSetting(field, value) {
     setFormState((current) => ({
       ...current,
-      [field]: parseNumericInput(value),
+      [field]: field === "cashTwd" ? parseIntegerInput(value) : parseNumericInput(value),
     }));
   }
 
@@ -334,6 +358,22 @@ export default function Home() {
     });
   }
 
+  function applyOneClickRebalance() {
+    if (!canApplyRebalance) {
+      return;
+    }
+
+    setFormState((current) => ({
+      ...current,
+      ...applyRebalanceToState({
+        positions: current.positions,
+        cashTwd: current.cashTwd,
+        recommendations: calculation.recommendations,
+        precision: rebalancePrecision,
+      }),
+    }));
+  }
+
   return (
     <main className="appShell">
       <AppHeader fx={quoteResult.fx} status={status} onRefresh={refreshQuotes} />
@@ -357,6 +397,10 @@ export default function Home() {
 
       <AdviceCard
         advice={advice}
+        canApplyRebalance={canApplyRebalance}
+        precision={rebalancePrecision}
+        onApplyRebalance={applyOneClickRebalance}
+        onPrecisionChange={setRebalancePrecision}
         onViewOperations={scrollToOperations}
       />
 
@@ -364,6 +408,7 @@ export default function Home() {
 
       <HoldingList
         recommendations={calculation.recommendations}
+        precision={rebalancePrecision}
         refTarget={operationsRef}
       />
 
@@ -481,7 +526,14 @@ function BetaCard({ calculation, betaRail }) {
   );
 }
 
-function AdviceCard({ advice, onViewOperations }) {
+function AdviceCard({
+  advice,
+  canApplyRebalance,
+  precision,
+  onApplyRebalance,
+  onPrecisionChange,
+  onViewOperations,
+}) {
   return (
     <section className="appCard adviceCard">
       <div className={`adviceIcon ${advice.tone}`} aria-hidden="true">
@@ -492,7 +544,37 @@ function AdviceCard({ advice, onViewOperations }) {
         <h2 className={advice.tone}>{advice.label}</h2>
         <strong>{advice.amount}</strong>
       </div>
-      <button type="button" className="primaryButton" onClick={onViewOperations}>
+      {canApplyRebalance && (
+        <div className="rebalanceApplyPanel">
+          <div className="precisionControl" aria-label="再平衡精度">
+            <label className={precision === "shares" ? "selected" : ""}>
+              <input
+                type="radio"
+                name="rebalancePrecision"
+                value="shares"
+                checked={precision === "shares"}
+                onChange={() => onPrecisionChange("shares")}
+              />
+              精確到股數
+            </label>
+            <label className={precision === "lots" ? "selected" : ""}>
+              <input
+                type="radio"
+                name="rebalancePrecision"
+                value="lots"
+                checked={precision === "lots"}
+                onChange={() => onPrecisionChange("lots")}
+              />
+              台股精確到張數
+            </label>
+          </div>
+          <p>美股固定精確到股數。</p>
+          <button type="button" className="primaryButton" onClick={onApplyRebalance}>
+            一鍵再平衡
+          </button>
+        </div>
+      )}
+      <button type="button" className="secondaryButton fullWidth adviceSecondaryButton" onClick={onViewOperations}>
         查看操作清單
       </button>
     </section>
@@ -565,7 +647,7 @@ function AllocationMetric({ color, label, current, target, valueTwd }) {
   );
 }
 
-function HoldingList({ recommendations, refTarget }) {
+function HoldingList({ recommendations, precision, refTarget }) {
   return (
     <section className="appCard holdingsCard" ref={refTarget}>
       <div className="cardHeaderRow">
@@ -577,7 +659,7 @@ function HoldingList({ recommendations, refTarget }) {
 
       <div className="holdingList">
         {recommendations.map((item) => (
-          <HoldingRow item={item} key={item.id} />
+          <HoldingRow item={item} key={item.id} precision={precision} />
         ))}
         {recommendations.length === 0 && (
           <div className="emptyState">更新價格後會顯示再平衡操作清單。</div>
@@ -588,9 +670,11 @@ function HoldingList({ recommendations, refTarget }) {
   );
 }
 
-function HoldingRow({ item }) {
-  const estimatedShares = getEstimatedShares(item.tradeAmountTwd, item.priceTwd);
-  const actionText = getActionText(item.action);
+function HoldingRow({ item, precision }) {
+  const estimatedShares = Math.abs(getRebalanceShareDelta(item, precision));
+  const displayedAction = estimatedShares === 0 ? "none" : item.action;
+  const actionText = getActionText(displayedAction);
+  const displayedTradeAmountTwd = estimatedShares * item.priceTwd;
   const drift = item.currentSleeveWeight - item.targetSleeveWeight;
   const driftClass = getDriftClass(drift);
   const currentPct = clampPercent(item.currentSleeveWeight);
@@ -633,8 +717,8 @@ function HoldingRow({ item }) {
       </div>
 
       <div className="holdingAction">
-        <span className={`actionPill ${getTradeClass(item)}`}>{actionText}</span>
-        <strong>{formatTwd(Math.abs(item.tradeAmountTwd))}</strong>
+        <span className={`actionPill ${displayedAction}`}>{actionText}</span>
+        <strong>{formatTwd(displayedTradeAmountTwd)}</strong>
         <em>{estimatedShares.toLocaleString("zh-TW")} 股</em>
       </div>
     </article>
@@ -665,7 +749,8 @@ function SettingsAccordions({
             <input
               type="number"
               min="0"
-              value={formState.cashTwd}
+              step="1"
+              value={parseIntegerInput(formState.cashTwd)}
               onChange={(event) => onUpdateSetting("cashTwd", event.target.value)}
             />
           </label>

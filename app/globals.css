@@ -445,6 +445,64 @@ p {
   line-height: 1;
 }
 
+.rebalanceApplyPanel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--card-soft);
+}
+
+.rebalanceApplyPanel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 680;
+}
+
+.precisionControl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.precisionControl label {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--muted-strong);
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.precisionControl label.selected {
+  border-color: rgba(49, 155, 114, 0.22);
+  color: var(--primary-dark);
+  background: #e8f6ef;
+}
+
+.precisionControl label:focus-within {
+  outline: 3px solid rgba(49, 155, 114, 0.2);
+  outline-offset: 2px;
+}
+
+.precisionControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.adviceSecondaryButton {
+  grid-column: 1 / -1;
+}
+
 .primaryButton,
 .secondaryButton,
 .textButton {
@@ -1023,6 +1081,10 @@ input {
   .cardHeaderRow {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .precisionControl {
+    grid-template-columns: 1fr;
   }
 
   .allocationTotal {
