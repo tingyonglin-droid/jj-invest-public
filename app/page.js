@@ -25,7 +25,7 @@ const DEFAULT_STATE = {
       tickerInput: "00631L",
       shares: 0,
       assetBeta: 2,
-      targetWeightPct: 60,
+      targetWeightPct: 100,
     },
   ],
   cashTwd: 0,
@@ -180,6 +180,16 @@ function getAdvice(calculation, primaryRecommendation) {
     ? getEstimatedShares(primaryRecommendation.tradeAmountTwd, primaryRecommendation.priceTwd)
     : 0;
 
+  if (!calculation.isValid) {
+    return {
+      tone: "none",
+      label: "設定需修正",
+      ticker: "正2內比例合計需為 100%",
+      amount: "請先調整比例",
+      shares: "0 股",
+    };
+  }
+
   if (
     !primaryRecommendation ||
     !calculation.needsRebalance ||
@@ -270,6 +280,7 @@ export default function Home() {
   const primaryRecommendation = getPrimaryRecommendation(calculation.recommendations);
   const advice = getAdvice(calculation, primaryRecommendation);
   const canApplyRebalance =
+    calculation.isValid &&
     calculation.needsRebalance &&
     calculation.recommendations.length > 0 &&
     Math.abs(calculation.totalTradeAmountTwd) > 0.5;
@@ -734,13 +745,19 @@ function SettingsAccordions({
   onUpdatePosition,
   onUpdateSetting,
 }) {
+  const targetWeightTotalPct = formState.positions.reduce(
+    (sum, position) => sum + (Number(position.targetWeightPct) || 0),
+    0,
+  );
+  const isTargetWeightValid = Math.abs(targetWeightTotalPct - 100) <= 0.01;
+
   return (
     <section className="settingsStack" aria-label="進階設定">
       <details className="settingsPanel">
         <summary>
           <span>投資組合設定</span>
           <em>
-            {formState.positions.length} 筆 / 現金 {formatTwd(Number(formState.cashTwd) || 0)}
+            {formState.positions.length} 筆 / 正2內合計 {formatNumber(targetWeightTotalPct)}%
           </em>
         </summary>
         <div className="settingsBody">
@@ -821,6 +838,14 @@ function SettingsAccordions({
                 </p>
               </div>
             ))}
+          </div>
+          <div className={`weightGuard ${isTargetWeightValid ? "ok" : "error"}`}>
+            <strong>正2內目標比例合計 {formatNumber(targetWeightTotalPct)}%</strong>
+            <span>
+              {isTargetWeightValid
+                ? "已符合 100%，可用於再平衡試算。"
+                : "請調整每檔正2內目標比例，合計必須等於 100%。"}
+            </span>
           </div>
           <div className="buttonRow portfolioActions">
             <button type="button" className="secondaryButton fullWidth" onClick={onAddPosition}>

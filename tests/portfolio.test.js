@@ -9,14 +9,14 @@ const positions = [
     tickerInput: "00631L",
     shares: 1000,
     assetBeta: 2,
-    targetWeightPct: 30,
+    targetWeightPct: 37.5,
   },
   {
     id: "us-leveraged",
     tickerInput: "QLD",
     shares: 10,
     assetBeta: 2.5,
-    targetWeightPct: 50,
+    targetWeightPct: 62.5,
   },
 ];
 
@@ -157,6 +157,34 @@ describe("portfolio calculations", () => {
     });
 
     assert.equal(result.isValid, false);
-    assert.equal(result.errors[0], "正二內目標比例總和不可超過 100%。");
+    assert.equal(result.errors[0], "正二內目標比例總和必須等於 100%。");
+  });
+
+  it("marks target weights below 100 percent as invalid", () => {
+    const result = calculatePortfolio({
+      positions: [
+        {
+          id: "first",
+          tickerInput: "00631L",
+          shares: 1000,
+          assetBeta: 2,
+          targetWeightPct: 60,
+        },
+        {
+          id: "second",
+          tickerInput: "QLD",
+          shares: 10,
+          assetBeta: 2.5,
+          targetWeightPct: 20,
+        },
+      ],
+      quotes,
+      cashTwd: 28500,
+      targetBeta: 1.2,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.isValid, false);
+    assert.equal(result.errors[0], "正二內目標比例總和必須等於 100%。");
   });
 });

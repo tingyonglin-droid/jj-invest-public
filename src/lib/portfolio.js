@@ -2,6 +2,7 @@ import { normalizeTicker } from "./market-data.js";
 
 const MONEY_PRECISION = 100;
 const RATIO_PRECISION = 10000;
+const TARGET_WEIGHT_TOLERANCE_PCT = 0.01;
 
 function roundMoney(value) {
   return Math.round((value + Number.EPSILON) * MONEY_PRECISION) / MONEY_PRECISION;
@@ -49,8 +50,8 @@ export function calculatePortfolio({
   );
   const errors = [];
 
-  if (targetWeightTotalPct > 100) {
-    errors.push("正二內目標比例總和不可超過 100%。");
+  if (Math.abs(targetWeightTotalPct - 100) > TARGET_WEIGHT_TOLERANCE_PCT) {
+    errors.push("正二內目標比例總和必須等於 100%。");
   }
 
   const validRows = normalizedPositions

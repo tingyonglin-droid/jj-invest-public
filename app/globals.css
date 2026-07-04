@@ -903,6 +903,33 @@ p {
   background: var(--card-soft);
 }
 
+.weightGuard {
+  display: grid;
+  gap: 4px;
+  border-radius: 16px;
+  padding: 13px 14px;
+  font-weight: 720;
+}
+
+.weightGuard strong {
+  font-size: 15px;
+}
+
+.weightGuard span {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.weightGuard.ok {
+  color: var(--primary-dark);
+  background: #e9f7f0;
+}
+
+.weightGuard.error {
+  color: var(--danger);
+  background: #fff0f1;
+}
+
 .positionTitle,
 .buttonRow {
   display: flex;
