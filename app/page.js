@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import {
+  AUTO_REFRESH_INTERVAL_MS,
+  shouldAutoRefreshQuotes,
+} from "../src/lib/auto-refresh.js";
 import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { calculateCashTwdValue } from "../src/lib/cash.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
@@ -13,6 +17,7 @@ import {
 import {
   getActionText,
   getEstimatedShares,
+  getOperationSummary,
   getPositionDisplayName,
   getTickerBadgeText,
 } from "../src/lib/presentation.js";
@@ -90,6 +95,17 @@ function formatSignedPercent(ratio) {
 
 function formatQuoteDate(date) {
   return date || "尚未更新";
+}
+
+function formatLastUpdatedAt(date) {
+  if (!date) {
+    return "尚未更新";
+  }
+
+  return new Intl.DateTimeFormat("zh-TW", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function parseNumericInput(value) {
@@ -261,8 +277,9 @@ export default function Home() {
   const [quoteResult, setQuoteResult] = useState(emptyQuoteResult);
   const [status, setStatus] = useState("idle");
   const [requestError, setRequestError] = useState("");
-  const [rebalancePrecision, setRebalancePrecision] = useState("shares");
-  const operationsRef = useRef(null);
+  const [rebalancePrecision, setRebalancePrecision] = useState("lots");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [activeView, setActiveView] = useState("overview");
 
   const tickers = useMemo(
     () =>
@@ -296,13 +313,14 @@ export default function Home() {
   const betaRail = createBetaRailModel(calculation);
   const primaryRecommendation = getPrimaryRecommendation(calculation.recommendations);
   const advice = getAdvice(calculation, primaryRecommendation);
+  const operationSummary = getOperationSummary(calculation.recommendations);
   const canApplyRebalance =
     calculation.isValid &&
     calculation.needsRebalance &&
     calculation.recommendations.length > 0 &&
     Math.abs(calculation.totalTradeAmountTwd) > 0.5;
 
-  async function refreshQuotes() {
+  const refreshQuotes = useCallback(async () => {
     if (tickers.length === 0) {
       setRequestError("請至少輸入一個標的代號。");
       return;
@@ -318,12 +336,59 @@ export default function Home() {
       }
       const payload = await response.json();
       setQuoteResult(payload);
+      setLastUpdatedAt(new Date());
       setStatus("ready");
     } catch (error) {
       setRequestError(error instanceof Error ? error.message : "價格更新失敗。");
       setStatus("error");
     }
-  }
+  }, [tickers]);
+
+  useEffect(() => {
+    if (!hydrated || tickers.length === 0) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(refreshQuotes, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [hydrated, refreshQuotes, tickers.length]);
+
+  useEffect(() => {
+    if (!hydrated) {
+      return undefined;
+    }
+
+    function canRefresh() {
+      return shouldAutoRefreshQuotes({
+        tickers,
+        visibilityState: document.visibilityState,
+        status,
+      });
+    }
+
+    function refreshIfVisible() {
+      if (canRefresh()) {
+        refreshQuotes();
+      }
+    }
+
+    const intervalId = window.setInterval(refreshIfVisible, AUTO_REFRESH_INTERVAL_MS);
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        refreshIfVisible();
+      }
+    }
+
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [hydrated, refreshQuotes, status, tickers]);
 
   function updateSetting(field, value) {
     setFormState((current) => ({
@@ -375,20 +440,6 @@ export default function Home() {
     }));
   }
 
-  function resetState() {
-    setFormState(DEFAULT_STATE);
-    setQuoteResult(emptyQuoteResult);
-    setStatus("idle");
-    setRequestError("");
-  }
-
-  function scrollToOperations() {
-    operationsRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }
-
   function applyOneClickRebalance() {
     if (!canApplyRebalance) {
       return;
@@ -419,9 +470,25 @@ export default function Home() {
     });
   }
 
+  function changeView(nextView) {
+    if (nextView === activeView) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setActiveView(nextView);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
   return (
     <main className="appShell">
-      <AppHeader fx={quoteResult.fx} status={status} onRefresh={refreshQuotes} />
+      <AppHeader
+        status={status}
+        lastUpdatedAt={lastUpdatedAt}
+        onRefresh={refreshQuotes}
+      />
 
       {(requestError || quoteResult.fx.error || quoteErrors.length > 0 || calculation.errors.length > 0) && (
         <div className="alertCard" role="alert">
@@ -438,40 +505,86 @@ export default function Home() {
         </div>
       )}
 
-      <BetaCard calculation={calculation} betaRail={betaRail} />
+      <section className="viewStack" aria-live="polite">
+        {activeView === "overview" && (
+          <>
+            <BetaCard calculation={calculation} betaRail={betaRail} />
 
-      <AdviceCard
-        advice={advice}
-        canApplyRebalance={canApplyRebalance}
-        precision={rebalancePrecision}
-        onApplyRebalance={applyOneClickRebalance}
-        onPrecisionChange={setRebalancePrecision}
-        onViewOperations={scrollToOperations}
-      />
+            <AdviceCard
+              advice={advice}
+            />
 
-      <AllocationCard calculation={calculation} />
+            <AllocationCard calculation={calculation} />
+          </>
+        )}
 
-      <HoldingList
-        recommendations={calculation.recommendations}
-        precision={rebalancePrecision}
-        refTarget={operationsRef}
-      />
+        {activeView === "operations" && (
+          <OperationsView
+            canApplyRebalance={canApplyRebalance}
+            onApplyRebalance={applyOneClickRebalance}
+            onPrecisionChange={setRebalancePrecision}
+            precision={rebalancePrecision}
+            recommendations={calculation.recommendations}
+            summary={operationSummary}
+          />
+        )}
 
-      <SettingsAccordions
-        calculation={calculation}
-        formState={formState}
-        hydrated={hydrated}
-        onAddPosition={addPosition}
-        onRemovePosition={removePosition}
-        onReset={resetState}
-        onUpdatePosition={updatePosition}
-        onUpdateSetting={updateSetting}
+        {activeView === "settings" && (
+          <SettingsAccordions
+            calculation={calculation}
+            formState={formState}
+            fx={quoteResult.fx}
+            onAddPosition={addPosition}
+            onRemovePosition={removePosition}
+            onUpdatePosition={updatePosition}
+            onUpdateSetting={updateSetting}
+          />
+        )}
+      </section>
+
+      <BottomTabBar
+        activeView={activeView}
+        onChange={changeView}
       />
     </main>
   );
 }
 
-function AppHeader({ fx, status, onRefresh }) {
+function BottomTabBar({ activeView, onChange }) {
+  return (
+    <nav className="bottomTabBar" aria-label="主要功能">
+      <button
+        type="button"
+        className={activeView === "overview" ? "active" : ""}
+        onClick={() => onChange("overview")}
+        aria-current={activeView === "overview" ? "page" : undefined}
+      >
+        <span aria-hidden="true">⌂</span>
+        總覽
+      </button>
+      <button
+        type="button"
+        className={activeView === "operations" ? "active" : ""}
+        onClick={() => onChange("operations")}
+        aria-current={activeView === "operations" ? "page" : undefined}
+      >
+        <span aria-hidden="true">≡</span>
+        操作
+      </button>
+      <button
+        type="button"
+        className={activeView === "settings" ? "active" : ""}
+        onClick={() => onChange("settings")}
+        aria-current={activeView === "settings" ? "page" : undefined}
+      >
+        <span aria-hidden="true">⚙</span>
+        設定
+      </button>
+    </nav>
+  );
+}
+
+function AppHeader({ status, lastUpdatedAt, onRefresh }) {
   return (
     <header className="appHeader">
       <div className="brandLockup">
@@ -482,21 +595,19 @@ function AppHeader({ fx, status, onRefresh }) {
         </span>
         <div>
           <p>JJ Invest System</p>
-          <span>Beta 再平衡公開試算版</span>
         </div>
       </div>
-      <button
-        type="button"
-        className="iconButton"
-        onClick={onRefresh}
-        disabled={status === "loading"}
-        aria-label="更新價格"
-      >
-        {status === "loading" ? "..." : "↻"}
-      </button>
-      <div className="fxPill">
-        USD/TWD{" "}
-        <strong>{fx.usdTwd ? numberDisplay.format(fx.usdTwd) : "尚未更新"}</strong>
+      <div className="headerActions">
+        <button
+          type="button"
+          className="headerStatusPill"
+          onClick={onRefresh}
+          disabled={status === "loading"}
+          aria-label="更新價格"
+        >
+          <span>自動更新 {formatLastUpdatedAt(lastUpdatedAt)}</span>
+          <em aria-hidden="true">{status === "loading" ? "..." : "↻"}</em>
+        </button>
       </div>
     </header>
   );
@@ -572,14 +683,7 @@ function BetaCard({ calculation, betaRail }) {
   );
 }
 
-function AdviceCard({
-  advice,
-  canApplyRebalance,
-  precision,
-  onApplyRebalance,
-  onPrecisionChange,
-  onViewOperations,
-}) {
+function AdviceCard({ advice }) {
   return (
     <section className="appCard adviceCard">
       <div className={`adviceIcon ${advice.tone}`} aria-hidden="true">
@@ -590,39 +694,6 @@ function AdviceCard({
         <h2 className={advice.tone}>{advice.label}</h2>
         <strong>{advice.amount}</strong>
       </div>
-      {canApplyRebalance && (
-        <div className="rebalanceApplyPanel">
-          <div className="precisionControl" aria-label="再平衡精度">
-            <label className={precision === "shares" ? "selected" : ""}>
-              <input
-                type="radio"
-                name="rebalancePrecision"
-                value="shares"
-                checked={precision === "shares"}
-                onChange={() => onPrecisionChange("shares")}
-              />
-              精確到股數
-            </label>
-            <label className={precision === "lots" ? "selected" : ""}>
-              <input
-                type="radio"
-                name="rebalancePrecision"
-                value="lots"
-                checked={precision === "lots"}
-                onChange={() => onPrecisionChange("lots")}
-              />
-              台股精確到張數
-            </label>
-          </div>
-          <p>美股固定精確到股數。</p>
-          <button type="button" className="primaryButton" onClick={onApplyRebalance}>
-            一鍵再平衡
-          </button>
-        </div>
-      )}
-      <button type="button" className="secondaryButton fullWidth adviceSecondaryButton" onClick={onViewOperations}>
-        查看操作清單
-      </button>
     </section>
   );
 }
@@ -703,16 +774,65 @@ function AllocationMetric({ color, label, current, target, valueTwd }) {
   );
 }
 
-function HoldingList({ recommendations, precision, refTarget }) {
+function OperationsView({
+  canApplyRebalance,
+  onApplyRebalance,
+  onPrecisionChange,
+  precision,
+  recommendations,
+  summary,
+}) {
   return (
-    <section className="appCard holdingsCard" ref={refTarget}>
+    <section className="appCard operationsPageCard">
       <div className="cardHeaderRow">
         <div>
           <h2>再平衡操作清單</h2>
-          <p>標的、市值、目前比例、目標比例、建議操作</p>
+          <p>
+            共 {summary.actionCount} 筆操作 / 預估調整 {formatTwd(summary.totalAmountTwd)}
+          </p>
         </div>
       </div>
+      <div className="rebalanceApplyPanel">
+        <div className="precisionControl" aria-label="再平衡精度">
+          <label className={precision === "lots" ? "selected" : ""}>
+            <input
+              type="radio"
+              name="rebalancePrecision"
+              value="lots"
+              checked={precision === "lots"}
+              onChange={() => onPrecisionChange("lots")}
+            />
+            台股精確到張數
+          </label>
+          <label className={precision === "shares" ? "selected" : ""}>
+            <input
+              type="radio"
+              name="rebalancePrecision"
+              value="shares"
+              checked={precision === "shares"}
+              onChange={() => onPrecisionChange("shares")}
+            />
+            精確到股數
+          </label>
+        </div>
+        <p>美股固定精確到股數。</p>
+        <button
+          type="button"
+          className="primaryButton"
+          onClick={onApplyRebalance}
+          disabled={!canApplyRebalance}
+        >
+          一鍵再平衡
+        </button>
+      </div>
+      <HoldingList recommendations={recommendations} precision={precision} />
+    </section>
+  );
+}
 
+function HoldingList({ recommendations, precision }) {
+  return (
+    <section className="holdingsCard">
       <div className="holdingList">
         {recommendations.map((item) => (
           <HoldingRow item={item} key={item.id} precision={precision} />
@@ -721,7 +841,6 @@ function HoldingList({ recommendations, precision, refTarget }) {
           <div className="emptyState">更新價格後會顯示再平衡操作清單。</div>
         )}
       </div>
-
     </section>
   );
 }
@@ -784,10 +903,9 @@ function HoldingRow({ item, precision }) {
 function SettingsAccordions({
   calculation,
   formState,
-  hydrated,
+  fx,
   onAddPosition,
   onRemovePosition,
-  onReset,
   onUpdatePosition,
   onUpdateSetting,
 }) {
@@ -804,158 +922,210 @@ function SettingsAccordions({
   const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
   const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
   const targetGuardIsValid = calculation.errors.length === 0;
+  const [activeSettingsPage, setActiveSettingsPage] = useState("cash");
 
   return (
-    <section className="settingsStack" aria-label="進階設定">
-      <details className="settingsPanel">
-        <summary>
-          <span>投資組合設定</span>
-          <em>
-            {formState.positions.length} 筆 / 正二 {formatNumber(leveragedTargetWeightTotalPct)}%
-            {hasOriginalPositions ? ` / 原形 ${formatNumber(originalTargetWeightTotalPct)}%` : ""}
-          </em>
-        </summary>
+    <section className="settingsStack" aria-label="參數設定">
+      <div className="settingsIntro">
+        <div>
+          <p>參數設定</p>
+          <span>調整持股、現金與 Beta 試算條件</span>
+        </div>
+      </div>
+
+      <div className="settingsPanel settingsPagePanel">
+        <nav className="settingsSubTabs" aria-label="設定分類">
+          {[
+            { id: "cash", label: "現金" },
+            { id: "positions", label: "持股" },
+            { id: "beta", label: "Beta 參數" },
+          ].map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={activeSettingsPage === item.id ? "active" : ""}
+              onClick={() => setActiveSettingsPage(item.id)}
+              aria-current={activeSettingsPage === item.id ? "page" : undefined}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
         <div className="settingsBody">
-          <div className="positionEditor cashEditor">
-            <div className="positionTitle">
-              <strong>現金</strong>
-            </div>
-            <p className="hint">現金分類</p>
-            <div className="twoCol">
-              <label>
-                <span>新台幣 TWD</span>
-                <input
-                  type="number"
-                  step="1"
-                  value={parseIntegerInput(formState.cashTwd)}
-                  onChange={(event) => onUpdateSetting("cashTwd", event.target.value)}
-                />
-              </label>
-              <label>
-                <span>美金 USD</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={parseIntegerInput(formState.cashUsd)}
-                  onChange={(event) => onUpdateSetting("cashUsd", event.target.value)}
-                />
-              </label>
-            </div>
-            <p className="hint">美金現金會用最新 USD/TWD 匯率換算，與新台幣相加後顯示總現金市值。</p>
-          </div>
-          <div className="positionList">
-            {formState.positions.map((position, index) => (
-              <div className="positionEditor" key={position.id}>
-                <div className="positionTitle">
-                  <strong>標的 {index + 1}</strong>
-                  <button
-                    type="button"
-                    className="textButton"
-                    onClick={() => onRemovePosition(position.id)}
-                    disabled={formState.positions.length === 1}
-                  >
-                    移除
-                  </button>
-                </div>
+          {activeSettingsPage === "cash" && (
+            <div className="positionEditor cashEditor">
+              <div className="positionTitle">
+                <strong>現金</strong>
+              </div>
+              <div className="cashFxInfo">
+                <span>USD/TWD 匯率</span>
+                <strong>{fx.usdTwd ? numberDisplay.format(fx.usdTwd) : "尚未更新"}</strong>
+                <em>更新 {formatQuoteDate(fx.date)}</em>
+              </div>
+              <p className="hint">現金分類</p>
+              <div className="twoCol">
                 <label>
-                  <span>代號</span>
-                  <input
-                    value={position.tickerInput}
-                    onChange={(event) =>
-                      onUpdatePosition(position.id, "tickerInput", event.target.value)
-                    }
-                    placeholder="00631L 或 QLD"
-                  />
-                </label>
-                <div className="twoCol">
-                  <label>
-                    <span>股數</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={position.shares}
-                      onChange={(event) =>
-                        onUpdatePosition(position.id, "shares", event.target.value)
-                      }
-                    />
-                  </label>
-                  <label>
-                    <span>資產類型</span>
-                    <select
-                      value={Number(position.assetBeta) === 1 ? "1" : "2"}
-                      onChange={(event) =>
-                        onUpdatePosition(position.id, "assetBeta", event.target.value)
-                      }
-                    >
-                      <option value="2">正二（Beta 2）</option>
-                      <option value="1">原形（Beta 1）</option>
-                    </select>
-                  </label>
-                </div>
-                <label>
-                  <span>同類資產內目標比例 %</span>
+                  <span>新台幣 TWD</span>
                   <input
                     type="number"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    value={position.targetWeightPct}
-                    onChange={(event) =>
-                      onUpdatePosition(position.id, "targetWeightPct", event.target.value)
-                    }
+                    step="1"
+                    value={parseIntegerInput(formState.cashTwd)}
+                    onChange={(event) => onUpdateSetting("cashTwd", event.target.value)}
                   />
                 </label>
-                <p className="hint">
-                  正規化代號：{normalizeTicker(position.tickerInput) || "尚未輸入"}
-                </p>
+                <label>
+                  <span>美金 USD</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={parseIntegerInput(formState.cashUsd)}
+                    onChange={(event) => onUpdateSetting("cashUsd", event.target.value)}
+                  />
+                </label>
               </div>
-            ))}
-          </div>
+              <p className="hint">美金現金會用最新 USD/TWD 匯率換算，與新台幣相加後顯示總現金市值。</p>
+            </div>
+          )}
+
+          {activeSettingsPage === "positions" && (
+            <>
+              <div className="settingsSummaryLine">
+                <strong>{formState.positions.length} 筆標的</strong>
+                <span>
+                  正二 {formatNumber(leveragedTargetWeightTotalPct)}%
+                  {hasOriginalPositions ? ` / 原形 ${formatNumber(originalTargetWeightTotalPct)}%` : ""}
+                </span>
+              </div>
+              <div className={`weightGuard ${targetGuardIsValid ? "ok" : "error"}`}>
+                <strong>
+                  同類資產分配：正二 {formatNumber(leveragedTargetWeightTotalPct)}%
+                  {hasOriginalTarget || hasOriginalPositions
+                    ? ` / 原形 ${formatNumber(originalTargetWeightTotalPct)}%`
+                    : ""}
+                </strong>
+                <span>
+                  {targetGuardIsValid
+                    ? "需要配置的資產類型各自符合 100%，可用於再平衡試算。"
+                    : "請調整同類資產內比例，需配置的類型合計必須等於 100%。"}
+                </span>
+              </div>
+              <div className="positionList">
+                {formState.positions.map((position, index) => (
+                  <div className="positionEditor" key={position.id}>
+                    <div className="positionTitle">
+                      <strong>標的 {index + 1}</strong>
+                      <button
+                        type="button"
+                        className="textButton"
+                        onClick={() => onRemovePosition(position.id)}
+                        disabled={formState.positions.length === 1}
+                      >
+                        移除
+                      </button>
+                    </div>
+                    <label>
+                      <span>代號</span>
+                      <input
+                        value={position.tickerInput}
+                        onChange={(event) =>
+                          onUpdatePosition(position.id, "tickerInput", event.target.value)
+                        }
+                        placeholder="00631L 或 QLD"
+                      />
+                    </label>
+                    <div className="twoCol">
+                      <label>
+                        <span>股數</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={position.shares}
+                          onChange={(event) =>
+                            onUpdatePosition(position.id, "shares", event.target.value)
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>資產類型</span>
+                        <select
+                          value={Number(position.assetBeta) === 1 ? "1" : "2"}
+                          onChange={(event) =>
+                            onUpdatePosition(position.id, "assetBeta", event.target.value)
+                          }
+                        >
+                          <option value="2">正二（Beta 2）</option>
+                          <option value="1">原形（Beta 1）</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label>
+                      <span>同類資產內目標比例 %</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={position.targetWeightPct}
+                        onChange={(event) =>
+                          onUpdatePosition(position.id, "targetWeightPct", event.target.value)
+                        }
+                      />
+                    </label>
+                    <p className="hint">
+                      正規化代號：{normalizeTicker(position.tickerInput) || "尚未輸入"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <button type="button" className="secondaryButton fullWidth" onClick={onAddPosition}>
+                新增標的
+              </button>
+            </>
+          )}
+
+          {activeSettingsPage === "beta" && (
+            <>
           <div className={`weightGuard ${targetGuardIsValid ? "ok" : "error"}`}>
             <strong>
-              同類資產分配：正二 {formatNumber(leveragedTargetWeightTotalPct)}%
-              {hasOriginalTarget || hasOriginalPositions
-                ? ` / 原形 ${formatNumber(originalTargetWeightTotalPct)}%`
-                : ""}
+              推算目標：正二 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
+              {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
+              {formatPercent(calculation.afterCashRatio)}
             </strong>
-            <span>
-              {targetGuardIsValid
-                ? "需要配置的資產類型各自符合 100%，可用於再平衡試算。"
-                : "請調整同類資產內比例，需配置的類型合計必須等於 100%。"}
-            </span>
+            <span>依照下方 Beta 核心參數與原形配置即時計算。</span>
           </div>
-          <div className="buttonRow portfolioActions">
-            <button type="button" className="secondaryButton fullWidth" onClick={onAddPosition}>
-              新增標的
-            </button>
-            <button type="button" className="secondaryButton compact" onClick={onReset}>
-              恢復預設
-            </button>
+          <div className="positionEditor betaParameterGroup">
+            <div className="positionTitle">
+              <strong>Beta 核心參數</strong>
+            </div>
+            <div className="twoCol">
+              <label>
+                <span>目標 Beta</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formState.targetBeta}
+                  onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
+                />
+              </label>
+              <label>
+                <span>容忍區間 %</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={formState.tolerancePct}
+                  onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
+                />
+              </label>
+            </div>
           </div>
-          <p className="hint">{hydrated ? "已自動儲存在此瀏覽器" : "讀取本機設定中"}</p>
-        </div>
-      </details>
-
-      <details className="settingsPanel">
-        <summary>
-          <span>Beta 參數</span>
-          <em>
-            {formatNumber(Number(formState.targetBeta) || 0)} / 原形 {Number(formState.originalTargetPct) || 0}%
-          </em>
-        </summary>
-        <div className="settingsBody">
-          <div className="twoCol">
-            <label>
-              <span>目標 Beta</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formState.targetBeta}
-                onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
-              />
-            </label>
+          <div className="positionEditor betaParameterGroup secondary">
+            <div className="positionTitle">
+              <strong>原形配置</strong>
+            </div>
             <label>
               <span>原形目標比例 %</span>
               <input
@@ -967,29 +1137,13 @@ function SettingsAccordions({
                 onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
               />
             </label>
+            <p className="hint">會先保留原形比例，再自動推算需要多少正二與現金。</p>
           </div>
-          <div className="twoCol">
-            <label>
-              <span>容忍區間 %</span>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                value={formState.tolerancePct}
-                onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
-              />
-            </label>
-          </div>
-          <div className={`weightGuard ${targetGuardIsValid ? "ok" : "error"}`}>
-            <strong>
-              推算目標：正二 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
-              {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
-              {formatPercent(calculation.afterCashRatio)}
-            </strong>
-            <span>目標 Beta 會先保留原形比例，再自動推算需要多少正二與現金。</span>
-          </div>
+            </>
+          )}
+
         </div>
-      </details>
+      </div>
     </section>
   );
 }

@@ -43,6 +43,20 @@ export function getActionText(action) {
   return "不動作";
 }
 
+export function getOperationSummary(recommendations) {
+  const actionableRows = recommendations.filter(
+    (item) => item.action !== "none" && Math.abs(item.tradeAmountTwd) > 0.5,
+  );
+
+  return {
+    actionCount: actionableRows.length,
+    totalAmountTwd: actionableRows.reduce(
+      (sum, item) => sum + Math.abs(item.tradeAmountTwd),
+      0,
+    ),
+  };
+}
+
 export function createOperationListText(recommendations) {
   const rows = recommendations
     .filter((item) => item.action !== "none" && Math.abs(item.tradeAmountTwd) > 0.5)

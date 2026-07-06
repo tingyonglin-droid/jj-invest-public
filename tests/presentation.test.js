@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   createOperationListText,
+  getOperationSummary,
   getPositionDisplayName,
   getTickerBadgeText,
 } from "../src/lib/presentation.js";
@@ -53,5 +54,27 @@ describe("presentation helpers", () => {
         "QLD 買入 NT$18,500，約 6 股",
       ].join("\n"),
     );
+  });
+
+  it("summarizes actionable operation list rows", () => {
+    const summary = getOperationSummary([
+      {
+        action: "sell",
+        tradeAmountTwd: -10000,
+      },
+      {
+        action: "buy",
+        tradeAmountTwd: 18500,
+      },
+      {
+        action: "none",
+        tradeAmountTwd: 0,
+      },
+    ]);
+
+    assert.deepEqual(summary, {
+      actionCount: 2,
+      totalAmountTwd: 28500,
+    });
   });
 });
