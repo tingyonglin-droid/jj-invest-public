@@ -9,14 +9,14 @@ const positions = [
     tickerInput: "00631L",
     shares: 1000,
     assetBeta: 2,
-    targetWeightPct: 37.5,
+    targetWeightPct: 100,
   },
   {
-    id: "us-leveraged",
+    id: "us-original",
     tickerInput: "QLD",
     shares: 10,
-    assetBeta: 2.5,
-    targetWeightPct: 62.5,
+    assetBeta: 1,
+    targetWeightPct: 100,
   },
 ];
 
@@ -50,24 +50,26 @@ describe("portfolio calculations", () => {
       quotes,
       cashTwd: 28500,
       targetBeta: 1.2,
+      originalTargetPct: 40,
       tolerancePct: 10,
     });
 
     assert.equal(result.totalAssetsTwd, 100000);
     assert.equal(result.stockValueTwd, 71500);
-    assert.equal(result.currentBeta, 1.5875);
-    assert.equal(result.betaDrift, 0.3875);
+    assert.equal(result.currentBeta, 1.115);
+    assert.equal(result.betaDrift, -0.085);
     assert.equal(result.betaLower, 1.08);
     assert.equal(result.betaUpper, 1.32);
-    assert.equal(result.needsRebalance, true);
+    assert.equal(result.needsRebalance, false);
   });
 
-  it("creates per-position rebalance recommendations from target weights inside the leveraged sleeve", () => {
+  it("creates per-position rebalance recommendations from target weights inside each asset type", () => {
     const result = calculatePortfolio({
       positions,
       quotes,
       cashTwd: 28500,
       targetBeta: 1.2,
+      originalTargetPct: 40,
       tolerancePct: 10,
     });
 
@@ -85,37 +87,60 @@ describe("portfolio calculations", () => {
         {
           ticker: "00631L.TW",
           currentValueTwd: 40000,
-          currentSleeveWeight: 0.5594,
-          targetSleeveWeight: 0.375,
-          targetValueTwd: 19459.46,
-          tradeAmountTwd: -20540.54,
-          action: "sell",
+          currentSleeveWeight: 1,
+          targetSleeveWeight: 1,
+          targetValueTwd: 40000,
+          tradeAmountTwd: 0,
+          action: "none",
         },
         {
           ticker: "QLD",
           currentValueTwd: 31500,
-          currentSleeveWeight: 0.4406,
-          targetSleeveWeight: 0.625,
-          targetValueTwd: 32432.43,
-          tradeAmountTwd: 932.43,
+          currentSleeveWeight: 1,
+          targetSleeveWeight: 1,
+          targetValueTwd: 40000,
+          tradeAmountTwd: 8500,
           action: "buy",
         },
       ],
     );
   });
 
-  it("derives post-rebalance stock and cash ratios from the target beta", () => {
+  it("derives post-rebalance asset and cash ratios from the target beta", () => {
     const result = calculatePortfolio({
       positions,
       quotes,
       cashTwd: 28500,
       targetBeta: 1.2,
+      originalTargetPct: 40,
       tolerancePct: 10,
     });
 
-    assert.equal(result.afterCashRatio, 0.4811);
-    assert.equal(result.afterStockRatio, 0.5189);
+    assert.equal(result.targetLeveragedRatio, 0.4);
+    assert.equal(result.targetOriginalRatio, 0.4);
+    assert.equal(result.afterCashRatio, 0.2);
+    assert.equal(result.afterStockRatio, 0.8);
     assert.equal(result.afterBeta, 1.2);
+  });
+
+  it("uses original target percent to group target allocation by leveraged, original, and cash assets", () => {
+    const result = calculatePortfolio({
+      positions,
+      quotes,
+      cashTwd: 28500,
+      targetBeta: 1.2,
+      originalTargetPct: 40,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.leveragedValueTwd, 40000);
+    assert.equal(result.originalValueTwd, 31500);
+    assert.equal(result.leveragedRatio, 0.4);
+    assert.equal(result.originalRatio, 0.315);
+    assert.equal(result.cashRatio, 0.285);
+    assert.equal(result.targetLeveragedRatio, 0.4);
+    assert.equal(result.targetOriginalRatio, 0.4);
+    assert.equal(result.afterCashRatio, 0.2);
   });
 
   it("does not treat a single target weight of 100 percent as 100 percent stock exposure", () => {
@@ -146,10 +171,22 @@ describe("portfolio calculations", () => {
 
   it("marks target weights above 100 percent as invalid", () => {
     const result = calculatePortfolio({
-      positions: positions.map((position) => ({
-        ...position,
-        targetWeightPct: 60,
-      })),
+      positions: [
+        {
+          id: "first",
+          tickerInput: "00631L",
+          shares: 1000,
+          assetBeta: 2,
+          targetWeightPct: 60,
+        },
+        {
+          id: "second",
+          tickerInput: "00685L",
+          shares: 1000,
+          assetBeta: 2,
+          targetWeightPct: 60,
+        },
+      ],
       quotes,
       cashTwd: 28500,
       targetBeta: 1.2,
@@ -157,7 +194,7 @@ describe("portfolio calculations", () => {
     });
 
     assert.equal(result.isValid, false);
-    assert.equal(result.errors[0], "正二內目標比例總和必須等於 100%。");
+    assert.equal(result.errors[0], "正二標的目標比例合計必須等於 100%。");
   });
 
   it("marks target weights below 100 percent as invalid", () => {
@@ -185,6 +222,28 @@ describe("portfolio calculations", () => {
     });
 
     assert.equal(result.isValid, false);
-    assert.equal(result.errors[0], "正二內目標比例總和必須等於 100%。");
+    assert.equal(result.errors[0], "正二標的目標比例合計必須等於 100%。");
+  });
+
+  it("marks original target percent without original allocation as invalid", () => {
+    const result = calculatePortfolio({
+      positions: [
+        {
+          id: "only-leveraged",
+          tickerInput: "00631L",
+          shares: 1000,
+          assetBeta: 2,
+          targetWeightPct: 100,
+        },
+      ],
+      quotes: [quotes[0]],
+      cashTwd: 60000,
+      targetBeta: 1.2,
+      originalTargetPct: 40,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.isValid, false);
+    assert.equal(result.errors[0], "原形標的目標比例合計必須等於 100%。");
   });
 });

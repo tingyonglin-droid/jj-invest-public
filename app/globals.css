@@ -9,6 +9,7 @@
   --primary: #319b72;
   --primary-dark: #247856;
   --purple: #8d55de;
+  --teal: #31a89b;
   --blue: #5a9ee7;
   --rail: #f3efe8;
   --danger: #c1515a;
@@ -38,7 +39,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -53,6 +55,7 @@ button:disabled {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 summary:focus-visible {
   outline: 3px solid rgba(49, 155, 114, 0.24);
   outline-offset: 3px;
@@ -589,13 +592,18 @@ p {
   background: #edf0f4;
 }
 
-.allocationStock,
+.allocationLeveraged,
+.allocationOriginal,
 .allocationCash {
   transition: width 260ms ease;
 }
 
-.allocationStock {
+.allocationLeveraged {
   background: var(--purple);
+}
+
+.allocationOriginal {
+  background: var(--teal);
 }
 
 .allocationCash {
@@ -625,6 +633,10 @@ p {
 
 .legendItem .purple {
   background: var(--purple);
+}
+
+.legendItem .teal {
+  background: var(--teal);
 }
 
 .legendItem .blue {
@@ -964,7 +976,8 @@ label span,
   line-height: 1.5;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 48px;
   border: 1px solid var(--line);
@@ -972,6 +985,21 @@ input {
   padding: 10px 14px;
   color: var(--text);
   background: #ffffff;
+}
+
+select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
 }
 
 .twoCol {

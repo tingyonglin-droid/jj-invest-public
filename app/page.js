@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createBetaRailModel } from "../src/lib/beta-rail.js";
+import { calculateCashTwdValue } from "../src/lib/cash.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
@@ -29,7 +30,9 @@ const DEFAULT_STATE = {
     },
   ],
   cashTwd: 0,
+  cashUsd: 0,
   targetBeta: 1.2,
+  originalTargetPct: 0,
   tolerancePct: 10,
 };
 
@@ -109,6 +112,12 @@ function normalizeStoredState(state) {
   return {
     ...state,
     cashTwd: parseIntegerInput(state.cashTwd),
+    cashUsd: parseIntegerInput(state.cashUsd ?? 0),
+    originalTargetPct: parseNumericInput(state.originalTargetPct ?? DEFAULT_STATE.originalTargetPct),
+    positions: (state.positions || DEFAULT_STATE.positions).map((position) => ({
+      ...position,
+      assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
+    })),
   };
 }
 
@@ -184,7 +193,7 @@ function getAdvice(calculation, primaryRecommendation) {
     return {
       tone: "none",
       label: "設定需修正",
-      ticker: "正2內比例合計需為 100%",
+      ticker: "同類資產分配需修正",
       amount: "請先調整比例",
       shares: "0 股",
     };
@@ -264,14 +273,22 @@ export default function Home() {
   );
 
   const calculation = useMemo(
-    () =>
-      calculatePortfolio({
+    () => {
+      const cashValueTwd = calculateCashTwdValue({
+        cashTwd: formState.cashTwd,
+        cashUsd: formState.cashUsd,
+        usdTwd: quoteResult.fx.usdTwd,
+      });
+
+      return calculatePortfolio({
         positions: formState.positions,
         quotes: quoteResult.quotes,
-        cashTwd: formState.cashTwd,
+        cashTwd: cashValueTwd,
         targetBeta: formState.targetBeta,
+        originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
-      }),
+      });
+    },
     [formState, quoteResult],
   );
 
@@ -311,7 +328,10 @@ export default function Home() {
   function updateSetting(field, value) {
     setFormState((current) => ({
       ...current,
-      [field]: field === "cashTwd" ? parseIntegerInput(value) : parseNumericInput(value),
+      [field]:
+        field === "cashTwd" || field === "cashUsd"
+          ? parseIntegerInput(value)
+          : parseNumericInput(value),
     }));
   }
 
@@ -374,15 +394,29 @@ export default function Home() {
       return;
     }
 
-    setFormState((current) => ({
-      ...current,
-      ...applyRebalanceToState({
-        positions: current.positions,
+    setFormState((current) => {
+      const currentCashTwd = calculateCashTwdValue({
         cashTwd: current.cashTwd,
+        cashUsd: current.cashUsd,
+        usdTwd: quoteResult.fx.usdTwd,
+      });
+      const result = applyRebalanceToState({
+        positions: current.positions,
+        cashTwd: currentCashTwd,
         recommendations: calculation.recommendations,
         precision: rebalancePrecision,
-      }),
-    }));
+      });
+
+      return {
+        ...current,
+        positions: result.positions,
+        cashTwd: result.cashTwd - calculateCashTwdValue({
+          cashTwd: 0,
+          cashUsd: current.cashUsd,
+          usdTwd: quoteResult.fx.usdTwd,
+        }),
+      };
+    });
   }
 
   return (
@@ -424,6 +458,7 @@ export default function Home() {
       />
 
       <SettingsAccordions
+        calculation={calculation}
         formState={formState}
         hydrated={hydrated}
         onAddPosition={addPosition}
@@ -599,8 +634,8 @@ function AllocationCard({ calculation }) {
     <section className="appCard allocationCard">
       <div className="cardHeaderRow">
         <div>
-          <h2>正二與現金配置</h2>
-          <p>目前配置與目標配置</p>
+          <h2>資產配置比例</h2>
+          <p>正二、原形與現金配置</p>
         </div>
         <div className="allocationTotal">
           <span>總資產</span>
@@ -608,16 +643,24 @@ function AllocationCard({ calculation }) {
         </div>
       </div>
       <AllocationBar
-        stockRatio={calculation.stockRatio}
+        leveragedRatio={calculation.leveragedRatio}
+        originalRatio={calculation.originalRatio}
         cashRatio={calculation.cashRatio}
       />
       <div className="allocationLegend">
         <AllocationMetric
           color="purple"
           label="正二"
-          current={calculation.stockRatio}
-          target={calculation.afterStockRatio}
-          valueTwd={calculation.stockValueTwd}
+          current={calculation.leveragedRatio}
+          target={calculation.targetLeveragedRatio}
+          valueTwd={calculation.leveragedValueTwd}
+        />
+        <AllocationMetric
+          color="teal"
+          label="原形"
+          current={calculation.originalRatio}
+          target={calculation.targetOriginalRatio}
+          valueTwd={calculation.originalValueTwd}
         />
         <AllocationMetric
           color="blue"
@@ -631,16 +674,18 @@ function AllocationCard({ calculation }) {
   );
 }
 
-function AllocationBar({ stockRatio, cashRatio }) {
-  const safeStockRatio = Math.min(Math.max(stockRatio, 0), 1);
+function AllocationBar({ leveragedRatio, originalRatio, cashRatio }) {
+  const safeLeveragedRatio = Math.min(Math.max(leveragedRatio, 0), 1);
+  const safeOriginalRatio = Math.min(Math.max(originalRatio, 0), 1);
   const safeCashRatio = Math.min(Math.max(cashRatio, 0), 1);
 
   return (
     <div
       className="allocationBar"
-      aria-label={`正二 ${formatPercent(safeStockRatio)}，現金 ${formatPercent(safeCashRatio)}`}
+      aria-label={`正二 ${formatPercent(safeLeveragedRatio)}，原形 ${formatPercent(safeOriginalRatio)}，現金 ${formatPercent(safeCashRatio)}`}
     >
-      <span className="allocationStock" style={{ width: `${safeStockRatio * 100}%` }} />
+      <span className="allocationLeveraged" style={{ width: `${safeLeveragedRatio * 100}%` }} />
+      <span className="allocationOriginal" style={{ width: `${safeOriginalRatio * 100}%` }} />
       <span className="allocationCash" style={{ width: `${safeCashRatio * 100}%` }} />
     </div>
   );
@@ -737,6 +782,7 @@ function HoldingRow({ item, precision }) {
 }
 
 function SettingsAccordions({
+  calculation,
   formState,
   hydrated,
   onAddPosition,
@@ -745,11 +791,19 @@ function SettingsAccordions({
   onUpdatePosition,
   onUpdateSetting,
 }) {
-  const targetWeightTotalPct = formState.positions.reduce(
-    (sum, position) => sum + (Number(position.targetWeightPct) || 0),
+  const leveragedTargetWeightTotalPct = formState.positions.reduce(
+    (sum, position) =>
+      sum + (Number(position.assetBeta) === 1 ? 0 : Number(position.targetWeightPct) || 0),
     0,
   );
-  const isTargetWeightValid = Math.abs(targetWeightTotalPct - 100) <= 0.01;
+  const originalTargetWeightTotalPct = formState.positions.reduce(
+    (sum, position) =>
+      sum + (Number(position.assetBeta) === 1 ? Number(position.targetWeightPct) || 0 : 0),
+    0,
+  );
+  const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
+  const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
+  const targetGuardIsValid = calculation.errors.length === 0;
 
   return (
     <section className="settingsStack" aria-label="進階設定">
@@ -757,20 +811,39 @@ function SettingsAccordions({
         <summary>
           <span>投資組合設定</span>
           <em>
-            {formState.positions.length} 筆 / 正2內合計 {formatNumber(targetWeightTotalPct)}%
+            {formState.positions.length} 筆 / 正二 {formatNumber(leveragedTargetWeightTotalPct)}%
+            {hasOriginalPositions ? ` / 原形 ${formatNumber(originalTargetWeightTotalPct)}%` : ""}
           </em>
         </summary>
         <div className="settingsBody">
-          <label>
-            <span>現金金額 TWD</span>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={parseIntegerInput(formState.cashTwd)}
-              onChange={(event) => onUpdateSetting("cashTwd", event.target.value)}
-            />
-          </label>
+          <div className="positionEditor cashEditor">
+            <div className="positionTitle">
+              <strong>現金</strong>
+            </div>
+            <p className="hint">現金分類</p>
+            <div className="twoCol">
+              <label>
+                <span>新台幣 TWD</span>
+                <input
+                  type="number"
+                  step="1"
+                  value={parseIntegerInput(formState.cashTwd)}
+                  onChange={(event) => onUpdateSetting("cashTwd", event.target.value)}
+                />
+              </label>
+              <label>
+                <span>美金 USD</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={parseIntegerInput(formState.cashUsd)}
+                  onChange={(event) => onUpdateSetting("cashUsd", event.target.value)}
+                />
+              </label>
+            </div>
+            <p className="hint">美金現金會用最新 USD/TWD 匯率換算，與新台幣相加後顯示總現金市值。</p>
+          </div>
           <div className="positionList">
             {formState.positions.map((position, index) => (
               <div className="positionEditor" key={position.id}>
@@ -808,20 +881,20 @@ function SettingsAccordions({
                     />
                   </label>
                   <label>
-                    <span>標的 Beta</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={position.assetBeta}
+                    <span>資產類型</span>
+                    <select
+                      value={Number(position.assetBeta) === 1 ? "1" : "2"}
                       onChange={(event) =>
                         onUpdatePosition(position.id, "assetBeta", event.target.value)
                       }
-                    />
+                    >
+                      <option value="2">正二（Beta 2）</option>
+                      <option value="1">原形（Beta 1）</option>
+                    </select>
                   </label>
                 </div>
                 <label>
-                  <span>正二內目標比例 %</span>
+                  <span>同類資產內目標比例 %</span>
                   <input
                     type="number"
                     step="0.1"
@@ -839,12 +912,17 @@ function SettingsAccordions({
               </div>
             ))}
           </div>
-          <div className={`weightGuard ${isTargetWeightValid ? "ok" : "error"}`}>
-            <strong>正2內目標比例合計 {formatNumber(targetWeightTotalPct)}%</strong>
+          <div className={`weightGuard ${targetGuardIsValid ? "ok" : "error"}`}>
+            <strong>
+              同類資產分配：正二 {formatNumber(leveragedTargetWeightTotalPct)}%
+              {hasOriginalTarget || hasOriginalPositions
+                ? ` / 原形 ${formatNumber(originalTargetWeightTotalPct)}%`
+                : ""}
+            </strong>
             <span>
-              {isTargetWeightValid
-                ? "已符合 100%，可用於再平衡試算。"
-                : "請調整每檔正2內目標比例，合計必須等於 100%。"}
+              {targetGuardIsValid
+                ? "需要配置的資產類型各自符合 100%，可用於再平衡試算。"
+                : "請調整同類資產內比例，需配置的類型合計必須等於 100%。"}
             </span>
           </div>
           <div className="buttonRow portfolioActions">
@@ -863,7 +941,7 @@ function SettingsAccordions({
         <summary>
           <span>Beta 參數</span>
           <em>
-            {formatNumber(Number(formState.targetBeta) || 0)} / {Number(formState.tolerancePct) || 0}%
+            {formatNumber(Number(formState.targetBeta) || 0)} / 原形 {Number(formState.originalTargetPct) || 0}%
           </em>
         </summary>
         <div className="settingsBody">
@@ -879,6 +957,19 @@ function SettingsAccordions({
               />
             </label>
             <label>
+              <span>原形目標比例 %</span>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={formState.originalTargetPct}
+                onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
+              />
+            </label>
+          </div>
+          <div className="twoCol">
+            <label>
               <span>容忍區間 %</span>
               <input
                 type="number"
@@ -888,6 +979,14 @@ function SettingsAccordions({
                 onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
               />
             </label>
+          </div>
+          <div className={`weightGuard ${targetGuardIsValid ? "ok" : "error"}`}>
+            <strong>
+              推算目標：正二 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
+              {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
+              {formatPercent(calculation.afterCashRatio)}
+            </strong>
+            <span>目標 Beta 會先保留原形比例，再自動推算需要多少正二與現金。</span>
           </div>
         </div>
       </details>
