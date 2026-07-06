@@ -77,6 +77,20 @@ function formatTwdPrice(value) {
   return `NT$${twdPriceFormatter.format(Number.isFinite(value) ? value : 0)}`;
 }
 
+function formatQuotePrice(value, currency) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+
+  if (currency === "USD") {
+    return `US$${twdPriceFormatter.format(safeValue)}`;
+  }
+
+  if (currency === "TWD") {
+    return formatTwdPrice(safeValue);
+  }
+
+  return `${currency || ""} ${twdPriceFormatter.format(safeValue)}`.trim();
+}
+
 function formatNumber(value, digits = 2) {
   return new Intl.NumberFormat("zh-TW", {
     minimumFractionDigits: digits,
@@ -865,7 +879,7 @@ function HoldingRow({ item, precision }) {
           <strong>{item.normalizedTicker}</strong>
           <span>{getPositionDisplayName(item.normalizedTicker)}</span>
           <em>市值 {formatTwd(item.currentValueTwd)}</em>
-          <em>股價 {formatTwdPrice(item.priceTwd)} · 更新 {formatQuoteDate(item.date)}</em>
+          <em>股價 {formatQuotePrice(item.price, item.currency)} · 更新 {formatQuoteDate(item.date)}</em>
         </div>
       </div>
 
