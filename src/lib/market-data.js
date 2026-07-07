@@ -1,4 +1,5 @@
 const TAIWAN_TICKER_PATTERN = /^\d{4,6}[A-Z]?$/i;
+const TAIWAN_LISTED_TICKER_PATTERN = /^(\d{4,6}[A-Z]?)\.TW$/i;
 
 export function normalizeTicker(tickerInput) {
   const value = String(tickerInput || "").trim().toUpperCase();
@@ -62,7 +63,101 @@ export function toYahooChartSymbol(normalizedTicker) {
   return encodeURIComponent(normalizedTicker);
 }
 
+function formatTwseDate(value) {
+  const text = String(value || "");
+  if (!/^\d{8}$/.test(text)) {
+    return null;
+  }
+
+  return `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`;
+}
+
+function previousWeekday(dateText) {
+  const date = new Date(`${dateText}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  do {
+    date.setUTCDate(date.getUTCDate() - 1);
+  } while (date.getUTCDay() === 0 || date.getUTCDay() === 6);
+
+  return date.toISOString().slice(0, 10);
+}
+
+function parseTwseNumber(value) {
+  const number = Number(String(value || "").replaceAll(",", ""));
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+export function parseTwseQuote(stockInfo) {
+  const tradePrice = parseTwseNumber(stockInfo?.z);
+  const quotedDate = formatTwseDate(stockInfo?.d);
+
+  if (tradePrice && quotedDate) {
+    return {
+      price: tradePrice,
+      date: quotedDate,
+      currency: "TWD",
+      source: "TWSE",
+      error: null,
+    };
+  }
+
+  const previousClose = parseTwseNumber(stockInfo?.y);
+  const previousDate = quotedDate ? previousWeekday(quotedDate) : null;
+  if (previousClose && previousDate) {
+    return {
+      price: previousClose,
+      date: previousDate,
+      currency: "TWD",
+      source: "TWSE",
+      error: null,
+    };
+  }
+
+  throw new Error("TWSE 沒有回傳可用價格。");
+}
+
+export function toTwseChannel(normalizedTicker) {
+  const match = String(normalizedTicker || "").toUpperCase().match(TAIWAN_LISTED_TICKER_PATTERN);
+  return match ? `tse_${match[1]}.tw` : null;
+}
+
+export async function fetchTwseQuote(normalizedTicker) {
+  const channel = toTwseChannel(normalizedTicker);
+  if (!channel) {
+    throw new Error("不是 TWSE 上市股票代號。");
+  }
+
+  const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${encodeURIComponent(channel)}&json=1&delay=0`;
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+    },
+    next: {
+      revalidate: 60,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`TWSE 回應 ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const stockInfo = payload?.msgArray?.[0];
+  return parseTwseQuote(stockInfo);
+}
+
 export async function fetchYahooQuote(normalizedTicker) {
+  if (toTwseChannel(normalizedTicker)) {
+    try {
+      return await fetchTwseQuote(normalizedTicker);
+    } catch {
+      // Fall through to Yahoo Finance when TWSE is temporarily unavailable.
+    }
+  }
+
   const symbol = toYahooChartSymbol(normalizedTicker);
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`;
   const response = await fetch(url, {
