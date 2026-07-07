@@ -11,3 +11,5 @@ yarn-error.log*
 總覽頁風格.png
 calculator.py
 price.py
+.vercel
+.env*
