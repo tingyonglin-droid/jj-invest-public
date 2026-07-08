@@ -90,6 +90,10 @@ function parseTwseNumber(value) {
   return Number.isFinite(number) && number > 0 ? number : null;
 }
 
+function parseTwseFirstLevelPrice(value) {
+  return parseTwseNumber(String(value || "").split("_")[0]);
+}
+
 export function parseTwseQuote(stockInfo) {
   const tradePrice = parseTwseNumber(stockInfo?.z);
   const quotedDate = formatTwseDate(stockInfo?.d);
@@ -97,6 +101,18 @@ export function parseTwseQuote(stockInfo) {
   if (tradePrice && quotedDate) {
     return {
       price: tradePrice,
+      date: quotedDate,
+      currency: "TWD",
+      source: "TWSE",
+      error: null,
+    };
+  }
+
+  const bestAsk = parseTwseFirstLevelPrice(stockInfo?.a);
+  const bestBid = parseTwseFirstLevelPrice(stockInfo?.b);
+  if (bestAsk && bestBid && quotedDate) {
+    return {
+      price: (bestAsk + bestBid) / 2,
       date: quotedDate,
       currency: "TWD",
       source: "TWSE",

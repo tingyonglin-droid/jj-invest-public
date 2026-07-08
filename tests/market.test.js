@@ -71,5 +71,26 @@ describe("market data helpers", () => {
       },
     );
   });
+
+  it("uses TWSE best bid and ask midpoint when last trade price is unavailable intraday", () => {
+    assert.deepEqual(
+      parseTwseQuote({
+        c: "00631L",
+        d: "20260708",
+        t: "10:09:59",
+        z: "-",
+        a: "36.5900_36.6000_",
+        b: "36.5800_36.5700_",
+        y: "37.19",
+      }),
+      {
+        price: 36.585,
+        date: "2026-07-08",
+        currency: "TWD",
+        source: "TWSE",
+        error: null,
+      },
+    );
+  });
 }
 );
