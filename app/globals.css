@@ -216,9 +216,9 @@ p {
 
 .betaTopline {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(148px, 0.42fr);
+  grid-template-columns: minmax(0, 0.92fr) minmax(172px, 0.58fr);
   align-items: end;
-  gap: 18px;
+  gap: 12px;
 }
 
 .megaNumber {
@@ -255,6 +255,7 @@ p {
   color: var(--text);
   font-size: 16px;
   font-weight: 790;
+  white-space: nowrap;
 }
 
 .betaMetaGrid small {
@@ -1370,7 +1371,8 @@ select {
   }
 
   .betaTopline {
-    gap: 12px;
+    grid-template-columns: minmax(0, 0.78fr) minmax(166px, 0.72fr);
+    gap: 8px;
   }
 
   .betaMetaGrid strong {
