@@ -15,6 +15,7 @@ import {
   applyRebalanceToState,
   getRebalanceShareDelta,
 } from "../src/lib/rebalance-apply.js";
+import { createAdviceActionText } from "../src/lib/advice-summary.js";
 import {
   getPositionGroups,
   getPositionGroupTargetStatus,
@@ -250,7 +251,7 @@ function getAdvice(calculation, primaryRecommendation) {
       status: "目前位於容忍區間",
       label: "無需操作",
       ticker: "目前位於容忍區間",
-      amount: "目前位於容忍區間",
+      amount: "",
       shares: "0 股",
     };
   }
@@ -700,6 +701,11 @@ function BetaCard({ calculation, betaRail }) {
 }
 
 function AdviceCard({ advice }) {
+  const actionText = createAdviceActionText({
+    label: advice.label,
+    amount: advice.amount,
+  });
+
   return (
     <section className="appCard adviceCard">
       <div className={`adviceIcon ${advice.tone}`} aria-hidden="true">
@@ -708,8 +714,7 @@ function AdviceCard({ advice }) {
       <div className="adviceContent">
         <p className="cardLabel">今日操作建議</p>
         <p className={`adviceStatus ${advice.tone}`}>{advice.status}</p>
-        <h2 className={advice.tone}>{advice.label}</h2>
-        <strong>{advice.amount}</strong>
+        <strong className={advice.tone}>{actionText}</strong>
       </div>
     </section>
   );
