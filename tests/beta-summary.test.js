@@ -12,6 +12,7 @@ describe("beta summary helpers", () => {
         tolerancePct: 10,
       }),
       {
+        driftText: "+0.12 (+10.00%)",
         driftValue: "+0.12",
         driftPercent: "+10.00%",
         targetText: "1.20 ± 10%",
@@ -28,6 +29,7 @@ describe("beta summary helpers", () => {
         tolerancePct: 10,
       }),
       {
+        driftText: "-0.12 (-10.00%)",
         driftValue: "-0.12",
         driftPercent: "-10.00%",
         targetText: "1.20 ± 10%",

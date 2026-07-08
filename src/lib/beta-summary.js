@@ -21,6 +21,7 @@ export function createBetaSummary({ currentBeta, targetBeta, tolerancePct }) {
   const toleranceText = formatPercentValue(tolerancePct);
 
   return {
+    driftText: `${formatSignedNumber(drift)} (${formatSignedPercent(driftPercent)})`,
     driftValue: formatSignedNumber(drift),
     driftPercent: formatSignedPercent(driftPercent),
     targetText: `${Number(targetBeta).toFixed(2)} ± ${toleranceText}`,

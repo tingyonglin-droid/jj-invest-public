@@ -668,10 +668,7 @@ function BetaCard({ calculation, betaRail }) {
           </div>
           <div>
             <span>與目標差距</span>
-            <strong>
-              {betaSummary.driftValue}
-              <small>{betaSummary.driftPercent}</small>
-            </strong>
+            <strong>{betaSummary.driftText}</strong>
           </div>
         </div>
       </div>
