@@ -1073,6 +1073,63 @@ p {
   gap: 12px;
 }
 
+.positionSections {
+  display: grid;
+  gap: 14px;
+}
+
+.positionSection {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(224, 229, 235, 0.95);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  background: #fbfcfd;
+}
+
+.positionSection.error {
+  border-color: rgba(201, 79, 95, 0.28);
+  background: #fff8f8;
+}
+
+.positionSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.positionSectionHeader div {
+  display: grid;
+  gap: 2px;
+}
+
+.positionSectionHeader strong {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 860;
+}
+
+.positionSectionHeader span,
+.positionSectionHeader em {
+  color: var(--muted);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 760;
+}
+
+.positionSection.error .positionSectionHeader em,
+.fieldError {
+  color: var(--danger);
+}
+
+.fieldError {
+  margin: -2px 0 0;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.45;
+}
+
 .positionEditor {
   display: grid;
   gap: 12px;
@@ -1158,6 +1215,12 @@ p {
 .portfolioActions .fullWidth {
   flex: 1;
   width: auto;
+}
+
+.emptyState.compact {
+  min-height: auto;
+  padding: 14px;
+  font-size: 13px;
 }
 
 label {
