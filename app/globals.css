@@ -253,7 +253,7 @@ p {
   align-items: baseline;
   gap: 6px;
   color: var(--text);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 790;
 }
 
@@ -389,28 +389,11 @@ p {
 }
 
 .adviceStatus {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  border-radius: 999px;
-  padding: 0 11px;
-  font-size: 13px;
-  font-weight: 780;
-}
-
-.adviceStatus.buy {
-  color: var(--primary-dark);
-  background: #e8f6ef;
-}
-
-.adviceStatus.sell {
-  color: #8e333b;
-  background: #fff0f1;
-}
-
-.adviceStatus.none {
+  margin: 0 0 4px;
   color: var(--muted-strong);
-  background: #f0f2f5;
+  font-size: 15px;
+  font-weight: 760;
+  line-height: 1.35;
 }
 
 .adviceContent h2.sell {

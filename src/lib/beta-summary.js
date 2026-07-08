@@ -18,10 +18,12 @@ function formatPercentValue(value) {
 export function createBetaSummary({ currentBeta, targetBeta, tolerancePct }) {
   const drift = currentBeta - targetBeta;
   const driftPercent = targetBeta === 0 ? 0 : (drift / targetBeta) * 100;
+  const toleranceText = formatPercentValue(tolerancePct);
 
   return {
     driftValue: formatSignedNumber(drift),
     driftPercent: formatSignedPercent(driftPercent),
-    toleranceText: formatPercentValue(tolerancePct),
+    targetText: `目標 Beta ${Number(targetBeta).toFixed(2)} ± ${toleranceText}`,
+    toleranceText,
   };
 }

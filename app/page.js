@@ -662,12 +662,8 @@ function BetaCard({ calculation, betaRail }) {
         </div>
         <div className="betaMetaGrid">
           <div>
-            <span>目標 Beta</span>
-            <strong>{formatNumber(calculation.targetBeta)}</strong>
-          </div>
-          <div>
-            <span>容忍區間</span>
-            <strong>{betaSummary.toleranceText}</strong>
+            <span>目標設定</span>
+            <strong>{betaSummary.targetText}</strong>
           </div>
           <div>
             <span>與目標差距</span>
@@ -710,8 +706,8 @@ function AdviceCard({ advice }) {
         <span />
       </div>
       <div className="adviceContent">
-        <p className="cardLabel">再平衡建議</p>
-        <span className={`adviceStatus ${advice.tone}`}>{advice.status}</span>
+        <p className="cardLabel">今日操作建議</p>
+        <p className={`adviceStatus ${advice.tone}`}>{advice.status}</p>
         <h2 className={advice.tone}>{advice.label}</h2>
         <strong>{advice.amount}</strong>
       </div>
