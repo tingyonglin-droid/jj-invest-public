@@ -191,6 +191,7 @@ export function calculatePortfolio({
     cashRatio: totalAssetsTwd > 0 ? toNumber(cashTwd) / totalAssetsTwd : 0,
     currentBeta,
     targetBeta: targetBetaValue,
+    tolerancePct: toNumber(tolerancePct),
     betaDrift,
     betaLower,
     betaUpper,

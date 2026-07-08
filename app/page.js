@@ -7,6 +7,7 @@ import {
   shouldAutoRefreshQuotes,
 } from "../src/lib/auto-refresh.js";
 import { createBetaRailModel } from "../src/lib/beta-rail.js";
+import { createBetaSummary } from "../src/lib/beta-summary.js";
 import { calculateCashTwdValue } from "../src/lib/cash.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
@@ -223,6 +224,7 @@ function getBetaStatus(calculation) {
 }
 
 function getAdvice(calculation, primaryRecommendation) {
+  const betaStatus = getBetaStatus(calculation);
   const estimatedShares = primaryRecommendation
     ? getEstimatedShares(primaryRecommendation.tradeAmountTwd, primaryRecommendation.priceTwd)
     : 0;
@@ -230,6 +232,7 @@ function getAdvice(calculation, primaryRecommendation) {
   if (!calculation.isValid) {
     return {
       tone: "none",
+      status: "設定需修正",
       label: "設定需修正",
       ticker: "同類資產分配需修正",
       amount: "請先調整比例",
@@ -244,6 +247,7 @@ function getAdvice(calculation, primaryRecommendation) {
   ) {
     return {
       tone: "none",
+      status: "目前位於容忍區間",
       label: "無需操作",
       ticker: "目前位於容忍區間",
       amount: "目前位於容忍區間",
@@ -253,6 +257,7 @@ function getAdvice(calculation, primaryRecommendation) {
 
   return {
     tone: calculation.totalTradeAmountTwd > 0 ? "buy" : "sell",
+    status: betaStatus.label,
     label: calculation.totalTradeAmountTwd > 0 ? "買入" : "賣出",
     ticker: primaryRecommendation.normalizedTicker,
     amount: formatTwd(Math.abs(calculation.totalTradeAmountTwd)),
@@ -642,7 +647,11 @@ function AppHeader({ status, lastUpdatedAt, onRefresh }) {
 }
 
 function BetaCard({ calculation, betaRail }) {
-  const betaStatus = getBetaStatus(calculation);
+  const betaSummary = createBetaSummary({
+    currentBeta: calculation.currentBeta,
+    targetBeta: calculation.targetBeta,
+    tolerancePct: calculation.tolerancePct,
+  });
 
   return (
     <section className="appCard betaCard">
@@ -658,16 +667,16 @@ function BetaCard({ calculation, betaRail }) {
           </div>
           <div>
             <span>容忍區間</span>
+            <strong>{betaSummary.toleranceText}</strong>
+          </div>
+          <div>
+            <span>與目標差距</span>
             <strong>
-              {formatNumber(calculation.betaLower)} ~ {formatNumber(calculation.betaUpper)}
+              {betaSummary.driftValue}
+              <small>{betaSummary.driftPercent}</small>
             </strong>
           </div>
         </div>
-      </div>
-
-      <div className={`statusPill ${betaStatus.tone === "ok" ? "ok" : "warning"}`}>
-        <span />
-        {betaStatus.label}
       </div>
 
       <div
@@ -690,23 +699,6 @@ function BetaCard({ calculation, betaRail }) {
         <span>1</span>
         <span>{betaRail.scaleMax}</span>
       </div>
-
-      <div className="betaInsightGrid">
-        <p className="betaDrift">
-          與目標差距{" "}
-          <strong className={calculation.betaDrift > 0 ? "sell" : "buy"}>
-            {calculation.betaDrift >= 0 ? "+" : ""}
-            {formatNumber(calculation.betaDrift)}
-          </strong>
-        </p>
-        <p className="betaDrift">
-          {betaStatus.boundaryLabel}{" "}
-          <strong className={betaStatus.tone === "sell" ? "sell" : "buy"}>
-            {betaStatus.boundaryGap >= 0 ? "+" : ""}
-            {formatNumber(betaStatus.boundaryGap)}
-          </strong>
-        </p>
-      </div>
     </section>
   );
 }
@@ -719,6 +711,7 @@ function AdviceCard({ advice }) {
       </div>
       <div className="adviceContent">
         <p className="cardLabel">再平衡建議</p>
+        <span className={`adviceStatus ${advice.tone}`}>{advice.status}</span>
         <h2 className={advice.tone}>{advice.label}</h2>
         <strong>{advice.amount}</strong>
       </div>

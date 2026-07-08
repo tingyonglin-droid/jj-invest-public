@@ -211,14 +211,14 @@ p {
 }
 
 .betaCard {
-  padding: 28px 28px 20px;
+  padding: 24px 28px 18px;
 }
 
 .betaTopline {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.68fr);
-  align-items: center;
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) minmax(148px, 0.42fr);
+  align-items: end;
+  gap: 18px;
 }
 
 .megaNumber {
@@ -230,74 +230,43 @@ p {
 
 .betaMetaGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 76px;
-  border-left: 1px solid var(--line);
+  gap: 8px;
+  min-height: 0;
 }
 
 .betaMetaGrid div {
   display: grid;
-  align-content: center;
-  gap: 8px;
-  padding-left: 24px;
-  border-right: 1px solid var(--line);
-}
-
-.betaMetaGrid div:last-child {
-  border-right: 0;
+  gap: 3px;
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: var(--card-soft);
 }
 
 .betaMetaGrid span {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 680;
 }
 
 .betaMetaGrid strong {
-  font-size: 22px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 790;
+}
+
+.betaMetaGrid small {
+  color: var(--muted);
+  font-size: 12px;
   font-weight: 760;
-}
-
-.statusPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  margin-top: 14px;
-  padding: 0 14px;
-  border-radius: 999px;
-  font-size: 15px;
-  font-weight: 760;
-}
-
-.statusPill span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.statusPill.ok {
-  color: var(--primary-dark);
-  background: #e8f6ef;
-}
-
-.statusPill.ok span {
-  background: var(--primary);
-}
-
-.statusPill.warning {
-  color: #8e333b;
-  background: #fff0f1;
-}
-
-.statusPill.warning span {
-  background: var(--danger);
 }
 
 .betaRail {
   position: relative;
   height: 18px;
-  margin-top: 34px;
+  margin-top: 30px;
   border-radius: 999px;
   overflow: visible;
   background: linear-gradient(
@@ -346,8 +315,7 @@ p {
   box-shadow: 0 0 0 7px rgba(17, 24, 33, 0.08);
 }
 
-.betaScale,
-.betaDrift {
+.betaScale {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -358,31 +326,6 @@ p {
 
 .betaScale {
   margin-top: 13px;
-}
-
-.betaDrift {
-  justify-content: flex-start;
-  gap: 8px;
-  margin: 0;
-}
-
-.betaDrift strong {
-  font-size: 21px;
-  font-weight: 780;
-}
-
-.betaInsightGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.betaInsightGrid .betaDrift {
-  min-height: 44px;
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: var(--card-soft);
 }
 
 .buy {
@@ -439,10 +382,35 @@ p {
 }
 
 .adviceContent h2 {
-  margin: 0 0 6px;
+  margin: 2px 0 6px;
   color: var(--primary-dark);
   font-size: clamp(30px, 6vw, 44px);
   font-weight: 820;
+}
+
+.adviceStatus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0 11px;
+  font-size: 13px;
+  font-weight: 780;
+}
+
+.adviceStatus.buy {
+  color: var(--primary-dark);
+  background: #e8f6ef;
+}
+
+.adviceStatus.sell {
+  color: #8e333b;
+  background: #fff0f1;
+}
+
+.adviceStatus.none {
+  color: var(--muted-strong);
+  background: #f0f2f5;
 }
 
 .adviceContent h2.sell {
@@ -1357,27 +1325,20 @@ select {
   }
 
   .betaTopline {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(132px, 0.42fr);
+    align-items: end;
   }
 
   .betaMetaGrid {
-    grid-template-columns: 1fr 1fr;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding-top: 18px;
+    gap: 8px;
   }
 
   .betaMetaGrid div {
-    padding-left: 0;
-    padding-right: 16px;
+    padding: 8px 9px;
   }
 
   .adviceCard {
     grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .betaInsightGrid {
-    grid-template-columns: 1fr;
   }
 
   .holdingRow {
@@ -1429,17 +1390,20 @@ select {
   }
 
   .megaNumber {
-    font-size: 86px;
+    font-size: 76px;
   }
 
-  .betaMetaGrid {
-    grid-template-columns: 1fr;
+  .betaTopline {
     gap: 12px;
   }
 
-  .betaMetaGrid div {
-    border-right: 0;
-    padding-right: 0;
+  .betaMetaGrid strong {
+    font-size: 15px;
+  }
+
+  .betaMetaGrid small {
+    display: block;
+    font-size: 11px;
   }
 
   .twoCol {
