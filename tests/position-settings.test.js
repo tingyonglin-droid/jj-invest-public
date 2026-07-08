@@ -37,6 +37,20 @@ describe("position settings helpers", () => {
     );
   });
 
+  it("marks a populated section invalid even when its target asset ratio is zero", () => {
+    assert.deepEqual(
+      getPositionGroupTargetStatus({
+        positions: [{ targetWeightPct: 60 }],
+        targetRatio: 0,
+      }),
+      {
+        totalPct: 60,
+        isRequired: true,
+        isValid: false,
+      },
+    );
+  });
+
   it("does not require target weights for an unused section", () => {
     assert.deepEqual(
       getPositionGroupTargetStatus({

@@ -14,7 +14,7 @@ export function getPositionGroupTargetStatus({ positions, targetRatio }) {
     (sum, position) => sum + (Number(position.targetWeightPct) || 0),
     0,
   );
-  const isRequired = Number(targetRatio) > 0.0001;
+  const isRequired = positions.length > 0 || Number(targetRatio) > 0.0001;
   const isValid = !isRequired || Math.abs(totalPct - 100) <= 0.01;
 
   return {
