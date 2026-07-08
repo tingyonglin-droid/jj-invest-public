@@ -1,4 +1,6 @@
 const TICKER_NAMES = {
+  "0050.TW": "元大台灣50",
+  "006208.TW": "富邦台50",
   "00631L.TW": "元大台灣50正2",
   "00685L.TW": "群益台灣加權正2",
   QLD: "ProShares Ultra QQQ",
@@ -18,8 +20,12 @@ function formatTwdText(value) {
   return `NT$${twdNumberFormatter.format(value)}`;
 }
 
-export function getPositionDisplayName(normalizedTicker) {
-  return TICKER_NAMES[normalizedTicker] || "正2標的";
+export function getPositionDisplayName(normalizedTicker, assetBeta = 2) {
+  if (TICKER_NAMES[normalizedTicker]) {
+    return TICKER_NAMES[normalizedTicker];
+  }
+
+  return Number(assetBeta) === 1 ? "原形標的" : "正二標的";
 }
 
 export function getTickerBadgeText(normalizedTicker) {

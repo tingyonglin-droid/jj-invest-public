@@ -10,13 +10,16 @@ import {
 
 describe("presentation helpers", () => {
   it("maps known tickers to app-friendly display names", () => {
+    assert.equal(getPositionDisplayName("0050.TW"), "元大台灣50");
+    assert.equal(getPositionDisplayName("006208.TW"), "富邦台50");
     assert.equal(getPositionDisplayName("00631L.TW"), "元大台灣50正2");
     assert.equal(getPositionDisplayName("00685L.TW"), "群益台灣加權正2");
     assert.equal(getPositionDisplayName("QLD"), "ProShares Ultra QQQ");
   });
 
-  it("falls back to a generic leveraged asset label for unknown tickers", () => {
-    assert.equal(getPositionDisplayName("2330.TW"), "正2標的");
+  it("falls back to generic asset labels by asset beta", () => {
+    assert.equal(getPositionDisplayName("2330.TW", 1), "原形標的");
+    assert.equal(getPositionDisplayName("2330.TW", 2), "正二標的");
   });
 
   it("creates compact badge text from tickers", () => {

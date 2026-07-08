@@ -882,7 +882,7 @@ function HoldingRow({ item, precision }) {
         </div>
         <div className="holdingIdentity">
           <strong>{item.normalizedTicker}</strong>
-          <span>{getPositionDisplayName(item.normalizedTicker)}</span>
+          <span>{getPositionDisplayName(item.normalizedTicker, item.assetBeta)}</span>
           <em>市值 {formatTwd(item.currentValueTwd)}</em>
           <em>股價 {formatQuotePrice(item.price, item.currency)} · 更新 {formatQuoteDate(item.date)}</em>
         </div>
