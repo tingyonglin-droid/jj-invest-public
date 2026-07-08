@@ -23,7 +23,7 @@ export function createBetaSummary({ currentBeta, targetBeta, tolerancePct }) {
   return {
     driftValue: formatSignedNumber(drift),
     driftPercent: formatSignedPercent(driftPercent),
-    targetText: `目標 Beta ${Number(targetBeta).toFixed(2)} ± ${toleranceText}`,
+    targetText: `${Number(targetBeta).toFixed(2)} ± ${toleranceText}`,
     toleranceText,
   };
 }

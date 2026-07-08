@@ -204,10 +204,10 @@ p {
 }
 
 .cardLabel {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   color: var(--text);
-  font-size: 16px;
-  font-weight: 760;
+  font-size: 22px;
+  font-weight: 780;
 }
 
 .betaCard {
@@ -244,8 +244,8 @@ p {
 
 .betaMetaGrid span {
   color: var(--muted);
-  font-size: 12px;
-  font-weight: 680;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .betaMetaGrid strong {
@@ -390,9 +390,9 @@ p {
 
 .adviceStatus {
   margin: 0 0 4px;
-  color: var(--muted-strong);
+  color: var(--muted);
   font-size: 15px;
-  font-weight: 760;
+  font-weight: 650;
   line-height: 1.35;
 }
 
