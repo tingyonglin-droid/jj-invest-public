@@ -308,6 +308,7 @@ export default function Home() {
   const [rebalancePrecision, setRebalancePrecision] = useState("lots");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [activeView, setActiveView] = useState("overview");
+  const [glossaryTopic, setGlossaryTopic] = useState(null);
 
   const tickers = useMemo(
     () =>
@@ -542,13 +543,20 @@ export default function Home() {
       <section className="viewStack" aria-live="polite">
         {activeView === "overview" && (
           <>
-            <BetaCard calculation={calculation} betaRail={betaRail} />
+            <BetaCard
+              calculation={calculation}
+              betaRail={betaRail}
+              onOpenGlossary={() => setGlossaryTopic("beta")}
+            />
 
             <AdviceCard
               advice={advice}
             />
 
-            <AllocationCard calculation={calculation} />
+            <AllocationCard
+              calculation={calculation}
+              onOpenGlossary={() => setGlossaryTopic("allocation")}
+            />
           </>
         )}
 
@@ -579,6 +587,11 @@ export default function Home() {
       <BottomTabBar
         activeView={activeView}
         onChange={changeView}
+      />
+
+      <GlossaryDialog
+        topic={glossaryTopic}
+        onClose={() => setGlossaryTopic(null)}
       />
     </main>
   );
@@ -647,7 +660,7 @@ function AppHeader({ status, lastUpdatedAt, onRefresh }) {
   );
 }
 
-function BetaCard({ calculation, betaRail }) {
+function BetaCard({ calculation, betaRail, onOpenGlossary }) {
   const betaSummary = createBetaSummary({
     currentBeta: calculation.currentBeta,
     targetBeta: calculation.targetBeta,
@@ -658,7 +671,17 @@ function BetaCard({ calculation, betaRail }) {
     <section className="appCard betaCard">
       <div className="betaTopline">
         <div>
-          <p className="cardLabel">目前 Beta</p>
+          <div className="cardLabelRow">
+            <p className="cardLabel">目前 Beta</p>
+            <button
+              type="button"
+              className="infoButton"
+              onClick={onOpenGlossary}
+              aria-label="查看 Beta 說明"
+            >
+              i
+            </button>
+          </div>
           <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
         </div>
         <div className="betaMetaGrid">
@@ -697,6 +720,94 @@ function BetaCard({ calculation, betaRail }) {
   );
 }
 
+function GlossaryDialog({ topic, onClose }) {
+  useEffect(() => {
+    if (!topic) {
+      return undefined;
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [topic, onClose]);
+
+  if (!topic) {
+    return null;
+  }
+
+  const isBetaTopic = topic === "beta";
+
+  return (
+    <div className="infoOverlay" role="presentation" onClick={onClose}>
+      <section
+        className="infoDialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="glossary-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="infoDialogHeader">
+          <div>
+            <p className="cardLabel">名詞說明</p>
+            <h2 id="glossary-title">{isBetaTopic ? "Beta" : "資產配置比例"}</h2>
+          </div>
+          <button
+            type="button"
+            className="infoCloseButton"
+            onClick={onClose}
+            aria-label="關閉名詞說明"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="glossaryStack">
+          {isBetaTopic ? (
+            <article className="glossaryItem featured">
+              <span>Beta</span>
+              <p>Beta 代表投資組合相對市場的波動與曝險程度。</p>
+              <p>Beta 1.0 約等於跟大盤同方向、同倍率變動；Beta 2.0 約等於大盤變動 1%，投組理論上變動約 2%。</p>
+              <p>Beta 0.0 代表幾乎都是現金，市場漲跌對投組影響很低。</p>
+              <p>目前 Beta 是依照每個標的市值占比 × 標的 Beta 加總計算。</p>
+              <p>目標 Beta 是你想維持的整體曝險，例如 1.2 代表希望投組約等於 120% 市場曝險。</p>
+              <p>容忍區間用來避免太頻繁調整，超出區間時才提示再平衡。</p>
+            </article>
+          ) : (
+            <>
+              <article className="glossaryItem">
+                <span>正二</span>
+                <p>正二是 Beta 約 2 的槓桿型標的，目標是提供約兩倍市場曝險。</p>
+                <p>例如 00631L、00685L、QLD 這類標的。</p>
+              </article>
+
+              <article className="glossaryItem">
+                <span>原形</span>
+                <p>原形是 Beta 約 1 的非槓桿標的，接近追蹤原始市場表現。</p>
+                <p>例如 0050、006208 這類 ETF。</p>
+              </article>
+
+              <article className="glossaryItem">
+                <span>現金</span>
+                <p>現金是台幣現金與美金現金換算成台幣後的加總。</p>
+                <p>資產配置比例會把正二、原形與現金一起納入總資產計算。</p>
+              </article>
+            </>
+          )}
+        </div>
+
+        <button type="button" className="primaryButton" onClick={onClose}>
+          知道了
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function AdviceCard({ advice }) {
   const actionText = createAdviceActionText({
     label: advice.label,
@@ -717,14 +828,24 @@ function AdviceCard({ advice }) {
   );
 }
 
-function AllocationCard({ calculation }) {
+function AllocationCard({ calculation, onOpenGlossary }) {
   const cashValueTwd = calculation.totalAssetsTwd - calculation.stockValueTwd;
 
   return (
     <section className="appCard allocationCard">
       <div className="cardHeaderRow">
         <div>
-          <h2>資產配置比例</h2>
+          <div className="cardTitleRow">
+            <h2>資產配置比例</h2>
+            <button
+              type="button"
+              className="infoButton small"
+              onClick={onOpenGlossary}
+              aria-label="查看正二、原形與現金說明"
+            >
+              i
+            </button>
+          </div>
           <p>正二、原形與現金配置</p>
         </div>
         <div className="allocationTotal">

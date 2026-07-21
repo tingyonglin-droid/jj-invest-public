@@ -210,6 +210,63 @@ p {
   font-weight: 780;
 }
 
+.cardLabelRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.cardLabelRow .cardLabel {
+  margin-bottom: 0;
+}
+
+.cardTitleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardTitleRow h2 {
+  margin: 0;
+}
+
+.infoButton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted-strong);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 820;
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+.infoButton::after {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(123, 131, 143, 0.24);
+}
+
+.infoButton.small {
+  min-width: 34px;
+  min-height: 34px;
+  font-size: 12px;
+}
+
+.infoButton.small::after {
+  width: 23px;
+  height: 23px;
+}
+
 .betaCard {
   padding: 24px 28px 18px;
 }
@@ -327,6 +384,101 @@ p {
 
 .betaScale {
   margin-top: 13px;
+}
+
+.infoOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(17, 24, 33, 0.22);
+  backdrop-filter: blur(10px);
+}
+
+.infoDialog {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 560px);
+  max-height: min(760px, calc(100dvh - 44px));
+  overflow: auto;
+  border: 1px solid rgba(234, 237, 241, 0.92);
+  border-radius: 28px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 70px rgba(17, 24, 33, 0.2);
+}
+
+.infoDialogHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.infoDialogHeader .cardLabel {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.infoDialogHeader h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 820;
+  line-height: 1.16;
+}
+
+.infoCloseButton {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted-strong);
+  background: #f1f3f5;
+  font-size: 24px;
+  font-weight: 520;
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+.glossaryStack {
+  display: grid;
+  gap: 10px;
+}
+
+.glossaryItem {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(224, 229, 235, 0.88);
+  border-radius: 18px;
+  padding: 15px;
+  background: #fbfcfd;
+}
+
+.glossaryItem.featured {
+  border-color: rgba(49, 155, 114, 0.18);
+  background: #f5fbf8;
+}
+
+.glossaryItem span {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 820;
+}
+
+.glossaryItem p {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 14px;
+  font-weight: 620;
+  line-height: 1.55;
 }
 
 .buy {
@@ -1354,6 +1506,18 @@ select {
     min-height: 40px;
     font-size: 13px;
   }
+
+  .infoOverlay {
+    align-items: end;
+    padding: 16px 12px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .infoDialog {
+    width: 100%;
+    max-height: min(76dvh, 720px);
+    border-radius: 26px;
+    padding: 22px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1442,5 +1606,13 @@ select {
 
   .holdingAction em {
     grid-column: auto;
+  }
+
+  .infoDialogHeader h2 {
+    font-size: 22px;
+  }
+
+  .glossaryItem {
+    padding: 14px;
   }
 }
