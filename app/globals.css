@@ -558,22 +558,6 @@ p {
   color: var(--primary-dark);
 }
 
-.rebalanceApplyPanel {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 18px;
-  background: var(--card-soft);
-}
-
-.rebalanceApplyPanel p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 680;
-}
-
 .precisionControl {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -858,27 +842,56 @@ p {
   gap: 18px;
 }
 
-.operationTargetPanel {
+.operationParameterCard {
   display: grid;
+  gap: 16px;
   border-radius: 18px;
   padding: 16px;
   background: var(--card-soft);
 }
 
-.operationTargetPanel label {
+.operationBetaField,
+.operationPrecisionField {
+  display: grid;
   gap: 8px;
 }
 
-.operationTargetPanel input {
+.operationBetaField input {
   min-height: 52px;
   font-size: 22px;
   font-weight: 820;
 }
 
-.operationTargetPanel span {
+.operationBetaField span,
+.operationPrecisionField span {
   color: var(--muted);
   font-size: 16px;
   font-weight: 780;
+}
+
+.operationPrecisionField p,
+.operationApplyFooter p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 1.5;
+}
+
+.operationApplyFooter {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 24, 33, 0.07);
+  box-shadow: 0 14px 36px rgba(17, 24, 33, 0.06);
+}
+
+.operationApplyFooter span {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 840;
 }
 
 .operationWarning {
@@ -1735,10 +1748,6 @@ select {
   }
 
   .precisionControl {
-    grid-template-columns: 1fr;
-  }
-
-  .operationTargetPanel {
     grid-template-columns: 1fr;
   }
 

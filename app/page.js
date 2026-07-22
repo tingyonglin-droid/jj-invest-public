@@ -1025,8 +1025,8 @@ function OperationsView({
           </p>
         </div>
       </div>
-      <div className="operationTargetPanel">
-        <label>
+      <div className="operationParameterCard">
+        <label className="operationBetaField">
           <span>再平衡到 Beta</span>
           <input
             type="number"
@@ -1037,36 +1037,49 @@ function OperationsView({
             onChange={(event) => onTargetBetaChange(event.target.value)}
           />
         </label>
+        <div className="operationPrecisionField">
+          <span>台股交易精度</span>
+          <div className="precisionControl" aria-label="再平衡精度">
+            <label className={precision === "lots" ? "selected" : ""}>
+              <input
+                type="radio"
+                name="rebalancePrecision"
+                value="lots"
+                checked={precision === "lots"}
+                onChange={() => onPrecisionChange("lots")}
+              />
+              精確到張數
+            </label>
+            <label className={precision === "shares" ? "selected" : ""}>
+              <input
+                type="radio"
+                name="rebalancePrecision"
+                value="shares"
+                checked={precision === "shares"}
+                onChange={() => onPrecisionChange("shares")}
+              />
+              精確到股數
+            </label>
+          </div>
+          <p>美股固定精確到股數。</p>
+        </div>
       </div>
       {warnings.map((warning) => (
         <div className="operationWarning" role="status" key={warning}>
           {warning}
         </div>
       ))}
-      <div className="rebalanceApplyPanel">
-        <div className="precisionControl" aria-label="再平衡精度">
-          <label className={precision === "lots" ? "selected" : ""}>
-            <input
-              type="radio"
-              name="rebalancePrecision"
-              value="lots"
-              checked={precision === "lots"}
-              onChange={() => onPrecisionChange("lots")}
-            />
-            台股精確到張數
-          </label>
-          <label className={precision === "shares" ? "selected" : ""}>
-            <input
-              type="radio"
-              name="rebalancePrecision"
-              value="shares"
-              checked={precision === "shares"}
-              onChange={() => onPrecisionChange("shares")}
-            />
-            精確到股數
-          </label>
+      <HoldingList
+        recommendations={recommendations}
+        onToggleSelection={onToggleSelection}
+        precision={precision}
+        totalAssetsTwd={operationRebalance.totalAssetsTwd}
+      />
+      <div className="operationApplyFooter">
+        <div>
+          <span>確認清單後套用</span>
+          <p>會依上方精度更新持股股數與現金。</p>
         </div>
-        <p>美股固定精確到股數。</p>
         <button
           type="button"
           className="primaryButton"
@@ -1076,12 +1089,6 @@ function OperationsView({
           一鍵再平衡
         </button>
       </div>
-      <HoldingList
-        recommendations={recommendations}
-        onToggleSelection={onToggleSelection}
-        precision={precision}
-        totalAssetsTwd={operationRebalance.totalAssetsTwd}
-      />
     </section>
   );
 }

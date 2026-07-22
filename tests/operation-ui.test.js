@@ -18,6 +18,15 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.doesNotMatch(page, /<span>納入本次再平衡<\/span>/);
 });
 
+test("operations page places precision in parameters and apply action after the list", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /operationParameterCard/);
+  assert.match(page, /operationApplyFooter/);
+  assert.ok(page.indexOf("precisionControl") < page.indexOf("<HoldingList"));
+  assert.ok(page.indexOf("<HoldingList") < page.indexOf("operationApplyFooter"));
+});
+
 test("holding progress shows after rebalance ratio", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
