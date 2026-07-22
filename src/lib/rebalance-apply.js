@@ -37,6 +37,13 @@ export function getRebalanceShareDelta(recommendation, precision = "shares") {
   return roundSigned(recommendation.tradeAmountTwd / recommendation.priceTwd, unit);
 }
 
+export function getAppliedRebalanceShareDelta(recommendation, precision = "shares") {
+  const requestedDeltaShares = getRebalanceShareDelta(recommendation, precision);
+  const currentShares = toNumber(recommendation?.shares);
+
+  return Math.max(requestedDeltaShares, -currentShares);
+}
+
 export function applyRebalanceToState({ positions, cashTwd, recommendations, precision }) {
   const recommendationById = new Map(
     recommendations.map((recommendation) => [recommendation.id, recommendation]),
@@ -50,8 +57,13 @@ export function applyRebalanceToState({ positions, cashTwd, recommendations, pre
     }
 
     const currentShares = toNumber(position.shares);
-    const requestedDeltaShares = getRebalanceShareDelta(recommendation, precision);
-    const appliedDeltaShares = Math.max(requestedDeltaShares, -currentShares);
+    const appliedDeltaShares = getAppliedRebalanceShareDelta(
+      {
+        ...recommendation,
+        shares: currentShares,
+      },
+      precision,
+    );
 
     cashDeltaTwd += appliedDeltaShares * recommendation.priceTwd;
 

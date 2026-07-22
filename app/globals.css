@@ -775,14 +775,120 @@ p {
   min-width: 0;
 }
 
-.holdingList {
+.holdingGroups {
+  display: grid;
+  gap: 18px;
+}
+
+.holdingGroup {
   display: grid;
   gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(17, 24, 33, 0.07);
+  border-radius: 24px;
+  background: #ffffff;
+}
+
+.holdingGroup.leveraged {
+  border-color: rgba(127, 97, 217, 0.2);
+  background: rgba(127, 97, 217, 0.045);
+}
+
+.holdingGroup.original {
+  border-color: rgba(49, 151, 121, 0.18);
+  background: rgba(49, 151, 121, 0.045);
+}
+
+.holdingGroupHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 4px 0;
+}
+
+.holdingGroupHeader div {
+  display: grid;
+  gap: 2px;
+}
+
+.holdingGroupHeader strong {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 860;
+  line-height: 1.25;
+}
+
+.holdingGroupHeader span,
+.holdingGroupHeader em {
+  color: var(--muted);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.holdingGroupHeader em {
+  flex: 0 0 auto;
+  padding-top: 2px;
+  color: var(--ink);
+}
+
+.holdingGroupAllocation {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.holdingGroupAllocation span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.holdingList {
+  display: grid;
+  gap: 10px;
 }
 
 .operationsPageCard {
   display: grid;
   gap: 18px;
+}
+
+.operationTargetPanel {
+  display: grid;
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--card-soft);
+}
+
+.operationTargetPanel label {
+  gap: 8px;
+}
+
+.operationTargetPanel input {
+  min-height: 52px;
+  font-size: 22px;
+  font-weight: 820;
+}
+
+.operationTargetPanel span {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 780;
+}
+
+.operationWarning {
+  border-radius: 16px;
+  padding: 12px 14px;
+  color: #8a5c0d;
+  background: #fff8e8;
+  font-size: 13px;
+  font-weight: 740;
+  line-height: 1.5;
 }
 
 .holdingRow {
@@ -794,11 +900,31 @@ p {
   background: var(--card-soft);
 }
 
+.holdingRow.unselected {
+  background: #f7f8fa;
+}
+
 .holdingAsset {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 13px;
   align-items: center;
+}
+
+.holdingSelect {
+  grid-column: 3;
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  justify-self: end;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.holdingSelect input {
+  width: 24px;
+  min-height: 24px;
+  accent-color: var(--primary);
 }
 
 .tickerBadge {
@@ -883,6 +1009,18 @@ p {
   transform: translateX(-50%);
 }
 
+.holdingProgressAfter {
+  position: absolute;
+  top: -3px;
+  left: var(--after-ratio);
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--primary-dark);
+  box-shadow: 0 0 0 4px rgba(49, 155, 114, 0.14);
+  transform: translateX(-50%);
+}
+
 .holdingRatioLabels,
 .holdingDrift {
   display: flex;
@@ -892,6 +1030,11 @@ p {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
+}
+
+.holdingRatioLabels.after {
+  justify-content: flex-start;
+  color: var(--primary-dark);
 }
 
 .holdingDrift {
@@ -1592,6 +1735,10 @@ select {
   }
 
   .precisionControl {
+    grid-template-columns: 1fr;
+  }
+
+  .operationTargetPanel {
     grid-template-columns: 1fr;
   }
 

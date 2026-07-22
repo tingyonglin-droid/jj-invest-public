@@ -13,8 +13,11 @@ import { normalizeTicker } from "../src/lib/market-data.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
   applyRebalanceToState,
-  getRebalanceShareDelta,
+  getAppliedRebalanceShareDelta,
 } from "../src/lib/rebalance-apply.js";
+import {
+  createOperationRebalance,
+} from "../src/lib/operation-rebalance.js";
 import { createAdviceActionText } from "../src/lib/advice-summary.js";
 import {
   getPositionGroups,
@@ -23,7 +26,6 @@ import {
 import {
   getActionText,
   getEstimatedShares,
-  getOperationSummary,
   getPositionDisplayName,
   getTickerBadgeText,
 } from "../src/lib/presentation.js";
@@ -309,6 +311,8 @@ export default function Home() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [activeView, setActiveView] = useState("overview");
   const [glossaryTopic, setGlossaryTopic] = useState(null);
+  const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState("");
+  const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
 
   const tickers = useMemo(
     () =>
@@ -345,12 +349,42 @@ export default function Home() {
   const betaRail = createBetaRailModel(calculation);
   const primaryRecommendation = getPrimaryRecommendation(calculation.recommendations);
   const advice = getAdvice(calculation, primaryRecommendation);
-  const operationSummary = getOperationSummary(calculation.recommendations);
+  const recommendationIds = useMemo(
+    () => calculation.recommendations.map((item) => String(item.id)),
+    [calculation.recommendations],
+  );
+  const selectedRebalanceIds = useMemo(
+    () => {
+      const excludedSet = new Set(excludedRebalanceIds);
+      return recommendationIds.filter((id) => !excludedSet.has(id));
+    },
+    [excludedRebalanceIds, recommendationIds],
+  );
+  const rebalanceTargetBeta =
+    rebalanceTargetBetaOverride === "" ? formState.targetBeta : rebalanceTargetBetaOverride;
+  const operationRebalance = useMemo(
+    () =>
+      createOperationRebalance({
+        recommendations: calculation.recommendations,
+        selectedIds: selectedRebalanceIds,
+        totalAssetsTwd: calculation.totalAssetsTwd,
+        targetBeta: rebalanceTargetBeta,
+        originalTargetRatio: calculation.targetOriginalRatio,
+        precision: rebalancePrecision,
+      }),
+    [
+      calculation.recommendations,
+      calculation.targetOriginalRatio,
+      calculation.totalAssetsTwd,
+      rebalanceTargetBeta,
+      rebalancePrecision,
+      selectedRebalanceIds,
+    ],
+  );
   const canApplyRebalance =
     calculation.isValid &&
-    calculation.needsRebalance &&
-    calculation.recommendations.length > 0 &&
-    Math.abs(calculation.totalTradeAmountTwd) > 0.5;
+    operationRebalance.recommendations.length > 0 &&
+    operationRebalance.summary.actionCount > 0;
 
   const refreshQuotes = useCallback(async () => {
     if (tickers.length === 0) {
@@ -486,7 +520,7 @@ export default function Home() {
       const result = applyRebalanceToState({
         positions: current.positions,
         cashTwd: currentCashTwd,
-        recommendations: calculation.recommendations,
+        recommendations: operationRebalance.recommendations,
         precision: rebalancePrecision,
       });
 
@@ -499,6 +533,20 @@ export default function Home() {
           usdTwd: quoteResult.fx.usdTwd,
         }),
       };
+    });
+  }
+
+  function updateRebalanceTargetBeta(value) {
+    setRebalanceTargetBetaOverride(parseNumericInput(value));
+  }
+
+  function toggleRebalanceSelection(id) {
+    setExcludedRebalanceIds((current) => {
+      const idText = String(id);
+      if (current.includes(idText)) {
+        return current.filter((item) => item !== idText);
+      }
+      return [...current, idText];
     });
   }
 
@@ -563,11 +611,14 @@ export default function Home() {
         {activeView === "operations" && (
           <OperationsView
             canApplyRebalance={canApplyRebalance}
+            operationRebalance={operationRebalance}
             onApplyRebalance={applyOneClickRebalance}
+            onOpenGlossary={() => setGlossaryTopic("operations")}
             onPrecisionChange={setRebalancePrecision}
+            onTargetBetaChange={updateRebalanceTargetBeta}
+            onToggleSelection={toggleRebalanceSelection}
             precision={rebalancePrecision}
-            recommendations={calculation.recommendations}
-            summary={operationSummary}
+            rebalanceTargetBeta={rebalanceTargetBeta}
           />
         )}
 
@@ -741,6 +792,7 @@ function GlossaryDialog({ topic, onClose }) {
   }
 
   const isBetaTopic = topic === "beta";
+  const isOperationTopic = topic === "operations";
 
   return (
     <div className="infoOverlay" role="presentation" onClick={onClose}>
@@ -754,7 +806,9 @@ function GlossaryDialog({ topic, onClose }) {
         <div className="infoDialogHeader">
           <div>
             <p className="cardLabel">名詞說明</p>
-            <h2 id="glossary-title">{isBetaTopic ? "Beta" : "資產配置比例"}</h2>
+            <h2 id="glossary-title">
+              {isBetaTopic ? "Beta" : isOperationTopic ? "再平衡操作" : "資產配置比例"}
+            </h2>
           </div>
           <button
             type="button"
@@ -777,6 +831,20 @@ function GlossaryDialog({ topic, onClose }) {
               <p>目標 Beta 是你想維持的整體曝險，例如 1.2 代表希望投組約等於 120% 市場曝險。</p>
               <p>容忍區間用來避免太頻繁調整，超出區間時才提示再平衡。</p>
             </article>
+          ) : isOperationTopic ? (
+            <>
+              <article className="glossaryItem featured">
+                <span>再平衡到 Beta</span>
+                <p>這裡可以設定本次想再平衡到的 Beta，預設會帶入投資組合設定的目標 Beta。</p>
+                <p>調整這個數值只影響操作頁本次試算，不會改動設定頁的目標 Beta。</p>
+              </article>
+
+              <article className="glossaryItem">
+                <span>勾選方式</span>
+                <p>有勾選的持股會納入本次再平衡，系統會依指定 Beta 重新計算買賣金額。</p>
+                <p>取消勾選的持股本次不買不賣，庫存股數維持不變。</p>
+              </article>
+            </>
           ) : (
             <>
               <article className="glossaryItem">
@@ -916,22 +984,65 @@ function AllocationMetric({ color, label, current, target, valueTwd }) {
 
 function OperationsView({
   canApplyRebalance,
+  operationRebalance,
   onApplyRebalance,
+  onOpenGlossary,
   onPrecisionChange,
+  onTargetBetaChange,
+  onToggleSelection,
   precision,
-  recommendations,
-  summary,
+  rebalanceTargetBeta,
 }) {
+  const { recommendations, summary, warnings } = operationRebalance;
+  const appliedAfterBeta = getAppliedAfterBeta({
+    precision,
+    recommendations,
+    totalAssetsTwd: operationRebalance.totalAssetsTwd,
+  });
+  const appliedTotalTradeAmount = getAppliedTotalTradeAmount({
+    precision,
+    recommendations,
+  });
+
   return (
     <section className="appCard operationsPageCard">
       <div className="cardHeaderRow">
         <div>
-          <h2>再平衡操作清單</h2>
+          <div className="cardTitleRow">
+            <h2>再平衡參數設定</h2>
+            <button
+              type="button"
+              className="infoButton small"
+              onClick={onOpenGlossary}
+              aria-label="查看再平衡操作說明"
+            >
+              i
+            </button>
+          </div>
           <p>
-            共 {summary.actionCount} 筆操作 / 預估調整 {formatTwd(summary.totalAmountTwd)}
+            共 {summary.actionCount} 筆操作 / 調整後 Beta {formatNumber(appliedAfterBeta)} / 預估調整{" "}
+            {formatTwd(appliedTotalTradeAmount)}
           </p>
         </div>
       </div>
+      <div className="operationTargetPanel">
+        <label>
+          <span>再平衡到 Beta</span>
+          <input
+            type="number"
+            min="0"
+            max="2"
+            step="0.01"
+            value={rebalanceTargetBeta}
+            onChange={(event) => onTargetBetaChange(event.target.value)}
+          />
+        </label>
+      </div>
+      {warnings.map((warning) => (
+        <div className="operationWarning" role="status" key={warning}>
+          {warning}
+        </div>
+      ))}
       <div className="rebalanceApplyPanel">
         <div className="precisionControl" aria-label="再平衡精度">
           <label className={precision === "lots" ? "selected" : ""}>
@@ -965,18 +1076,67 @@ function OperationsView({
           一鍵再平衡
         </button>
       </div>
-      <HoldingList recommendations={recommendations} precision={precision} />
+      <HoldingList
+        recommendations={recommendations}
+        onToggleSelection={onToggleSelection}
+        precision={precision}
+        totalAssetsTwd={operationRebalance.totalAssetsTwd}
+      />
     </section>
   );
 }
 
-function HoldingList({ recommendations, precision }) {
+function getAppliedTotalTradeAmount({ recommendations, precision }) {
+  return recommendations.reduce(
+    (sum, item) => sum + Math.abs(getAppliedRebalanceShareDelta(item, precision) * item.priceTwd),
+    0,
+  );
+}
+
+function getAppliedAfterBeta({ recommendations, totalAssetsTwd, precision }) {
+  const totalAssets = Number(totalAssetsTwd);
+  if (!Number.isFinite(totalAssets) || totalAssets <= 0) {
+    return 0;
+  }
+
+  return recommendations.reduce((sum, item) => {
+    const appliedDeltaShares = getAppliedRebalanceShareDelta(item, precision);
+    const afterValueTwd = Math.max(
+      item.currentValueTwd + appliedDeltaShares * item.priceTwd,
+      0,
+    );
+
+    return sum + (afterValueTwd / totalAssets) * Number(item.assetBeta || 0);
+  }, 0);
+}
+
+function HoldingList({ recommendations, onToggleSelection, precision, totalAssetsTwd }) {
+  const leveragedRecommendations = recommendations.filter(
+    (item) => getHoldingAssetType(item.assetBeta) === "leveraged",
+  );
+  const originalRecommendations = recommendations.filter(
+    (item) => getHoldingAssetType(item.assetBeta) === "original",
+  );
+
   return (
     <section className="holdingsCard">
-      <div className="holdingList">
-        {recommendations.map((item) => (
-          <HoldingRow item={item} key={item.id} precision={precision} />
-        ))}
+      <div className="holdingGroups">
+        <HoldingGroup
+          items={leveragedRecommendations}
+          onToggleSelection={onToggleSelection}
+          precision={precision}
+          tone="leveraged"
+          title="正二操作清單"
+          totalAssetsTwd={totalAssetsTwd}
+        />
+        <HoldingGroup
+          items={originalRecommendations}
+          onToggleSelection={onToggleSelection}
+          precision={precision}
+          tone="original"
+          title="原形操作清單"
+          totalAssetsTwd={totalAssetsTwd}
+        />
         {recommendations.length === 0 && (
           <div className="emptyState">更新價格後會顯示再平衡操作清單。</div>
         )}
@@ -985,20 +1145,89 @@ function HoldingList({ recommendations, precision }) {
   );
 }
 
-function HoldingRow({ item, precision }) {
-  const estimatedShares = Math.abs(getRebalanceShareDelta(item, precision));
-  const displayedAction = estimatedShares === 0 ? "none" : item.action;
-  const actionText = getActionText(displayedAction);
+function getHoldingAssetType(assetBeta) {
+  return Number(assetBeta) >= 1.5 ? "leveraged" : "original";
+}
+
+function HoldingGroup({ items, onToggleSelection, precision, title, tone, totalAssetsTwd }) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  const totalValueTwd = items.reduce((sum, item) => sum + item.currentValueTwd, 0);
+  const allocationRatio = totalAssetsTwd > 0 ? totalValueTwd / totalAssetsTwd : 0;
+  const itemsWithAppliedAfterValue = items.map((item) => {
+    const appliedDeltaShares = getAppliedRebalanceShareDelta(item, precision);
+    return {
+      ...item,
+      appliedAfterValueTwd: Math.max(
+        item.currentValueTwd + appliedDeltaShares * item.priceTwd,
+        0,
+      ),
+    };
+  });
+  const appliedAfterTotalValue = itemsWithAppliedAfterValue.reduce(
+    (sum, item) => sum + item.appliedAfterValueTwd,
+    0,
+  );
+  const appliedAfterAllocationRatio =
+    totalAssetsTwd > 0 ? appliedAfterTotalValue / totalAssetsTwd : 0;
+  const itemsWithAppliedAfterWeight = itemsWithAppliedAfterValue.map((item) => ({
+    ...item,
+    appliedAfterSleeveWeight:
+      appliedAfterTotalValue > 0 ? item.appliedAfterValueTwd / appliedAfterTotalValue : 0,
+  }));
+
+  return (
+    <section className={`holdingGroup ${tone}`} aria-label={title}>
+      <div className="holdingGroupHeader">
+        <div>
+          <strong>{title}</strong>
+          <span>{items.length} 檔標的 / 調整後市值 {formatTwd(appliedAfterTotalValue)}</span>
+        </div>
+        <em className="holdingGroupAllocation">
+          <span>目前 {formatPercent(allocationRatio)}</span>
+          <span>調整後 {formatPercent(appliedAfterAllocationRatio)}</span>
+        </em>
+      </div>
+      <div className="holdingList">
+        {itemsWithAppliedAfterWeight.map((item) => (
+          <HoldingRow
+            item={item}
+            key={item.id}
+            onToggleSelection={onToggleSelection}
+            precision={precision}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HoldingRow({ item, onToggleSelection, precision }) {
+  const estimatedShares = Math.abs(getAppliedRebalanceShareDelta(item, precision));
+  const displayedAction = !item.isSelected || estimatedShares === 0 ? "none" : item.action;
+  const actionText = item.isSelected ? getActionText(displayedAction) : "不納入再平衡清單";
   const displayedTradeAmountTwd = estimatedShares * item.priceTwd;
   const drift = item.currentSleeveWeight - item.targetSleeveWeight;
   const driftClass = getDriftClass(drift);
   const currentPct = clampPercent(item.currentSleeveWeight);
   const targetPct = clampPercent(item.targetSleeveWeight);
+  const afterSleeveWeight = item.appliedAfterSleeveWeight ?? item.afterSleeveWeight;
+  const afterPct = clampPercent(afterSleeveWeight);
 
   return (
-    <article className="holdingRow">
+    <article className={`holdingRow ${item.isSelected ? "" : "unselected"}`}>
       <div className="holdingAsset">
-        <div className={`tickerBadge ${getTradeClass(item)}`}>
+        <label className="holdingSelect">
+          <input
+            type="checkbox"
+            checked={item.isSelected}
+            onChange={() => onToggleSelection(item.id)}
+            aria-label={`${item.normalizedTicker} 是否納入本次再平衡`}
+          />
+        </label>
+        <div className={`tickerBadge ${displayedAction}`}>
           {getTickerBadgeText(item.normalizedTicker)}
         </div>
         <div className="holdingIdentity">
@@ -1015,15 +1244,20 @@ function HoldingRow({ item, precision }) {
           style={{
             "--current-ratio": `${currentPct}%`,
             "--target-ratio": `${targetPct}%`,
+            "--after-ratio": `${afterPct}%`,
           }}
-          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}，目標 ${formatPercent(item.targetSleeveWeight)}`}
+          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}，目標 ${formatPercent(item.targetSleeveWeight)}，再平衡後 ${formatPercent(afterSleeveWeight)}`}
         >
           <span className="holdingProgressFill" />
           <span className="holdingProgressTarget" />
+          <span className="holdingProgressAfter" />
         </div>
         <div className="holdingRatioLabels">
           <span>目前 {formatPercent(item.currentSleeveWeight)}</span>
           <span>目標 {formatPercent(item.targetSleeveWeight)}</span>
+        </div>
+        <div className="holdingRatioLabels after">
+          <span>再平衡後 {formatPercent(afterSleeveWeight)}</span>
         </div>
         <div className="holdingDrift">
           距離目標{" "}

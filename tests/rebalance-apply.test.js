@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   applyRebalanceToState,
+  getAppliedRebalanceShareDelta,
   getRebalanceShareDelta,
 } from "../src/lib/rebalance-apply.js";
 
@@ -30,6 +31,22 @@ describe("apply rebalance", () => {
   it("rounds Taiwan tickers to lots while US tickers remain share-based", () => {
     assert.equal(getRebalanceShareDelta(recommendations[0], "lots"), 1000);
     assert.equal(getRebalanceShareDelta(recommendations[1], "lots"), -1);
+  });
+
+  it("caps displayed applied shares at the current holding size", () => {
+    assert.equal(
+      getAppliedRebalanceShareDelta(
+        {
+          id: "tw",
+          normalizedTicker: "00631L.TW",
+          shares: 500,
+          tradeAmountTwd: -46000,
+          priceTwd: 40,
+        },
+        "shares",
+      ),
+      -500,
+    );
   });
 
   it("updates position shares and cash using applied trade values", () => {
