@@ -721,7 +721,7 @@ function BottomTabBar({ activeView, onChange }) {
         aria-current={activeView === "operations" ? "page" : undefined}
       >
         <span aria-hidden="true">≡</span>
-        操作
+        再平衡
       </button>
       <button
         type="button"
@@ -1187,7 +1187,7 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
           onToggleSelection={onToggleSelection}
           precision={precision}
           tone="leveraged"
-          title="正二操作清單"
+          title="正二再平衡清單"
           totalAssetsTwd={totalAssetsTwd}
         />
         <HoldingGroup
@@ -1195,7 +1195,7 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
           onToggleSelection={onToggleSelection}
           precision={precision}
           tone="original"
-          title="原形操作清單"
+          title="原形再平衡清單"
           totalAssetsTwd={totalAssetsTwd}
         />
         {recommendations.length === 0 && (
