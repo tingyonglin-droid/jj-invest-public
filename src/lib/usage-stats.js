@@ -13,6 +13,20 @@ export function sanitizeDeviceId(value) {
   return DEVICE_ID_PATTERN.test(deviceId) ? deviceId : "";
 }
 
+export function isUsageAdminAuthorized(requestUrl, expectedToken) {
+  const token = String(expectedToken || "").trim();
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const url = new URL(requestUrl);
+    return url.searchParams.get("token") === token;
+  } catch {
+    return false;
+  }
+}
+
 export function getTaipeiDateKey(date = new Date()) {
   return taipeiDateFormatter.format(date);
 }

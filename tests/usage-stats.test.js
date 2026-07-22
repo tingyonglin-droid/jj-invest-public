@@ -1,10 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import {
   createUsageMetrics,
   getTaipeiDateKey,
   getTaipeiDateKeys,
+  isUsageAdminAuthorized,
   sanitizeDeviceId,
 } from "../src/lib/usage-stats.js";
 
@@ -44,4 +46,19 @@ test("creates metrics where one device counts once but opens can increase", () =
     active30Days: 1,
     opensToday: 3,
   });
+});
+
+test("authorizes usage stats reads only with the configured token", () => {
+  assert.equal(isUsageAdminAuthorized("https://example.com/api/usage?token=secret", "secret"), true);
+  assert.equal(isUsageAdminAuthorized("https://example.com/api/usage?token=wrong", "secret"), false);
+  assert.equal(isUsageAdminAuthorized("https://example.com/api/usage", "secret"), false);
+  assert.equal(isUsageAdminAuthorized("https://example.com/api/usage?token=secret", ""), false);
+});
+
+test("keeps usage statistics out of the public settings UI", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const adminPage = await readFile(new URL("../app/admin/usage/page.js", import.meta.url), "utf8");
+
+  assert.doesNotMatch(page, /使用統計/);
+  assert.match(adminPage, /匿名使用者數/);
 });

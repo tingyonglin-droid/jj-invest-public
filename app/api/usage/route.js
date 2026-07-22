@@ -4,6 +4,7 @@ import {
   createUsageMetrics,
   getTaipeiDateKey,
   getTaipeiDateKeys,
+  isUsageAdminAuthorized,
   sanitizeDeviceId,
 } from "../../../src/lib/usage-stats.js";
 
@@ -22,6 +23,10 @@ function getRedisUrl() {
 
 function getRedisToken() {
   return process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+}
+
+function getAdminToken() {
+  return process.env.USAGE_ADMIN_TOKEN;
 }
 
 function getRedis() {
@@ -89,7 +94,16 @@ async function readUsageMetrics(redis, now = new Date()) {
   });
 }
 
-export async function GET() {
+export async function GET(request) {
+  if (!isUsageAdminAuthorized(request.url, getAdminToken())) {
+    return Response.json(
+      {
+        error: "未授權讀取使用統計。",
+      },
+      { status: 401 },
+    );
+  }
+
   const redis = getRedis();
 
   if (!redis) {
@@ -152,7 +166,12 @@ export async function POST(request) {
       redis.expire(keys.todayOpens, DAILY_KEY_TTL_SECONDS),
     ]);
 
-    return Response.json(await readUsageMetrics(redis, now));
+    await readUsageMetrics(redis, now);
+
+    return Response.json({
+      configured: true,
+      recorded: true,
+    });
   } catch (error) {
     return Response.json(
       {

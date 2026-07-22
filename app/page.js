@@ -337,11 +337,6 @@ export default function Home() {
   const [glossaryTopic, setGlossaryTopic] = useState(null);
   const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState("");
   const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
-  const [usageStats, setUsageStats] = useState({
-    status: "idle",
-    data: null,
-    error: "",
-  });
 
   const tickers = useMemo(
     () =>
@@ -485,42 +480,21 @@ export default function Home() {
     };
   }, [hydrated, refreshQuotes, status, tickers]);
 
-  const refreshUsageStats = useCallback(async ({ recordOpen = false } = {}) => {
+  const recordUsageOpen = useCallback(async () => {
     const deviceId = getOrCreateAnonymousDeviceId();
-    if (recordOpen && !deviceId) {
+    if (!deviceId) {
       return;
     }
 
-    setUsageStats((current) => ({
-      ...current,
-      status: "loading",
-      error: "",
-    }));
-
     try {
-      const response = await fetch("/api/usage", {
-        method: recordOpen ? "POST" : "GET",
-        headers: recordOpen ? { "Content-Type": "application/json" } : undefined,
-        body: recordOpen ? JSON.stringify({ deviceId }) : undefined,
+      await fetch("/api/usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deviceId }),
         cache: "no-store",
       });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error || `使用統計 API 回應 ${response.status}`);
-      }
-
-      setUsageStats({
-        status: "ready",
-        data: payload,
-        error: "",
-      });
-    } catch (error) {
-      setUsageStats({
-        status: "error",
-        data: null,
-        error: error instanceof Error ? error.message : "使用統計更新失敗。",
-      });
+    } catch {
+      // Usage tracking must never block the calculator.
     }
   }, []);
 
@@ -530,11 +504,11 @@ export default function Home() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      refreshUsageStats({ recordOpen: true });
+      recordUsageOpen();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [hydrated, refreshUsageStats]);
+  }, [hydrated, recordUsageOpen]);
 
   function updateSetting(field, value) {
     setFormState((current) => ({
@@ -709,10 +683,8 @@ export default function Home() {
             fx={quoteResult.fx}
             onAddPosition={addPosition}
             onRemovePosition={removePosition}
-            onRefreshUsageStats={() => refreshUsageStats()}
             onUpdatePosition={updatePosition}
             onUpdateSetting={updateSetting}
-            usageStats={usageStats}
           />
         )}
       </section>
@@ -1458,10 +1430,8 @@ function SettingsAccordions({
   fx,
   onAddPosition,
   onRemovePosition,
-  onRefreshUsageStats,
   onUpdatePosition,
   onUpdateSetting,
-  usageStats,
 }) {
   const positionGroups = getPositionGroups(formState.positions);
   const leveragedStatus = getPositionGroupTargetStatus({
@@ -1493,7 +1463,6 @@ function SettingsAccordions({
             { id: "cash", label: "現金" },
             { id: "positions", label: "持股" },
             { id: "beta", label: "Beta 參數" },
-            { id: "usage", label: "使用統計" },
           ].map((item) => (
             <button
               type="button"
@@ -1654,68 +1623,8 @@ function SettingsAccordions({
             </>
           )}
 
-          {activeSettingsPage === "usage" && (
-            <UsageStatsPanel
-              onRefresh={onRefreshUsageStats}
-              usageStats={usageStats}
-            />
-          )}
-
         </div>
       </div>
     </section>
-  );
-}
-
-function UsageStatsPanel({ onRefresh, usageStats }) {
-  const data = usageStats.data;
-  const isConfigured = data?.configured !== false;
-
-  return (
-    <div className="positionEditor usageStatsPanel">
-      <div className="positionTitle">
-        <strong>匿名使用者數</strong>
-        <button
-          type="button"
-          className="secondaryButton compact"
-          onClick={onRefresh}
-          disabled={usageStats.status === "loading"}
-        >
-          重新整理
-        </button>
-      </div>
-
-      {!isConfigured && (
-        <p className="usageWarning">
-          尚未連接 Upstash Redis，部署後需在 Vercel Marketplace 加上 Upstash 才會開始累積匿名使用者。
-        </p>
-      )}
-
-      {usageStats.error && (
-        <p className="usageWarning">{usageStats.error}</p>
-      )}
-
-      <div className="usageStatsGrid">
-        <UsageMetric label="總匿名裝置" value={data?.totalDevices} />
-        <UsageMetric label="今日活躍" value={data?.activeToday} />
-        <UsageMetric label="7 日活躍" value={data?.active7Days} />
-        <UsageMetric label="30 日活躍" value={data?.active30Days} />
-        <UsageMetric label="今日開啟" value={data?.opensToday} />
-        <UsageMetric label="總開啟次數" value={data?.totalOpens} />
-      </div>
-
-      <p className="hint">
-        同一台手機或同一個瀏覽器會用同一個匿名 ID 計為 1 個裝置；重新開啟 app 只會增加開啟次數。
-      </p>
-    </div>
-  );
-}
-
-function UsageMetric({ label, value }) {
-  return (
-    <div className="usageMetric">
-      <span>{label}</span>
-      <strong>{Number(value || 0).toLocaleString("zh-TW")}</strong>
-    </div>
   );
 }
