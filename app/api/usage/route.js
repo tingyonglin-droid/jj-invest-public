@@ -2,6 +2,7 @@ import { Redis } from "@upstash/redis";
 
 import {
   createUsageMetrics,
+  createUsageTrend,
   getTaipeiDateKey,
   getTaipeiDateKeys,
   isUsageAdminAuthorized,
@@ -47,6 +48,8 @@ function usageKeys(now = new Date()) {
     totalOpens: `${KEY_PREFIX}:opens:total`,
     todayDevices: `${KEY_PREFIX}:active:${today}`,
     todayOpens: `${KEY_PREFIX}:opens:${today}`,
+    todaySnapshot: `${KEY_PREFIX}:snapshot:${today}`,
+    snapshot: (dateKey) => `${KEY_PREFIX}:snapshot:${dateKey}`,
     device: (deviceId) => `${KEY_PREFIX}:device:${deviceId}`,
   };
 }
@@ -65,8 +68,10 @@ function unconfiguredResponse() {
 
 async function readUsageMetrics(redis, now = new Date()) {
   const today = getTaipeiDateKey(now);
+  const trendDates = getTaipeiDateKeys(30, now).reverse();
   const sevenDayKeys = getTaipeiDateKeys(7, now).map((dateKey) => `${KEY_PREFIX}:active:${dateKey}`);
   const thirtyDayKeys = getTaipeiDateKeys(30, now).map((dateKey) => `${KEY_PREFIX}:active:${dateKey}`);
+  const snapshotKeys = trendDates.map((dateKey) => `${KEY_PREFIX}:snapshot:${dateKey}`);
 
   const [
     totalDevices,
@@ -75,6 +80,7 @@ async function readUsageMetrics(redis, now = new Date()) {
     sevenDayDevices,
     thirtyDayDevices,
     opensToday,
+    trendSnapshots,
   ] = await Promise.all([
     redis.scard(`${KEY_PREFIX}:devices`),
     redis.get(`${KEY_PREFIX}:opens:total`),
@@ -82,9 +88,10 @@ async function readUsageMetrics(redis, now = new Date()) {
     redis.sunion(...sevenDayKeys),
     redis.sunion(...thirtyDayKeys),
     redis.get(`${KEY_PREFIX}:opens:${today}`),
+    Promise.all(snapshotKeys.map((key) => redis.hgetall(key))),
   ]);
 
-  return createUsageMetrics({
+  const metrics = createUsageMetrics({
     totalDevices,
     totalOpens,
     todayDevices,
@@ -92,6 +99,26 @@ async function readUsageMetrics(redis, now = new Date()) {
     thirtyDayDevices,
     opensToday,
   });
+  const snapshots = Object.fromEntries(
+    trendDates
+      .map((dateKey, index) => [dateKey, trendSnapshots[index]])
+      .filter(([, snapshot]) => snapshot && Object.keys(snapshot).length > 0),
+  );
+
+  if (!snapshots[today]) {
+    snapshots[today] = {
+      totalDevices: metrics.totalDevices,
+      totalOpens: metrics.totalOpens,
+    };
+  }
+
+  return {
+    ...metrics,
+    trend: createUsageTrend({
+      dates: trendDates,
+      snapshots,
+    }),
+  };
 }
 
 export async function GET(request) {
@@ -154,7 +181,6 @@ export async function POST(request) {
 
   try {
     await Promise.all([
-      redis.sadd(keys.allDevices, deviceId),
       redis.sadd(keys.todayDevices, deviceId),
       redis.incr(keys.totalOpens),
       redis.incr(keys.todayOpens),
@@ -164,6 +190,18 @@ export async function POST(request) {
       redis.hsetnx(keys.device(deviceId), "firstSeenAt", nowIso),
       redis.expire(keys.todayDevices, DAILY_KEY_TTL_SECONDS),
       redis.expire(keys.todayOpens, DAILY_KEY_TTL_SECONDS),
+    ]);
+    await redis.sadd(keys.allDevices, deviceId);
+    const [totalDevices, totalOpens] = await Promise.all([
+      redis.scard(keys.allDevices),
+      redis.get(keys.totalOpens),
+    ]);
+    await Promise.all([
+      redis.hset(keys.todaySnapshot, {
+        totalDevices: Number(totalDevices) || 0,
+        totalOpens: Number(totalOpens) || 0,
+      }),
+      redis.expire(keys.todaySnapshot, DAILY_KEY_TTL_SECONDS),
     ]);
 
     await readUsageMetrics(redis, now);

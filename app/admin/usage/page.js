@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { createUsageChartModel } from "../../../src/lib/usage-chart.js";
+
 function formatMetric(value) {
   return Number(value || 0).toLocaleString("zh-TW");
 }
@@ -18,6 +20,7 @@ export default function UsageAdminPage() {
   const [stats, setStats] = useState(null);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const chartModel = createUsageChartModel(stats?.trend);
 
   const refreshStats = useCallback(async () => {
     const token = getTokenFromUrl();
@@ -94,12 +97,98 @@ export default function UsageAdminPage() {
           <UsageMetric label="總開啟次數" value={stats?.totalOpens} />
         </div>
 
+        <UsageTrendChart
+          model={chartModel}
+          trend={stats?.trend}
+        />
+
         <p className="hint">
           同一台手機或同一個瀏覽器會用同一個匿名 ID 計為 1 個裝置；重新開啟 app 只會增加開啟次數。
         </p>
       </section>
     </main>
   );
+}
+
+function UsageTrendChart({ model, trend }) {
+  const latest = trend?.[trend.length - 1];
+  const latestDevicePoint = getLastSvgPoint(model.devicePoints);
+  const latestOpenPoint = getLastSvgPoint(model.openPoints);
+
+  return (
+    <div className="usageTrend">
+      <div className="usageTrendHeader">
+        <div>
+          <span>累積趨勢</span>
+          <strong>最近 30 天</strong>
+        </div>
+        <div className="usageTrendLegend">
+          <span className="devices">總匿名裝置</span>
+          <span className="opens">總開啟次數</span>
+        </div>
+      </div>
+
+      <div className="usageTrendCanvas">
+        <svg viewBox="0 0 100 100" role="img" aria-label="總匿名裝置與總開啟次數累積曲線">
+          <line x1="0" y1="0" x2="100" y2="0" className="chartGrid" />
+          <line x1="0" y1="50" x2="100" y2="50" className="chartGrid" />
+          <line x1="0" y1="100" x2="100" y2="100" className="chartGrid" />
+          {model.devicePoints && (
+            <polyline className="chartLine devices" points={model.devicePoints} />
+          )}
+          {model.openPoints && (
+            <polyline className="chartLine opens" points={model.openPoints} />
+          )}
+          {latestDevicePoint && (
+            <circle
+              className="chartDot devices"
+              cx={latestDevicePoint.x}
+              cy={latestDevicePoint.y}
+              r="1.8"
+            />
+          )}
+          {latestOpenPoint && (
+            <circle
+              className="chartDot opens"
+              cx={latestOpenPoint.x}
+              cy={latestOpenPoint.y}
+              r="1.8"
+            />
+          )}
+        </svg>
+        <div className="usageTrendScale" aria-hidden="true">
+          <span>{formatMetric(model.maxY)}</span>
+          <span>0</span>
+        </div>
+      </div>
+
+      <div className="usageTrendFooter">
+        <span>{model.labels[0] || ""}</span>
+        <span>{model.labels[1] || model.labels[0] || ""}</span>
+      </div>
+
+      {latest && (
+        <p className="hint">
+          最新累積：總匿名裝置 {formatMetric(latest.totalDevices)}，總開啟次數{" "}
+          {formatMetric(latest.totalOpens)}。
+        </p>
+      )}
+    </div>
+  );
+}
+
+function getLastSvgPoint(points) {
+  const lastPoint = String(points || "").trim().split(" ").filter(Boolean).at(-1);
+  if (!lastPoint) {
+    return null;
+  }
+
+  const [x, y] = lastPoint.split(",").map(Number);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return null;
+  }
+
+  return { x, y };
 }
 
 function UsageMetric({ label, value }) {

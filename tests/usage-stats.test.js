@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import {
   createUsageMetrics,
+  createUsageTrend,
   getTaipeiDateKey,
   getTaipeiDateKeys,
   isUsageAdminAuthorized,
@@ -46,6 +47,22 @@ test("creates metrics where one device counts once but opens can increase", () =
     active30Days: 1,
     opensToday: 3,
   });
+});
+
+test("creates cumulative trend points and carries totals through empty days", () => {
+  const trend = createUsageTrend({
+    dates: ["2026-07-22", "2026-07-23", "2026-07-24"],
+    snapshots: {
+      "2026-07-22": { totalDevices: 14, totalOpens: 21 },
+      "2026-07-24": { totalDevices: 18, totalOpens: 34 },
+    },
+  });
+
+  assert.deepEqual(trend, [
+    { date: "2026-07-22", totalDevices: 14, totalOpens: 21 },
+    { date: "2026-07-23", totalDevices: 14, totalOpens: 21 },
+    { date: "2026-07-24", totalDevices: 18, totalOpens: 34 },
+  ]);
 });
 
 test("authorizes usage stats reads only with the configured token", () => {

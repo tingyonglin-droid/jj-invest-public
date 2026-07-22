@@ -63,3 +63,22 @@ export function createUsageMetrics({
     opensToday: Number(opensToday) || 0,
   };
 }
+
+export function createUsageTrend({ dates, snapshots }) {
+  let latestTotalDevices = 0;
+  let latestTotalOpens = 0;
+
+  return (dates || []).map((date) => {
+    const snapshot = snapshots?.[date];
+    if (snapshot) {
+      latestTotalDevices = Number(snapshot.totalDevices) || latestTotalDevices;
+      latestTotalOpens = Number(snapshot.totalOpens) || latestTotalOpens;
+    }
+
+    return {
+      date,
+      totalDevices: latestTotalDevices,
+      totalOpens: latestTotalOpens,
+    };
+  });
+}

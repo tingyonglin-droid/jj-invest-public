@@ -1523,6 +1523,144 @@ p {
   line-height: 1.45;
 }
 
+.usageTrend {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(224, 229, 235, 0.9);
+  border-radius: 18px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.usageTrendHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.usageTrendHeader div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.usageTrendHeader span,
+.usageTrendLegend span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.usageTrendHeader strong {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.usageTrendLegend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 12px;
+}
+
+.usageTrendLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.usageTrendLegend span::before {
+  content: "";
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.usageTrendLegend .devices {
+  color: var(--primary);
+}
+
+.usageTrendLegend .opens {
+  color: var(--blue);
+}
+
+.usageTrendCanvas {
+  position: relative;
+  height: 220px;
+  border-radius: 14px;
+  background: #fbfcfd;
+  overflow: hidden;
+}
+
+.usageTrendCanvas svg {
+  position: absolute;
+  inset: 16px 42px 28px 12px;
+  width: calc(100% - 54px);
+  height: calc(100% - 44px);
+  overflow: visible;
+}
+
+.chartGrid {
+  fill: none;
+  stroke: rgba(123, 131, 143, 0.18);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.chartLine {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chartLine.devices {
+  stroke: var(--primary);
+}
+
+.chartLine.opens {
+  stroke: var(--blue);
+}
+
+.chartDot {
+  stroke: #ffffff;
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.chartDot.devices {
+  fill: var(--primary);
+}
+
+.chartDot.opens {
+  fill: var(--blue);
+}
+
+.usageTrendScale {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  text-align: right;
+}
+
+.usageTrendFooter {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
 label {
   display: grid;
   gap: 7px;
