@@ -6,9 +6,25 @@ import {
   AUTO_REFRESH_INTERVAL_MS,
   shouldAutoRefreshQuotes,
 } from "../src/lib/auto-refresh.js";
+import {
+  createAppBackup,
+  mergeImportedHistory,
+  parseAppBackup,
+} from "../src/lib/backup.js";
+import { createBenchmarkDrawdown } from "../src/lib/benchmark-drawdown.js";
 import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { createBetaSummary } from "../src/lib/beta-summary.js";
 import { calculateCashTwdValue } from "../src/lib/cash.js";
+import {
+  createHistoryChartModel,
+  createHistorySnapshot,
+  createHistorySummary,
+  createPerformanceSeries,
+  getTaipeiDateKey,
+  mergeDemoHistoryRecords,
+  normalizeHistoryRecords,
+  upsertDailyHistorySnapshot,
+} from "../src/lib/history.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
@@ -31,7 +47,9 @@ import {
 } from "../src/lib/presentation.js";
 
 const STORAGE_KEY = "jj-invest-public-overview-v1";
+const HISTORY_STORAGE_KEY = "jj-invest-public-history-v1";
 const USAGE_DEVICE_KEY = "jj-invest-public-device-id-v1";
+const BENCHMARK_HISTORY_FROM = "2003-06-30";
 const TARGET_WEIGHT_ERROR_MESSAGES = new Set([
   "正二標的目標比例合計必須等於 100%。",
   "原形標的目標比例合計必須等於 100%。",
@@ -292,6 +310,16 @@ function getAdvice(calculation, primaryRecommendation) {
   };
 }
 
+function isLocalPreviewHost(hostname) {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+  );
+}
+
 function useStoredState() {
   const [state, setState] = useState(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
@@ -326,8 +354,39 @@ function useStoredState() {
   return [state, setState, hydrated];
 }
 
+function useStoredHistory() {
+  const [records, setRecords] = useState([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const saved = window.localStorage.getItem(HISTORY_STORAGE_KEY);
+        setRecords(normalizeHistoryRecords(saved ? JSON.parse(saved) : []));
+      } catch {
+        setRecords([]);
+      } finally {
+        setHydrated(true);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(records));
+  }, [hydrated, records]);
+
+  return [records, setRecords, hydrated];
+}
+
 export default function Home() {
   const [formState, setFormState, hydrated] = useStoredState();
+  const [historyRecords, setHistoryRecords, historyHydrated] = useStoredHistory();
   const [quoteResult, setQuoteResult] = useState(emptyQuoteResult);
   const [status, setStatus] = useState("idle");
   const [requestError, setRequestError] = useState("");
@@ -337,6 +396,10 @@ export default function Home() {
   const [glossaryTopic, setGlossaryTopic] = useState(null);
   const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState("");
   const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
+  const [historyMode, setHistoryMode] = useState("performance");
+  const [historyRangeDays, setHistoryRangeDays] = useState("30");
+  const [benchmarkDrawdown, setBenchmarkDrawdown] = useState(null);
+  const [backupStatus, setBackupStatus] = useState("");
 
   const tickers = useMemo(
     () =>
@@ -345,6 +408,11 @@ export default function Home() {
         .filter((ticker) => String(ticker || "").trim()),
     [formState.positions],
   );
+
+  const isLocalPreview =
+    hydrated &&
+    typeof window !== "undefined" &&
+    isLocalPreviewHost(window.location.hostname);
 
   const calculation = useMemo(
     () => {
@@ -442,6 +510,87 @@ export default function Home() {
     const timeoutId = window.setTimeout(refreshQuotes, 0);
     return () => window.clearTimeout(timeoutId);
   }, [hydrated, refreshQuotes, tickers.length]);
+
+  useEffect(() => {
+    if (
+      !historyHydrated ||
+      !lastUpdatedAt ||
+      !calculation.isValid ||
+      calculation.totalAssetsTwd <= 0 ||
+      quoteResult.quotes.length === 0 ||
+      quoteResult.quotes.some((quote) => quote.error || !quote.priceTwd)
+    ) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const date = getTaipeiDateKey(lastUpdatedAt);
+
+    async function saveDailyHistorySnapshot() {
+      try {
+        const response = await fetch(
+          `/api/history-quotes?tickers=0050.TW&from=${date}&to=${date}`,
+        );
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = await response.json();
+        const benchmarkPrice = payload?.quotes?.[0]?.prices?.[0]?.price;
+        const snapshot = createHistorySnapshot({
+          date,
+          calculation,
+          benchmark0050Price: benchmarkPrice,
+        });
+
+        if (!cancelled && snapshot) {
+          setHistoryRecords((current) => upsertDailyHistorySnapshot(current, snapshot));
+        }
+      } catch {
+        // Historical comparison is helpful, but must never block current calculations.
+      }
+    }
+
+    saveDailyHistorySnapshot();
+    return () => {
+      cancelled = true;
+    };
+  }, [calculation, historyHydrated, lastUpdatedAt, quoteResult.quotes, setHistoryRecords]);
+
+  useEffect(() => {
+    if (!hydrated) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const toDate = getTaipeiDateKey(lastUpdatedAt || new Date());
+
+    async function loadBenchmarkDrawdown() {
+      try {
+        const response = await fetch(
+          `/api/history-quotes?tickers=0050.TW&from=${BENCHMARK_HISTORY_FROM}&to=${toDate}`,
+        );
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = await response.json();
+        const drawdown = createBenchmarkDrawdown(payload?.quotes?.[0]?.prices || []);
+        if (!cancelled) {
+          setBenchmarkDrawdown(drawdown);
+        }
+      } catch {
+        if (!cancelled) {
+          setBenchmarkDrawdown(null);
+        }
+      }
+    }
+
+    loadBenchmarkDrawdown();
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, lastUpdatedAt]);
 
   useEffect(() => {
     if (!hydrated) {
@@ -604,6 +753,52 @@ export default function Home() {
     });
   }
 
+  const handleExportBackup = useCallback(() => {
+    const backup = createAppBackup({
+      settings: formState,
+      history: historyRecords,
+    });
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `jj-invest-public-backup-${getTaipeiDateKey()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setBackupStatus("已匯出完整備份。");
+  }, [formState, historyRecords]);
+
+  const handleImportBackup = useCallback(
+    async (file) => {
+      if (!file) {
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "匯入後會覆蓋目前設定；歷史紀錄會依日期合併，同一天以備份檔為準。確定繼續？",
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        const backupText = await file.text();
+        const backup = parseAppBackup(backupText, DEFAULT_STATE);
+        setFormState(normalizeStoredState(backup.settings));
+        setHistoryRecords((current) => mergeImportedHistory(current, backup.history));
+        setBackupStatus("已匯入完整備份，設定已更新，歷史紀錄已合併。");
+      } catch (error) {
+        setBackupStatus(error instanceof Error ? error.message : "備份檔匯入失敗。");
+      }
+    },
+    [setFormState, setHistoryRecords],
+  );
+
   function changeView(nextView) {
     if (nextView === activeView) {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -651,6 +846,11 @@ export default function Home() {
               onOpenGlossary={() => setGlossaryTopic("beta")}
             />
 
+            <MarketLevelCard
+              benchmarkDrawdown={benchmarkDrawdown}
+              onOpenGlossary={() => setGlossaryTopic("benchmarkDrawdown")}
+            />
+
             <AdviceCard
               advice={advice}
             />
@@ -676,12 +876,36 @@ export default function Home() {
           />
         )}
 
+        {activeView === "history" && (
+          <HistoryView
+            historyMode={historyMode}
+            historyRangeDays={historyRangeDays}
+            records={historyRecords}
+            onClearHistory={() => {
+              if (window.confirm("確定要清除歷史紀錄？")) {
+                setHistoryRecords([]);
+              }
+            }}
+            onSeedDemoHistory={
+              isLocalPreview
+                ? () => setHistoryRecords((current) => mergeDemoHistoryRecords(current))
+                : null
+            }
+            onModeChange={setHistoryMode}
+            onRangeChange={setHistoryRangeDays}
+          />
+        )}
+
         {activeView === "settings" && (
           <SettingsAccordions
+            backupStatus={backupStatus}
             calculation={calculation}
             formState={formState}
             fx={quoteResult.fx}
+            historyCount={historyRecords.length}
             onAddPosition={addPosition}
+            onExportBackup={handleExportBackup}
+            onImportBackup={handleImportBackup}
             onRemovePosition={removePosition}
             onUpdatePosition={updatePosition}
             onUpdateSetting={updateSetting}
@@ -722,6 +946,15 @@ function BottomTabBar({ activeView, onChange }) {
       >
         <span aria-hidden="true">≡</span>
         再平衡
+      </button>
+      <button
+        type="button"
+        className={activeView === "history" ? "active" : ""}
+        onClick={() => onChange("history")}
+        aria-current={activeView === "history" ? "page" : undefined}
+      >
+        <span aria-hidden="true">⌁</span>
+        歷史
       </button>
       <button
         type="button"
@@ -825,6 +1058,52 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
   );
 }
 
+function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
+  if (!benchmarkDrawdown) {
+    return null;
+  }
+
+  const levelLabel = {
+    normal: "正常區間",
+    prepare: "觀察低接",
+    deep: "深度回落",
+  }[benchmarkDrawdown.level] || "市場水位";
+
+  return (
+    <section className={`appCard marketLevelCard ${benchmarkDrawdown.level}`}>
+      <div className="cardHeaderRow">
+        <div>
+          <div className="cardTitleRow">
+            <h2>市場水位</h2>
+            <button
+              type="button"
+              className="infoButton small"
+              onClick={onOpenGlossary}
+              aria-label="查看 0050 距收盤高點說明"
+            >
+              i
+            </button>
+          </div>
+          <p>0050 距收盤高點</p>
+        </div>
+        <span className="marketLevelBadge">{levelLabel}</span>
+      </div>
+
+      <div className="marketLevelBody">
+        <strong>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</strong>
+        <div>
+          <span>
+            高點 {formatNumber(benchmarkDrawdown.highPrice, 2)} · {benchmarkDrawdown.highDate}
+          </span>
+          <span>
+            目前 {formatNumber(benchmarkDrawdown.currentPrice, 2)} · {benchmarkDrawdown.currentDate}
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function GlossaryDialog({ topic, onClose }) {
   useEffect(() => {
     if (!topic) {
@@ -847,6 +1126,7 @@ function GlossaryDialog({ topic, onClose }) {
 
   const isBetaTopic = topic === "beta";
   const isOperationTopic = topic === "operations";
+  const isBenchmarkDrawdownTopic = topic === "benchmarkDrawdown";
 
   return (
     <div className="infoOverlay" role="presentation" onClick={onClose}>
@@ -861,7 +1141,13 @@ function GlossaryDialog({ topic, onClose }) {
           <div>
             <p className="cardLabel">名詞說明</p>
             <h2 id="glossary-title">
-              {isBetaTopic ? "Beta" : isOperationTopic ? "再平衡操作" : "資產配置比例"}
+              {isBetaTopic
+                ? "Beta"
+                : isOperationTopic
+                  ? "再平衡操作"
+                  : isBenchmarkDrawdownTopic
+                    ? "市場水位"
+                    : "資產配置比例"}
             </h2>
           </div>
           <button
@@ -897,6 +1183,20 @@ function GlossaryDialog({ topic, onClose }) {
                 <span>勾選方式</span>
                 <p>有勾選的持股會納入本次再平衡，系統會依指定 Beta 重新計算買賣金額。</p>
                 <p>取消勾選的持股本次不買不賣，庫存股數維持不變。</p>
+              </article>
+            </>
+          ) : isBenchmarkDrawdownTopic ? (
+            <>
+              <article className="benchmarkIntro">
+                <p>這個數字用 0050 最新收盤價，和系統抓到的歷史最高收盤價相比。</p>
+                <p>例如 -6% 代表目前 0050 收盤價比歷史收盤高點低約 6%。</p>
+              </article>
+
+              <article className="glossaryItem benchmarkRules">
+                <span>區間顏色</span>
+                <p>-10% 以內顯示綠色，代表仍在相對正常的回落範圍。</p>
+                <p>-10% 到 -20% 顯示橘色，可視為開始準備提高 Beta 低接的觀察區。</p>
+                <p>-20% 以上顯示紅色，代表已經是股災等級，可以分批加碼買進，拉高 Beta 值。</p>
               </article>
             </>
           ) : (
@@ -1032,6 +1332,303 @@ function AllocationMetric({ color, label, current, target, valueTwd }) {
       <em>{formatPercent(current)}</em>
       <small>目標 {formatPercent(target)}</small>
       <small>市值 {formatTwd(valueTwd)}</small>
+    </div>
+  );
+}
+
+function getHistoryChartRecords(records, rangeDays) {
+  const limit = Number(rangeDays) === 7 ? 7 : 30;
+  return records.slice(-limit);
+}
+
+function HistoryView({
+  historyMode,
+  historyRangeDays,
+  records,
+  onClearHistory,
+  onModeChange,
+  onRangeChange,
+  onSeedDemoHistory,
+}) {
+  const summary = createHistorySummary(records);
+  const chartRecords = getHistoryChartRecords(records, historyRangeDays);
+  const chartModel = createHistoryChartModel(chartRecords, historyMode);
+  const series = createPerformanceSeries(records).slice().reverse();
+  const hasRecords = records.length > 0;
+
+  if (!hasRecords) {
+    return (
+      <section className="appCard historyEmptyCard">
+        <p className="cardLabel">歷史</p>
+        <h2>尚無歷史資料</h2>
+        <p>成功更新價格後會自動記錄今日。</p>
+        {onSeedDemoHistory ? (
+          <button type="button" className="secondaryButton" onClick={onSeedDemoHistory}>
+            載入示範曲線
+          </button>
+        ) : null}
+      </section>
+    );
+  }
+
+  return (
+    <section className="historyStack" aria-label="歷史紀錄">
+      <section className="appCard historySummaryCard">
+        <div className="cardHeaderRow">
+          <div>
+            <h2>歷史紀錄</h2>
+            <p>總資產、Beta 與 0050 同日起始比較</p>
+          </div>
+          <span className="historyDatePill">{summary.latestDate}</span>
+        </div>
+        <div className="historySummaryGrid">
+          <HistoryMetric label="最新總資產" value={formatTwd(summary.latestTotalAssetsTwd)} />
+          <HistoryMetric label="最新 Beta" value={formatNumber(summary.latestBeta)} />
+          <HistoryMetric label="投組累積報酬" value={formatSignedPercent(summary.portfolioReturn)} />
+          <HistoryMetric label="0050 累積報酬" value={formatSignedPercent(summary.benchmarkReturn)} />
+        </div>
+      </section>
+
+      <section className="appCard historyChartCard">
+        <div className="historyChartControls">
+          <div className="historyModeTabs" aria-label="歷史圖表切換">
+            <button
+              type="button"
+              className={historyMode === "performance" ? "active" : ""}
+              onClick={() => onModeChange("performance")}
+            >
+              績效
+            </button>
+            <button
+              type="button"
+              className={historyMode === "beta" ? "active" : ""}
+              onClick={() => onModeChange("beta")}
+            >
+              Beta
+            </button>
+          </div>
+          <div className="historyRangeTabs" aria-label="歷史時間範圍">
+            <button
+              type="button"
+              className={historyRangeDays === "7" ? "active" : ""}
+              onClick={() => onRangeChange("7")}
+            >
+              7天
+            </button>
+            <button
+              type="button"
+              className={historyRangeDays === "30" ? "active" : ""}
+              onClick={() => onRangeChange("30")}
+            >
+              30天
+            </button>
+          </div>
+        </div>
+        <HistoryChart model={chartModel} />
+      </section>
+
+      <section className="appCard historyRecordsCard">
+        <div className="cardHeaderRow">
+          <div>
+            <h2>最近紀錄</h2>
+            <p>同一天更新會覆蓋為最新快照</p>
+          </div>
+        </div>
+        <div className="historyRecordsList">
+          {series.slice(0, 14).map((record) => (
+            <article className="historyRecord" key={record.date}>
+              <div>
+                <strong>{record.date}</strong>
+                <span>Beta {formatNumber(record.currentBeta)}</span>
+              </div>
+              <div>
+                <strong>{formatTwd(record.totalAssetsTwd)}</strong>
+                <span>
+                  投組 {formatSignedPercent(record.portfolioReturn)} · 0050{" "}
+                  {record.benchmarkReturn === null
+                    ? "資料不足"
+                    : formatSignedPercent(record.benchmarkReturn)}
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="historyActions">
+          {onSeedDemoHistory ? (
+            <button type="button" className="secondaryButton" onClick={onSeedDemoHistory}>
+              載入示範曲線
+            </button>
+          ) : null}
+          <button type="button" className="dangerTextButton" onClick={onClearHistory}>
+            清除歷史紀錄
+          </button>
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function HistoryMetric({ label, value }) {
+  return (
+    <div className="historyMetric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function HistoryChart({ model }) {
+  const [activePointState, setActivePointState] = useState(null);
+  const activePointIndex =
+    activePointState?.mode === model.mode ? activePointState.index : null;
+  const activePoint =
+    activePointIndex === null ? null : model.dataPoints[activePointIndex] || null;
+  const setActivePointIndex = (index) => setActivePointState({ mode: model.mode, index });
+
+  if (model.labels.length < 2) {
+    return (
+      <div className="historyChartEmpty">
+        累積兩筆以上紀錄後會顯示曲線。
+      </div>
+    );
+  }
+
+  return (
+    <div className="historyChartWrap">
+      <svg
+        className="historyChartSvg"
+        viewBox={`0 0 ${model.width} ${model.height}`}
+        role="img"
+        aria-label={model.mode === "beta" ? "Beta 歷史曲線" : "投組與 0050 績效曲線"}
+        preserveAspectRatio="none"
+        onPointerLeave={() => setActivePointState(null)}
+      >
+        {model.yTicks.map((tick) => (
+          <g className="historyGridLine" key={tick.label}>
+            <line x1={model.plot.left} y1={tick.y} x2={model.width - model.plot.right} y2={tick.y} />
+            <text x={model.plot.left - 6} y={tick.y} dominantBaseline="middle" textAnchor="end">
+              {tick.label}
+            </text>
+          </g>
+        ))}
+        <line
+          className="historyAxisLine"
+          x1={model.plot.left}
+          y1={model.height - model.plot.bottom}
+          x2={model.width - model.plot.right}
+          y2={model.height - model.plot.bottom}
+        />
+        {model.mode === "beta" ? (
+          <>
+            <polyline className="historyLine tolerance" points={model.upperPoints} />
+            <polyline className="historyLine tolerance" points={model.lowerPoints} />
+            <polyline className="historyLine benchmark" points={model.targetPoints} />
+            <polyline className="historyLine portfolio" points={model.betaPoints} />
+          </>
+        ) : (
+          <>
+            <polyline className="historyLine benchmark" points={model.benchmarkPoints} />
+            <polyline className="historyLine portfolio" points={model.portfolioPoints} />
+          </>
+        )}
+        {model.xTicks.map((tick) => (
+          <text
+            className="historyXAxisLabel"
+            key={`${tick.label}-${tick.x}`}
+            x={tick.x}
+            y={model.height - 4}
+            textAnchor={tick.anchor}
+          >
+            {tick.label}
+          </text>
+        ))}
+        {model.dataPoints.map((point, index) => (
+          <g className="historyHitPoint" key={point.date}>
+            <line
+              className={activePointIndex === index ? "active" : ""}
+              x1={point.x}
+              y1={model.plot.top}
+              x2={point.x}
+              y2={model.height - model.plot.bottom}
+            />
+            <circle
+              className={activePointIndex === index ? "visible" : ""}
+              cx={point.x}
+              cy={point.y}
+              r="3.2"
+            />
+            <circle
+              className="hitArea"
+              cx={point.x}
+              cy={point.y}
+              r="12"
+              tabIndex="0"
+              role="button"
+              aria-label={`${point.date} 歷史數據`}
+              onFocus={() => setActivePointIndex(index)}
+              onPointerEnter={() => setActivePointIndex(index)}
+              onClick={() => setActivePointIndex(index)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setActivePointIndex(index);
+                }
+              }}
+            />
+          </g>
+        ))}
+      </svg>
+      {activePoint ? (
+        <div
+          className={`historyTooltip ${
+            activePoint.x > model.width * 0.72
+              ? "alignRight"
+              : activePoint.x < model.width * 0.28
+                ? "alignLeft"
+                : ""
+          }`}
+          style={{
+            left: `${(activePoint.x / model.width) * 100}%`,
+            top: `${(activePoint.y / model.height) * 100}%`,
+          }}
+        >
+          <strong>{activePoint.date}</strong>
+          {model.mode === "beta" ? (
+            <>
+              <span>目前 Beta {formatNumber(activePoint.currentBeta)}</span>
+              <span>目標 {formatNumber(activePoint.targetBeta)}</span>
+              <span>
+                區間 {formatNumber(activePoint.betaLower)} ~ {formatNumber(activePoint.betaUpper)}
+              </span>
+            </>
+          ) : (
+            <>
+              <span>總資產 {formatTwd(activePoint.totalAssetsTwd)}</span>
+              <span>投組 {formatSignedPercent(activePoint.portfolioReturn)}</span>
+              <span>
+                0050{" "}
+                {activePoint.benchmarkReturn === null
+                  ? "資料不足"
+                  : formatSignedPercent(activePoint.benchmarkReturn)}
+              </span>
+            </>
+          )}
+        </div>
+      ) : null}
+      <div className="historyLegend">
+        {model.mode === "beta" ? (
+          <>
+            <span><i className="portfolio" />目前 Beta</span>
+            <span><i className="benchmark" />目標 Beta</span>
+            <span><i className="tolerance" />容忍區間</span>
+          </>
+        ) : (
+          <>
+            <span><i className="portfolio" />投組</span>
+            <span><i className="benchmark" />0050</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -1425,10 +2022,14 @@ function PositionSection({
 }
 
 function SettingsAccordions({
+  backupStatus,
   calculation,
   formState,
   fx,
+  historyCount,
   onAddPosition,
+  onExportBackup,
+  onImportBackup,
   onRemovePosition,
   onUpdatePosition,
   onUpdateSetting,
@@ -1624,6 +2225,39 @@ function SettingsAccordions({
           )}
 
         </div>
+      </div>
+
+      <div className="settingsPanel backupPanel">
+        <div className="backupHeader">
+          <div>
+            <h2>資料備份</h2>
+            <p>完整備份目前瀏覽器內的現金、持股、Beta 參數與歷史紀錄。</p>
+          </div>
+          <span>{historyCount} 筆歷史</span>
+        </div>
+
+        <div className="backupActions">
+          <button type="button" className="primaryButton" onClick={onExportBackup}>
+            匯出完整備份
+          </button>
+          <label className="secondaryButton backupImportButton">
+            匯入完整備份
+            <input
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => {
+                const [file] = event.target.files || [];
+                onImportBackup(file);
+                event.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+
+        <p className="hint">
+          匯入時會覆蓋目前設定；歷史紀錄會依日期合併，同一天以備份檔為準，不會刪掉備份檔沒有的新日期。
+        </p>
+        {backupStatus ? <p className="backupStatus">{backupStatus}</p> : null}
       </div>
     </section>
   );

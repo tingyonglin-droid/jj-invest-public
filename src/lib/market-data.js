@@ -63,6 +63,114 @@ export function toYahooChartSymbol(normalizedTicker) {
   return encodeURIComponent(normalizedTicker);
 }
 
+export function createDateRange(from, to) {
+  const start = new Date(`${from}T00:00:00Z`);
+  const end = new Date(`${to}T00:00:00Z`);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+    return [];
+  }
+
+  const dates = [];
+  for (const cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    dates.push(cursor.toISOString().slice(0, 10));
+  }
+
+  return dates;
+}
+
+export function parseYahooHistoricalPrices(payload, normalizedTicker) {
+  const result = payload?.chart?.result?.[0];
+  const quote = result?.indicators?.quote?.[0];
+  const close = quote?.close || [];
+  const timestamps = result?.timestamp || [];
+  const meta = result?.meta || {};
+
+  return timestamps
+    .map((timestamp, index) => {
+      const price = close[index];
+      if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+        return null;
+      }
+
+      return {
+        date: new Date(timestamp * 1000).toISOString().slice(0, 10),
+        price,
+        currency: meta.currency || guessCurrency(normalizedTicker),
+        source: "Yahoo Finance",
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function alignHistoricalPricesToDates(prices, dates) {
+  const sortedPrices = [...(Array.isArray(prices) ? prices : [])]
+    .filter((price) => price?.date && Number.isFinite(Number(price.price)))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  let priceIndex = 0;
+  let latestPrice = null;
+
+  return dates.map((date) => {
+    while (
+      priceIndex < sortedPrices.length &&
+      sortedPrices[priceIndex].date <= date
+    ) {
+      latestPrice = sortedPrices[priceIndex];
+      priceIndex += 1;
+    }
+
+    return {
+      date,
+      price: latestPrice?.price ?? null,
+      currency: latestPrice?.currency ?? null,
+      source: latestPrice?.source ?? "Yahoo Finance",
+      error: latestPrice ? null : "沒有可用的前一交易日收盤價。",
+    };
+  });
+}
+
+function addUtcDays(dateText, days) {
+  const date = new Date(`${dateText}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+export async function fetchYahooHistoricalQuotes(normalizedTicker, { from, to }) {
+  const dates = createDateRange(from, to);
+  if (!dates.length) {
+    return [];
+  }
+
+  const periodStart = addUtcDays(from, -10);
+  const periodEnd = addUtcDays(to, 1);
+  const period1 = Math.floor(new Date(`${periodStart}T00:00:00Z`).getTime() / 1000);
+  const period2 = Math.floor(new Date(`${periodEnd}T00:00:00Z`).getTime() / 1000);
+  const symbol = toYahooChartSymbol(normalizedTicker);
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${period1}&period2=${period2}&interval=1d`;
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+    },
+    next: {
+      revalidate: 3600,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Yahoo Finance 回應 ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const prices = parseYahooHistoricalPrices(payload, normalizedTicker);
+  return alignHistoricalPricesToDates(prices, dates);
+}
+
 function formatTwseDate(value) {
   const text = String(value || "");
   if (!/^\d{8}$/.test(text)) {

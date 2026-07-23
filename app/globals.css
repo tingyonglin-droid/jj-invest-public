@@ -267,6 +267,18 @@ p {
   height: 23px;
 }
 
+.infoButton.micro {
+  min-width: 28px;
+  min-height: 28px;
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.infoButton.micro::after {
+  width: 20px;
+  height: 20px;
+}
+
 .betaCard {
   padding: 24px 28px 18px;
 }
@@ -386,6 +398,79 @@ p {
   margin-top: 13px;
 }
 
+.marketLevelCard {
+  overflow: hidden;
+}
+
+.marketLevelCard.normal {
+  border-color: rgba(49, 155, 114, 0.18);
+}
+
+.marketLevelCard.prepare {
+  border-color: rgba(197, 139, 26, 0.24);
+}
+
+.marketLevelCard.deep {
+  border-color: rgba(193, 81, 90, 0.24);
+}
+
+.marketLevelBadge {
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: var(--primary-dark);
+  background: #edf8f2;
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.marketLevelCard.prepare .marketLevelBadge {
+  color: #8a5c0d;
+  background: #fff6e8;
+}
+
+.marketLevelCard.deep .marketLevelBadge {
+  color: var(--danger);
+  background: #fff0f1;
+}
+
+.marketLevelBody {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: end;
+  gap: 18px;
+}
+
+.marketLevelBody > strong {
+  color: var(--primary-dark);
+  font-size: clamp(46px, 9vw, 72px);
+  font-weight: 880;
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.marketLevelCard.prepare .marketLevelBody > strong {
+  color: var(--warning);
+}
+
+.marketLevelCard.deep .marketLevelBody > strong {
+  color: var(--danger);
+}
+
+.marketLevelBody div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding-bottom: 4px;
+}
+
+.marketLevelBody span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
 .infoOverlay {
   position: fixed;
   inset: 0;
@@ -479,6 +564,42 @@ p {
   font-size: 14px;
   font-weight: 620;
   line-height: 1.55;
+}
+
+.benchmarkIntro {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: 0;
+  padding: 16px 18px;
+  background: #f3fbf7;
+}
+
+.benchmarkIntro p {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 15px;
+  font-weight: 680;
+  line-height: 1.65;
+}
+
+.benchmarkRules {
+  gap: 12px;
+  border-color: rgba(224, 229, 235, 0.98);
+  border-radius: 20px;
+  padding: 18px 20px;
+  background: #fcfdfe;
+}
+
+.benchmarkRules span {
+  font-size: 18px;
+}
+
+.benchmarkRules p {
+  font-size: 15px;
+  font-weight: 660;
+  line-height: 1.7;
 }
 
 .buy {
@@ -753,6 +874,346 @@ p {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
+}
+
+.historyStack {
+  display: grid;
+  gap: 18px;
+}
+
+.historySummaryCard,
+.historyChartCard,
+.historyRecordsCard,
+.historyEmptyCard {
+  margin-bottom: 0;
+}
+
+.historyEmptyCard {
+  display: grid;
+  gap: 8px;
+  min-height: 240px;
+  align-content: center;
+  text-align: center;
+}
+
+.historyEmptyCard h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 840;
+}
+
+.historyEmptyCard p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.historyDatePill {
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: var(--primary-dark);
+  background: #e8f6ef;
+  font-size: 13px;
+  font-weight: 780;
+}
+
+.historySummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.historyMetric {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--card-soft);
+}
+
+.historyMetric span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.historyMetric strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 860;
+  line-height: 1.05;
+}
+
+.historyChartControls {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.historyModeTabs,
+.historyRangeTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  border-radius: 18px;
+  padding: 6px;
+  background: #eef1f4;
+}
+
+.historyRangeTabs {
+  justify-self: end;
+  min-width: min(220px, 100%);
+  border-radius: 16px;
+  background: #f5f7f9;
+}
+
+.historyModeTabs button,
+.historyRangeTabs button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 820;
+}
+
+.historyRangeTabs button {
+  min-height: 36px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.historyModeTabs button.active,
+.historyRangeTabs button.active {
+  color: var(--text);
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(17, 24, 33, 0.07);
+}
+
+.historyChartWrap {
+  display: grid;
+  gap: 12px;
+}
+
+.historyChartSvg {
+  width: 100%;
+  height: 220px;
+  overflow: visible;
+}
+
+.historyChartSvg .historyAxisLine {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.historyGridLine line {
+  stroke: rgba(126, 137, 151, 0.14);
+  stroke-width: 1;
+}
+
+.historyGridLine text,
+.historyXAxisLabel {
+  fill: var(--muted);
+  font-size: 9px;
+  font-weight: 780;
+}
+
+.historyHitPoint line {
+  opacity: 0;
+  stroke: rgba(17, 24, 33, 0.14);
+  stroke-width: 1;
+}
+
+.historyHitPoint line.active {
+  opacity: 1;
+}
+
+.historyHitPoint circle {
+  opacity: 0;
+  fill: #ffffff;
+  stroke: var(--primary);
+  stroke-width: 1.8;
+}
+
+.historyHitPoint circle.visible {
+  opacity: 1;
+}
+
+.historyHitPoint .hitArea {
+  cursor: pointer;
+  opacity: 0;
+  fill: transparent;
+  stroke: transparent;
+  outline: none;
+}
+
+.historyHitPoint .hitArea:focus-visible {
+  opacity: 1;
+  stroke: rgba(47, 159, 113, 0.32);
+  stroke-width: 6;
+}
+
+.historyTooltip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  min-width: 140px;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(220, 226, 233, 0.95);
+  border-radius: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 32px rgba(16, 24, 40, 0.12);
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.25;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+}
+
+.historyTooltip.alignLeft {
+  transform: translate(0, calc(-100% - 12px));
+}
+
+.historyTooltip.alignRight {
+  transform: translate(-100%, calc(-100% - 12px));
+}
+
+.historyTooltip strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 860;
+}
+
+.historyLine {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.historyLine.portfolio {
+  stroke: var(--primary);
+}
+
+.historyLine.benchmark {
+  stroke: var(--purple);
+}
+
+.historyLine.tolerance {
+  stroke: rgba(123, 131, 143, 0.34);
+  stroke-dasharray: 6 8;
+  stroke-width: 1.5;
+}
+
+.historyLegend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 740;
+}
+
+.historyLegend {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.historyLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.historyLegend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.historyLegend i.portfolio {
+  background: var(--primary);
+}
+
+.historyLegend i.benchmark {
+  background: var(--purple);
+}
+
+.historyLegend i.tolerance {
+  background: var(--muted);
+}
+
+.historyChartEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  border-radius: 18px;
+  color: var(--muted);
+  background: var(--card-soft);
+  font-weight: 740;
+}
+
+.historyRecordsList {
+  display: grid;
+  gap: 0;
+}
+
+.historyRecord {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.historyRecord:last-child {
+  border-bottom: 0;
+}
+
+.historyRecord div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.historyRecord div:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
+.historyRecord strong {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  font-weight: 820;
+}
+
+.historyRecord span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.historyActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dangerTextButton {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  color: var(--danger);
+  background: #fff0f1;
+  font-weight: 820;
 }
 
 .holdingsCard {
@@ -1131,10 +1592,10 @@ p {
   bottom: max(12px, env(safe-area-inset-bottom));
   z-index: 900;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   align-items: center;
   gap: 4px;
-  width: min(calc(100% - 28px), 520px);
+  width: min(calc(100% - 28px), 560px);
   min-height: 66px;
   margin: 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.82);
@@ -1221,6 +1682,79 @@ p {
 .settingsPagePanel {
   display: grid;
   gap: 0;
+}
+
+.backupPanel {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.backupHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.backupHeader h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 820;
+}
+
+.backupHeader p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.45;
+}
+
+.backupHeader span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--primary-dark);
+  background: #e8f6ef;
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.backupActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.backupActions .primaryButton {
+  grid-column: auto;
+}
+
+.backupImportButton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.backupImportButton input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.backupStatus {
+  margin: 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: var(--primary-dark);
+  background: #e8f6ef;
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 1.45;
 }
 
 .settingsSubTabs {
@@ -1848,6 +2382,10 @@ select {
     font-size: 13px;
   }
 
+  .backupPanel {
+    padding: 15px;
+  }
+
   .infoOverlay {
     align-items: end;
     padding: 16px 12px calc(96px + env(safe-area-inset-bottom));
@@ -1899,6 +2437,11 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .marketLevelBody {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
   .settingsStack {
     margin-left: -2px;
     margin-right: -2px;
@@ -1927,6 +2470,18 @@ select {
     align-self: center;
   }
 
+  .backupHeader {
+    display: grid;
+  }
+
+  .backupHeader span {
+    justify-self: start;
+  }
+
+  .backupActions {
+    grid-template-columns: 1fr;
+  }
+
   .cardHeaderRow {
     align-items: stretch;
     flex-direction: column;
@@ -1939,6 +2494,27 @@ select {
   .allocationTotal {
     justify-items: start;
     text-align: left;
+  }
+
+  .historySummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .historyChartSvg {
+    height: 170px;
+  }
+
+  .historyRecord {
+    grid-template-columns: 1fr;
+  }
+
+  .historyRecord div:last-child {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .historyActions {
+    grid-template-columns: 1fr;
   }
 
   .holdingAction {
@@ -1955,5 +2531,19 @@ select {
 
   .glossaryItem {
     padding: 14px;
+  }
+
+  .benchmarkIntro {
+    padding: 14px 15px;
+  }
+
+  .benchmarkIntro p,
+  .benchmarkRules p {
+    font-size: 14px;
+    line-height: 1.62;
+  }
+
+  .benchmarkRules {
+    padding: 16px;
   }
 }
