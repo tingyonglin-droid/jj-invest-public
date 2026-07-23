@@ -28,6 +28,18 @@ test("operations page places precision in parameters and apply action after the 
   assert.ok(page.indexOf("<HoldingList") < page.indexOf("operationApplyFooter"));
 });
 
+test("operations page confirms apply and offers restore after rebalance", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /BEFORE_REBALANCE_STORAGE_KEY/);
+  assert.match(page, /createRebalanceRestorePoint/);
+  assert.match(page, /parseRebalanceRestorePoint/);
+  assert.match(page, /window\.confirm/);
+  assert.match(page, /套用再平衡結果/);
+  assert.match(page, /復原上一步/);
+  assert.doesNotMatch(page, />一鍵再平衡</);
+});
+
 test("holding progress shows after rebalance ratio", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 

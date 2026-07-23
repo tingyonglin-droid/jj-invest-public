@@ -39,6 +39,10 @@ import {
   getAppliedRebalanceShareDelta,
 } from "../src/lib/rebalance-apply.js";
 import {
+  createRebalanceRestorePoint,
+  parseRebalanceRestorePoint,
+} from "../src/lib/rebalance-restore.js";
+import {
   createOperationRebalance,
 } from "../src/lib/operation-rebalance.js";
 import { createAdviceActionText } from "../src/lib/advice-summary.js";
@@ -55,6 +59,7 @@ import {
 
 const STORAGE_KEY = "jj-invest-public-overview-v1";
 const HISTORY_STORAGE_KEY = "jj-invest-public-history-v1";
+const BEFORE_REBALANCE_STORAGE_KEY = "jj-invest-public-before-rebalance-v1";
 const USAGE_DEVICE_KEY = "jj-invest-public-device-id-v1";
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.1.0";
 const BENCHMARK_HISTORY_FROM = "2003-06-30";
@@ -408,6 +413,8 @@ export default function Home() {
   const [historyRangeDays, setHistoryRangeDays] = useState("30");
   const [benchmarkDrawdown, setBenchmarkDrawdown] = useState(null);
   const [backupStatus, setBackupStatus] = useState("");
+  const [hasRebalanceRestorePoint, setHasRebalanceRestorePoint] = useState(false);
+  const [rebalanceRestoreStatus, setRebalanceRestoreStatus] = useState("");
   const analyticsClient = useMemo(
     () =>
       createAnalyticsClient({
@@ -697,6 +704,24 @@ export default function Home() {
     return () => window.clearTimeout(timeoutId);
   }, [analyticsClient, hydrated, recordUsageOpen]);
 
+  useEffect(() => {
+    if (!hydrated) {
+      return undefined;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        setHasRebalanceRestorePoint(
+          Boolean(window.localStorage.getItem(BEFORE_REBALANCE_STORAGE_KEY)),
+        );
+      } catch {
+        setHasRebalanceRestorePoint(false);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [hydrated]);
+
   function updateSetting(field, value) {
     setFormState((current) => ({
       ...current,
@@ -764,6 +789,23 @@ export default function Home() {
       return;
     }
 
+    const confirmed = window.confirm(
+      `套用再平衡結果？\n\n這會更新持股股數與台幣現金，並先保留一份套用前資料供復原。\n\n共 ${operationRebalance.summary.actionCount} 筆操作。`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    let restorePointSaved = false;
+    try {
+      const restorePoint = createRebalanceRestorePoint(formState);
+      window.localStorage.setItem(BEFORE_REBALANCE_STORAGE_KEY, JSON.stringify(restorePoint));
+      setHasRebalanceRestorePoint(true);
+      restorePointSaved = true;
+    } catch {
+      // Rebalance can still be applied if the browser blocks localStorage.
+    }
+
     setFormState((current) => {
       const currentCashTwd = calculateCashTwdValue({
         cashTwd: current.cashTwd,
@@ -787,6 +829,29 @@ export default function Home() {
         }),
       };
     });
+    setRebalanceRestoreStatus(
+      restorePointSaved
+        ? "已套用再平衡結果，可復原上一步。"
+        : "已套用再平衡結果，但瀏覽器未允許建立復原點。",
+    );
+  }
+
+  function restorePreviousRebalance() {
+    try {
+      const saved = window.localStorage.getItem(BEFORE_REBALANCE_STORAGE_KEY);
+      const restorePoint = parseRebalanceRestorePoint(saved || "");
+      setFormState(normalizeStoredState({
+        ...DEFAULT_STATE,
+        ...restorePoint.settings,
+      }));
+      window.localStorage.removeItem(BEFORE_REBALANCE_STORAGE_KEY);
+      setHasRebalanceRestorePoint(false);
+      setRebalanceRestoreStatus("已復原到套用再平衡前。");
+    } catch (error) {
+      setRebalanceRestoreStatus(
+        error instanceof Error ? error.message : "無法復原上一筆再平衡資料。",
+      );
+    }
   }
 
   function updateRebalanceTargetBeta(value) {
@@ -915,14 +980,17 @@ export default function Home() {
         {activeView === "operations" && (
           <OperationsView
             canApplyRebalance={canApplyRebalance}
+            hasRestorePoint={hasRebalanceRestorePoint}
             operationRebalance={operationRebalance}
             onApplyRebalance={applyOneClickRebalance}
             onOpenGlossary={() => setGlossaryTopic("operations")}
             onPrecisionChange={setRebalancePrecision}
+            onRestorePreviousRebalance={restorePreviousRebalance}
             onTargetBetaChange={updateRebalanceTargetBeta}
             onToggleSelection={toggleRebalanceSelection}
             precision={rebalancePrecision}
             rebalanceTargetBeta={rebalanceTargetBeta}
+            restoreStatus={rebalanceRestoreStatus}
           />
         )}
 
@@ -1685,14 +1753,17 @@ function HistoryChart({ model }) {
 
 function OperationsView({
   canApplyRebalance,
+  hasRestorePoint,
   operationRebalance,
   onApplyRebalance,
   onOpenGlossary,
   onPrecisionChange,
+  onRestorePreviousRebalance,
   onTargetBetaChange,
   onToggleSelection,
   precision,
   rebalanceTargetBeta,
+  restoreStatus,
 }) {
   const { recommendations, summary, warnings } = operationRebalance;
   const appliedAfterBeta = getAppliedAfterBeta({
@@ -1779,16 +1850,28 @@ function OperationsView({
       <div className="operationApplyFooter">
         <div>
           <span>確認清單後套用</span>
-          <p>會依上方精度更新持股股數與現金。</p>
+          <p>會依上方精度更新持股股數與現金，套用前會自動保留復原點。</p>
         </div>
-        <button
-          type="button"
-          className="primaryButton"
-          onClick={onApplyRebalance}
-          disabled={!canApplyRebalance}
-        >
-          一鍵再平衡
-        </button>
+        <div className="operationApplyActions">
+          <button
+            type="button"
+            className="primaryButton"
+            onClick={onApplyRebalance}
+            disabled={!canApplyRebalance}
+          >
+            套用再平衡結果
+          </button>
+          {hasRestorePoint ? (
+            <button
+              type="button"
+              className="secondaryButton restoreButton"
+              onClick={onRestorePreviousRebalance}
+            >
+              復原上一步
+            </button>
+          ) : null}
+        </div>
+        {restoreStatus ? <p className="operationRestoreStatus">{restoreStatus}</p> : null}
       </div>
     </section>
   );

@@ -1355,6 +1355,26 @@ p {
   font-weight: 840;
 }
 
+.operationApplyActions {
+  display: grid;
+  gap: 10px;
+}
+
+.operationApplyActions .primaryButton {
+  grid-column: auto;
+}
+
+.restoreButton {
+  width: 100%;
+}
+
+.operationRestoreStatus {
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: var(--primary-dark);
+  background: #e8f6ef;
+}
+
 .operationWarning {
   border-radius: 16px;
   padding: 12px 14px;
