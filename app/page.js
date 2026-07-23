@@ -17,6 +17,7 @@ import {
   getAssetType,
   getMarketFromTicker,
   getResultStatus,
+  isCompletedPortfolioForAnalytics,
 } from "../src/lib/analytics-client.js";
 import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { createBetaSummary } from "../src/lib/beta-summary.js";
@@ -528,6 +529,9 @@ export default function Home() {
           holdingCount: formState.positions.length,
           resultStatus: getResultStatus(nextCalculation),
         });
+        if (isCompletedPortfolioForAnalytics(nextCalculation)) {
+          analyticsClient.trackPortfolioCompleted();
+        }
       }
     } catch (error) {
       setRequestError(error instanceof Error ? error.message : "價格更新失敗。");

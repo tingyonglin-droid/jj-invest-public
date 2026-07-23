@@ -142,6 +142,14 @@ function AnalyticsV1Panel({ stats }) {
         <UsageMetric label="DAU" value={stats?.overview?.dau} />
         <UsageMetric label="WAU" value={stats?.overview?.wau} />
         <UsageMetric label="MAU" value={stats?.overview?.mau} />
+        <UsageMetric
+          label="有效使用裝置"
+          value={stats?.events?.portfolio_completed?.uniqueDevices}
+        />
+        <UsageMetric
+          label="今日有效使用"
+          value={stats?.events?.portfolio_completed?.todayCount}
+        />
         <UsageMetric label="今日 Sessions" value={stats?.overview?.todaySessions} />
         <UsageMetric label="7 日 Sessions" value={stats?.overview?.sessions7Days} />
         <UsageMetric
@@ -204,6 +212,7 @@ function AnalyticsEventUsage({ events }) {
       </div>
       <div className="analyticsTable">
         {[
+          ["portfolio_completed", "有效使用"],
           ["beta_calculated", "Beta 計算"],
           ["holding_added", "新增持股"],
           ["holding_deleted", "刪除持股"],
@@ -225,7 +234,7 @@ function AnalyticsVersionUsage({ versions }) {
       <div className="usageTrendHeader">
         <div>
           <span>版本分析</span>
-          <strong>活躍裝置 / Sessions / Beta 使用裝置</strong>
+          <strong>活躍裝置 / Sessions / 有效使用裝置 / Beta 使用裝置</strong>
         </div>
       </div>
       <div className="analyticsTable">
@@ -234,6 +243,7 @@ function AnalyticsVersionUsage({ versions }) {
             <span>{item.version}</span>
             <span>{formatMetric(item.activeDevices)} 裝置</span>
             <span>{formatMetric(item.sessions)} Sessions</span>
+            <span>{formatMetric(item.completedDevices)} 有效裝置</span>
             <span>{formatMetric(item.betaDevices)} Beta 裝置</span>
           </div>
         ))}
@@ -250,7 +260,7 @@ function AnalyticsDailyTrend({ trend }) {
       <div className="usageTrendHeader">
         <div>
           <span>每日趨勢</span>
-          <strong>新增 / 活躍 / Sessions / Beta</strong>
+          <strong>新增 / 活躍 / Sessions / 有效使用 / Beta</strong>
         </div>
       </div>
       <div className="analyticsTable">
@@ -260,6 +270,7 @@ function AnalyticsDailyTrend({ trend }) {
             <span>新增 {formatMetric(row.newDevices)}</span>
             <span>活躍 {formatMetric(row.activeDevices)}</span>
             <span>Sessions {formatMetric(row.sessions)}</span>
+            <span>有效 {formatMetric(row.portfolioCompleted)}</span>
             <span>Beta {formatMetric(row.betaCalculated)}</span>
           </div>
         ))}

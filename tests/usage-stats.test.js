@@ -79,4 +79,5 @@ test("keeps usage statistics out of the public settings UI", async () => {
   assert.doesNotMatch(page, /使用統計/);
   assert.match(adminPage, /Legacy 使用統計/);
   assert.match(adminPage, /Analytics v1/);
+  assert.match(adminPage, /有效使用裝置/);
 });

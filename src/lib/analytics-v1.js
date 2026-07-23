@@ -5,6 +5,7 @@ export const ANALYTICS_V1_EVENT_NAMES = [
   "beta_calculated",
   "holding_added",
   "holding_deleted",
+  "portfolio_completed",
 ];
 export const ANALYTICS_V1_START_DATE = "2026-07-23";
 
@@ -90,6 +91,10 @@ function sanitizeProperties(eventName, properties = {}) {
       asset_type: sanitizeStringEnum(properties.asset_type, ALLOWED_ASSET_TYPES),
       market: sanitizeStringEnum(properties.market, ALLOWED_MARKETS),
     };
+  }
+
+  if (eventName === "portfolio_completed") {
+    return {};
   }
 
   return {};

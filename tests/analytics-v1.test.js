@@ -57,6 +57,7 @@ test("accepts only whitelisted analytics events and safe properties", () => {
     "beta_calculated",
     "holding_added",
     "holding_deleted",
+    "portfolio_completed",
   ]);
 
   assert.deepEqual(
@@ -83,6 +84,22 @@ test("accepts only whitelisted analytics events and safe properties", () => {
       properties: {},
     }),
     null,
+  );
+});
+
+test("accepts portfolio completed as a property-free effective usage event", () => {
+  assert.deepEqual(
+    sanitizeAnalyticsEventPayload({
+      eventName: "portfolio_completed",
+      properties: {
+        ticker: "00631L",
+        cash: 1000,
+      },
+    }),
+    {
+      eventName: "portfolio_completed",
+      properties: {},
+    },
   );
 });
 

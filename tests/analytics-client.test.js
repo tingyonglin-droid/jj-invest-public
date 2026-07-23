@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   createAnalyticsClient,
+  isCompletedPortfolioForAnalytics,
   getMarketFromTicker,
   getResultStatus,
 } from "../src/lib/analytics-client.js";
@@ -69,6 +70,41 @@ test("analytics client swallows API failures", async () => {
   }));
 });
 
+test("tracks portfolio completed at most once per Taipei day", async () => {
+  const requests = [];
+  const storage = createMemoryStorage({
+    "jj-invest-public-device-id-v1": "device-1234567890",
+  });
+  const sessionStorage = createMemoryStorage();
+  const nowValues = [
+    new Date("2026-07-23T02:00:00.000Z"),
+    new Date("2026-07-23T02:05:00.000Z"),
+    new Date("2026-07-23T16:00:00.000Z"),
+  ];
+  const client = createAnalyticsClient({
+    appVersion: "0.1.0",
+    fetcher: async (url, options) => {
+      requests.push({ url, options: JSON.parse(options.body) });
+      return { ok: true };
+    },
+    localStorage: storage,
+    sessionStorage,
+    createId: () => `id-${requests.length}`,
+    now: () => nowValues.shift() || new Date("2026-07-23T16:00:00.000Z"),
+  });
+
+  await client.trackPortfolioCompleted();
+  await client.trackPortfolioCompleted();
+  await client.trackPortfolioCompleted();
+
+  const events = requests.filter((request) => request.url === "/api/analytics/event");
+  assert.equal(events.length, 2);
+  assert.deepEqual(
+    events.map((request) => request.options.eventName),
+    ["portfolio_completed", "portfolio_completed"],
+  );
+});
+
 test("derives coarse market and beta result status without exposing values", () => {
   assert.equal(getMarketFromTicker("00631L"), "TW");
   assert.equal(getMarketFromTicker("VOO"), "US");
@@ -76,4 +112,31 @@ test("derives coarse market and beta result status without exposing values", () 
   assert.equal(getResultStatus({ isValid: false }), "invalid");
   assert.equal(getResultStatus({ isValid: true, needsRebalance: true }), "rebalance_needed");
   assert.equal(getResultStatus({ isValid: true, needsRebalance: false }), "within_tolerance");
+});
+
+test("requires valid stock value and cash before marking portfolio completed", () => {
+  assert.equal(
+    isCompletedPortfolioForAnalytics({
+      isValid: true,
+      stockValueTwd: 100000,
+      cashTwd: 20000,
+    }),
+    true,
+  );
+  assert.equal(
+    isCompletedPortfolioForAnalytics({
+      isValid: true,
+      stockValueTwd: 100000,
+      cashTwd: 0,
+    }),
+    false,
+  );
+  assert.equal(
+    isCompletedPortfolioForAnalytics({
+      isValid: false,
+      stockValueTwd: 100000,
+      cashTwd: 20000,
+    }),
+    false,
+  );
 });

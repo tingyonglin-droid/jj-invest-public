@@ -131,7 +131,12 @@ export async function touchDevice({ redis, anonymousId, appVersion, now }) {
 
 export async function updateDailySnapshot(redis, dateKey, now = new Date()) {
   const keys = analyticsKeys(now);
-  const eventNames = ["beta_calculated", "holding_added", "holding_deleted"];
+  const eventNames = [
+    "beta_calculated",
+    "holding_added",
+    "holding_deleted",
+    "portfolio_completed",
+  ];
   const [
     newDevices,
     activeDevices,
@@ -139,6 +144,7 @@ export async function updateDailySnapshot(redis, dateKey, now = new Date()) {
     betaEvents,
     holdingAddedEvents,
     holdingDeletedEvents,
+    portfolioCompletedEvents,
   ] = await Promise.all([
     redis.scard(keys.newDevices(dateKey)),
     redis.scard(keys.activeDevices(dateKey)),
@@ -146,6 +152,7 @@ export async function updateDailySnapshot(redis, dateKey, now = new Date()) {
     redis.scard(keys.eventsByNameDate(eventNames[0], dateKey)),
     redis.scard(keys.eventsByNameDate(eventNames[1], dateKey)),
     redis.scard(keys.eventsByNameDate(eventNames[2], dateKey)),
+    redis.scard(keys.eventsByNameDate(eventNames[3], dateKey)),
   ]);
 
   await Promise.all([
@@ -157,6 +164,7 @@ export async function updateDailySnapshot(redis, dateKey, now = new Date()) {
       beta_calculated: Number(betaEvents) || 0,
       holding_added: Number(holdingAddedEvents) || 0,
       holding_deleted: Number(holdingDeletedEvents) || 0,
+      portfolio_completed: Number(portfolioCompletedEvents) || 0,
       updated_at: now.toISOString(),
     }),
     redis.expire(keys.daily(dateKey), ANALYTICS_KEY_TTL_SECONDS),
@@ -196,7 +204,12 @@ export async function readAnalyticsAdminMetrics(redis, now = new Date()) {
   const sevenDayDates = getTaipeiDateKeys(7, now);
   const thirtyDayDates = getTaipeiDateKeys(30, now);
   const trendDates = getTaipeiDateKeys(30, now).reverse();
-  const eventNames = ["beta_calculated", "holding_added", "holding_deleted"];
+  const eventNames = [
+    "beta_calculated",
+    "holding_added",
+    "holding_deleted",
+    "portfolio_completed",
+  ];
 
   const [totalDevices, totalSessions, totalEvents, dailyRows] = await Promise.all([
     redis.scard(keys.devices),
@@ -245,16 +258,18 @@ export async function readAnalyticsAdminMetrics(redis, now = new Date()) {
   const versions = await redis.smembers(keys.versions);
   const versionMetrics = await Promise.all(
     (versions || []).map(async (version) => {
-      const [activeDevices, sessions, betaDevices] = await Promise.all([
+      const [activeDevices, sessions, betaDevices, completedDevices] = await Promise.all([
         redis.scard(keys.versionActiveDevices(version)),
         redis.scard(keys.versionSessions(version)),
         redis.scard(keys.versionEventDevices(version, "beta_calculated")),
+        redis.scard(keys.versionEventDevices(version, "portfolio_completed")),
       ]);
       return {
         version,
         activeDevices: Number(activeDevices) || 0,
         sessions: Number(sessions) || 0,
         betaDevices: Number(betaDevices) || 0,
+        completedDevices: Number(completedDevices) || 0,
       };
     }),
   );
@@ -269,6 +284,7 @@ export async function readAnalyticsAdminMetrics(redis, now = new Date()) {
       activeDevices: Number(row.active_devices) || 0,
       sessions: Number(row.sessions) || 0,
       betaCalculated: Number(row.beta_calculated) || 0,
+      portfolioCompleted: Number(row.portfolio_completed) || 0,
     };
   });
 

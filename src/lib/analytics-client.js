@@ -4,9 +4,11 @@ import {
   getHoldingCountBucket,
   sanitizeAnalyticsEventPayload,
 } from "./analytics-v1.js";
+import { getTaipeiDateKey } from "./usage-stats.js";
 
 const DEVICE_STORAGE_KEY = "jj-invest-public-device-id-v1";
 const SESSION_STORAGE_KEY = "jj-invest-public-analytics-session-v1";
+const PORTFOLIO_COMPLETED_DAILY_KEY = "jj-invest-public-portfolio-completed-date-v1";
 
 function defaultCreateId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -48,6 +50,22 @@ function getOrCreateDeviceId(storage, createId) {
   }
 }
 
+function readText(storage, key) {
+  try {
+    return storage?.getItem(key) || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeText(storage, key, value) {
+  try {
+    storage?.setItem(key, value);
+  } catch {
+    // Storage can be blocked by browser privacy settings.
+  }
+}
+
 export function getMarketFromTicker(ticker) {
   const text = String(ticker || "").trim().toUpperCase();
   if (!text) {
@@ -74,6 +92,14 @@ export function getResultStatus(calculation) {
     return "invalid";
   }
   return calculation.needsRebalance ? "rebalance_needed" : "within_tolerance";
+}
+
+export function isCompletedPortfolioForAnalytics(calculation) {
+  return (
+    Boolean(calculation?.isValid) &&
+    Number(calculation.stockValueTwd) > 0 &&
+    Number(calculation.cashTwd) > 0
+  );
 }
 
 export function createAnalyticsClient({
@@ -182,6 +208,15 @@ export function createAnalyticsClient({
         asset_type: assetType,
         market,
       });
+    },
+    async trackPortfolioCompleted() {
+      const today = getTaipeiDateKey(now());
+      if (readText(safeLocalStorage, PORTFOLIO_COMPLETED_DAILY_KEY) === today) {
+        return;
+      }
+
+      await trackEvent("portfolio_completed", {});
+      writeText(safeLocalStorage, PORTFOLIO_COMPLETED_DAILY_KEY, today);
     },
   };
 }
