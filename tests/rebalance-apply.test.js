@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   applyRebalanceToState,
+  getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
   getRebalanceShareDelta,
 } from "../src/lib/rebalance-apply.js";
@@ -96,5 +97,30 @@ describe("apply rebalance", () => {
 
     assert.equal(result.positions[0].shares, 1284);
     assert.equal(result.cashTwd, 88001);
+  });
+
+  it("counts only holdings with actual applied share changes", () => {
+    const summary = getAppliedRebalanceSummary({
+      recommendations: [
+        {
+          id: "small-tw",
+          normalizedTicker: "0050.TW",
+          shares: 1000,
+          tradeAmountTwd: 20000,
+          priceTwd: 100,
+        },
+        {
+          id: "large-tw",
+          normalizedTicker: "00631L.TW",
+          shares: 1000,
+          tradeAmountTwd: 120000,
+          priceTwd: 40,
+        },
+      ],
+      precision: "lots",
+    });
+
+    assert.equal(summary.actionCount, 1);
+    assert.equal(summary.totalAmountTwd, 120000);
   });
 });

@@ -44,6 +44,25 @@ export function getAppliedRebalanceShareDelta(recommendation, precision = "share
   return Math.max(requestedDeltaShares, -currentShares);
 }
 
+export function getAppliedRebalanceSummary({ recommendations, precision = "shares" }) {
+  return recommendations.reduce(
+    (summary, recommendation) => {
+      const appliedDeltaShares = getAppliedRebalanceShareDelta(recommendation, precision);
+      if (appliedDeltaShares === 0) {
+        return summary;
+      }
+
+      return {
+        actionCount: summary.actionCount + 1,
+        totalAmountTwd: roundCash(
+          summary.totalAmountTwd + Math.abs(appliedDeltaShares * toNumber(recommendation.priceTwd)),
+        ),
+      };
+    },
+    { actionCount: 0, totalAmountTwd: 0 },
+  );
+}
+
 export function applyRebalanceToState({ positions, cashTwd, recommendations, precision }) {
   const recommendationById = new Map(
     recommendations.map((recommendation) => [recommendation.id, recommendation]),

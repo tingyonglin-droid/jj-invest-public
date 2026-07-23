@@ -36,6 +36,7 @@ import { normalizeTicker } from "../src/lib/market-data.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
   applyRebalanceToState,
+  getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
 } from "../src/lib/rebalance-apply.js";
 import {
@@ -495,10 +496,18 @@ export default function Home() {
       selectedRebalanceIds,
     ],
   );
+  const appliedRebalanceSummary = useMemo(
+    () =>
+      getAppliedRebalanceSummary({
+        recommendations: operationRebalance.recommendations,
+        precision: rebalancePrecision,
+      }),
+    [operationRebalance.recommendations, rebalancePrecision],
+  );
   const canApplyRebalance =
     calculation.isValid &&
     operationRebalance.recommendations.length > 0 &&
-    operationRebalance.summary.actionCount > 0;
+    appliedRebalanceSummary.actionCount > 0;
 
   const refreshQuotes = useCallback(async () => {
     if (tickers.length === 0) {
@@ -790,7 +799,7 @@ export default function Home() {
     }
 
     const confirmed = window.confirm(
-      `套用再平衡結果？\n\n這會更新持股股數與台幣現金，並先保留一份套用前資料供復原。\n\n共 ${operationRebalance.summary.actionCount} 筆操作。`,
+      `套用再平衡結果？\n\n這會更新持股股數與台幣現金，並先保留一份套用前資料供復原。\n\n共 ${appliedRebalanceSummary.actionCount} 筆操作。`,
     );
     if (!confirmed) {
       return;
@@ -980,6 +989,7 @@ export default function Home() {
         {activeView === "operations" && (
           <OperationsView
             canApplyRebalance={canApplyRebalance}
+            appliedSummary={appliedRebalanceSummary}
             hasRestorePoint={hasRebalanceRestorePoint}
             operationRebalance={operationRebalance}
             onApplyRebalance={applyOneClickRebalance}
@@ -1752,6 +1762,7 @@ function HistoryChart({ model }) {
 }
 
 function OperationsView({
+  appliedSummary,
   canApplyRebalance,
   hasRestorePoint,
   operationRebalance,
@@ -1765,15 +1776,11 @@ function OperationsView({
   rebalanceTargetBeta,
   restoreStatus,
 }) {
-  const { recommendations, summary, warnings } = operationRebalance;
+  const { recommendations, warnings } = operationRebalance;
   const appliedAfterBeta = getAppliedAfterBeta({
     precision,
     recommendations,
     totalAssetsTwd: operationRebalance.totalAssetsTwd,
-  });
-  const appliedTotalTradeAmount = getAppliedTotalTradeAmount({
-    precision,
-    recommendations,
   });
 
   return (
@@ -1792,8 +1799,8 @@ function OperationsView({
             </button>
           </div>
           <p>
-            共 {summary.actionCount} 筆操作 / 調整後 Beta {formatNumber(appliedAfterBeta)} / 預估調整{" "}
-            {formatTwd(appliedTotalTradeAmount)}
+            共 {appliedSummary.actionCount} 筆操作 / 調整後 Beta {formatNumber(appliedAfterBeta)} / 預估調整{" "}
+            {formatTwd(appliedSummary.totalAmountTwd)}
           </p>
         </div>
       </div>
@@ -1874,13 +1881,6 @@ function OperationsView({
         {restoreStatus ? <p className="operationRestoreStatus">{restoreStatus}</p> : null}
       </div>
     </section>
-  );
-}
-
-function getAppliedTotalTradeAmount({ recommendations, precision }) {
-  return recommendations.reduce(
-    (sum, item) => sum + Math.abs(getAppliedRebalanceShareDelta(item, precision) * item.priceTwd),
-    0,
   );
 }
 

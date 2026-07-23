@@ -10,7 +10,9 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(page, /再平衡到 Beta/);
   assert.match(page, /調整後 Beta/);
   assert.match(page, /預估調整/);
-  assert.match(page, /getAppliedTotalTradeAmount/);
+  assert.match(page, /getAppliedRebalanceSummary/);
+  assert.match(page, /appliedSummary\.actionCount/);
+  assert.doesNotMatch(page, /summary\.actionCount/);
   assert.doesNotMatch(page, /formatTwd\(summary\.totalAmountTwd\)/);
   assert.match(page, /是否納入本次再平衡/);
   assert.match(page, /className="holdingSelect"/);
