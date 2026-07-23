@@ -1,3 +1,5 @@
+import { getTaipeiDateKey } from "./usage-stats.js";
+
 export const ANALYTICS_V1_TRACKING_VERSION = "analytics_v1";
 export const ANALYTICS_V1_EVENT_NAMES = [
   "beta_calculated",
@@ -149,6 +151,14 @@ function daysBetween(startDateKey, endDateKey) {
 }
 
 function createRetentionCell({ cohort, activeByDate, offset, nowDateKey }) {
+  if (cohort.devices.length === 0) {
+    return {
+      mature: false,
+      retainedDevices: 0,
+      ratio: null,
+    };
+  }
+
   const matured = daysBetween(cohort.date, nowDateKey) >= offset;
   if (!matured) {
     return {
@@ -164,12 +174,14 @@ function createRetentionCell({ cohort, activeByDate, offset, nowDateKey }) {
   return {
     mature: true,
     retainedDevices,
-    ratio: cohort.devices.length > 0 ? retainedDevices / cohort.devices.length : 0,
+    ratio: retainedDevices / cohort.devices.length,
   };
 }
 
 function createWeightedRetention(cohorts, key) {
-  const matureCohorts = cohorts.filter((cohort) => cohort.retention[key].mature);
+  const matureCohorts = cohorts.filter(
+    (cohort) => cohort.size > 0 && cohort.retention[key].mature,
+  );
   if (matureCohorts.length === 0) {
     return null;
   }
@@ -188,7 +200,7 @@ function createWeightedRetention(cohorts, key) {
 }
 
 export function createAnalyticsRetentionSummary({ cohorts, activeByDate, now = new Date() }) {
-  const nowDateKey = now.toISOString().slice(0, 10);
+  const nowDateKey = getTaipeiDateKey(now);
   const cohortRows = (cohorts || []).map((cohort) => {
     const devices = Array.from(new Set(cohort.devices || []));
 

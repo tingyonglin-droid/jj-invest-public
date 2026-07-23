@@ -149,6 +149,98 @@ test("builds exact-day retention and leaves immature cohorts blank", () => {
   assert.equal(summary.cohorts[0].retention.d7.mature, false);
 });
 
+test("keeps all retention blank before analytics v1 cohorts mature", () => {
+  const summary = createAnalyticsRetentionSummary({
+    cohorts: [
+      {
+        date: "2026-07-23",
+        devices: ["a"],
+      },
+    ],
+    activeByDate: {
+      "2026-07-23": ["a"],
+    },
+    now: new Date("2026-07-23T15:59:59.000Z"),
+  });
+
+  assert.deepEqual(summary.weighted, {
+    d1: null,
+    d7: null,
+    d30: null,
+  });
+  assert.deepEqual(summary.cohorts[0].retention.d1, {
+    mature: false,
+    retainedDevices: 0,
+    ratio: null,
+  });
+});
+
+test("does not include empty cohorts in weighted retention", () => {
+  const summary = createAnalyticsRetentionSummary({
+    cohorts: [
+      {
+        date: "2026-07-20",
+        devices: [],
+      },
+      {
+        date: "2026-07-21",
+        devices: ["a", "b"],
+      },
+    ],
+    activeByDate: {
+      "2026-07-22": ["a"],
+    },
+    now: new Date("2026-07-23T08:00:00.000Z"),
+  });
+
+  assert.deepEqual(summary.weighted.d1, {
+    matureDevices: 2,
+    retainedDevices: 1,
+    ratio: 0.5,
+  });
+  assert.deepEqual(summary.cohorts[0].retention.d1, {
+    mature: false,
+    retainedDevices: 0,
+    ratio: null,
+  });
+});
+
+test("matures retention by complete Asia Taipei calendar days", () => {
+  const beforeTaipeiMidnight = createAnalyticsRetentionSummary({
+    cohorts: [
+      {
+        date: "2026-07-23",
+        devices: ["a"],
+      },
+    ],
+    activeByDate: {
+      "2026-07-24": ["a"],
+    },
+    now: new Date("2026-07-23T15:59:59.000Z"),
+  });
+  const afterTaipeiMidnight = createAnalyticsRetentionSummary({
+    cohorts: [
+      {
+        date: "2026-07-23",
+        devices: ["a"],
+      },
+    ],
+    activeByDate: {
+      "2026-07-24": ["a"],
+    },
+    now: new Date("2026-07-23T16:00:00.000Z"),
+  });
+
+  assert.equal(beforeTaipeiMidnight.cohorts[0].retention.d1.mature, false);
+  assert.deepEqual(beforeTaipeiMidnight.weighted.d1, null);
+  assert.equal(afterTaipeiMidnight.cohorts[0].retention.d1.mature, true);
+  assert.deepEqual(afterTaipeiMidnight.weighted.d1, {
+    matureDevices: 1,
+    retainedDevices: 1,
+    ratio: 1,
+  });
+});
+
 test("buckets holding counts without exposing portfolio contents", () => {
   assert.equal(getHoldingCountBucket(0), "0");
   assert.equal(getHoldingCountBucket(1), "1");
