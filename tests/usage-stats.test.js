@@ -77,5 +77,6 @@ test("keeps usage statistics out of the public settings UI", async () => {
   const adminPage = await readFile(new URL("../app/admin/usage/page.js", import.meta.url), "utf8");
 
   assert.doesNotMatch(page, /使用統計/);
-  assert.match(adminPage, /匿名使用者數/);
+  assert.match(adminPage, /Legacy 使用統計/);
+  assert.match(adminPage, /Analytics v1/);
 });

@@ -12,6 +12,12 @@ import {
   parseAppBackup,
 } from "../src/lib/backup.js";
 import { createBenchmarkDrawdown } from "../src/lib/benchmark-drawdown.js";
+import {
+  createAnalyticsClient,
+  getAssetType,
+  getMarketFromTicker,
+  getResultStatus,
+} from "../src/lib/analytics-client.js";
 import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { createBetaSummary } from "../src/lib/beta-summary.js";
 import { calculateCashTwdValue } from "../src/lib/cash.js";
@@ -49,6 +55,7 @@ import {
 const STORAGE_KEY = "jj-invest-public-overview-v1";
 const HISTORY_STORAGE_KEY = "jj-invest-public-history-v1";
 const USAGE_DEVICE_KEY = "jj-invest-public-device-id-v1";
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.1.0";
 const BENCHMARK_HISTORY_FROM = "2003-06-30";
 const TARGET_WEIGHT_ERROR_MESSAGES = new Set([
   "正二標的目標比例合計必須等於 100%。",
@@ -400,6 +407,13 @@ export default function Home() {
   const [historyRangeDays, setHistoryRangeDays] = useState("30");
   const [benchmarkDrawdown, setBenchmarkDrawdown] = useState(null);
   const [backupStatus, setBackupStatus] = useState("");
+  const analyticsClient = useMemo(
+    () =>
+      createAnalyticsClient({
+        appVersion: APP_VERSION,
+      }),
+    [],
+  );
 
   const tickers = useMemo(
     () =>
@@ -493,14 +507,33 @@ export default function Home() {
         throw new Error(`報價 API 回應 ${response.status}`);
       }
       const payload = await response.json();
+      const nextCashValueTwd = calculateCashTwdValue({
+        cashTwd: formState.cashTwd,
+        cashUsd: formState.cashUsd,
+        usdTwd: payload.fx.usdTwd,
+      });
+      const nextCalculation = calculatePortfolio({
+        positions: formState.positions,
+        quotes: payload.quotes,
+        cashTwd: nextCashValueTwd,
+        targetBeta: formState.targetBeta,
+        originalTargetPct: formState.originalTargetPct,
+        tolerancePct: formState.tolerancePct,
+      });
       setQuoteResult(payload);
       setLastUpdatedAt(new Date());
       setStatus("ready");
+      if (nextCalculation.isValid) {
+        analyticsClient.trackBetaCalculated({
+          holdingCount: formState.positions.length,
+          resultStatus: getResultStatus(nextCalculation),
+        });
+      }
     } catch (error) {
       setRequestError(error instanceof Error ? error.message : "價格更新失敗。");
       setStatus("error");
     }
-  }, [tickers]);
+  }, [analyticsClient, formState, tickers]);
 
   useEffect(() => {
     if (!hydrated || tickers.length === 0) {
@@ -654,10 +687,11 @@ export default function Home() {
 
     const timeoutId = window.setTimeout(() => {
       recordUsageOpen();
+      analyticsClient.startOrResumeSession();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [hydrated, recordUsageOpen]);
+  }, [analyticsClient, hydrated, recordUsageOpen]);
 
   function updateSetting(field, value) {
     setFormState((current) => ({
@@ -697,9 +731,15 @@ export default function Home() {
         },
       ],
     }));
+    analyticsClient.trackHoldingAdded({
+      assetType: getAssetType(assetBeta),
+      market: "unknown",
+    });
   }
 
   function removePosition(id) {
+    const removedPosition = formState.positions.find((position) => position.id === id);
+    const canRemove = formState.positions.length > 1 && removedPosition;
     setFormState((current) => ({
       ...current,
       positions:
@@ -707,6 +747,12 @@ export default function Home() {
           ? current.positions
           : current.positions.filter((position) => position.id !== id),
     }));
+    if (canRemove) {
+      analyticsClient.trackHoldingDeleted({
+        assetType: getAssetType(removedPosition.assetBeta),
+        market: getMarketFromTicker(removedPosition.tickerInput),
+      });
+    }
   }
 
   function applyOneClickRebalance() {

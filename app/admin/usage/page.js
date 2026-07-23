@@ -18,6 +18,7 @@ function getTokenFromUrl() {
 
 export default function UsageAdminPage() {
   const [stats, setStats] = useState(null);
+  const [analyticsStats, setAnalyticsStats] = useState(null);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const chartModel = createUsageChartModel(stats?.trend);
@@ -35,19 +36,32 @@ export default function UsageAdminPage() {
     setError("");
 
     try {
-      const response = await fetch(`/api/usage?token=${encodeURIComponent(token)}`, {
-        cache: "no-store",
-      });
-      const payload = await response.json();
+      const [usageResponse, analyticsResponse] = await Promise.all([
+        fetch(`/api/usage?token=${encodeURIComponent(token)}`, {
+          cache: "no-store",
+        }),
+        fetch(`/api/analytics/admin?token=${encodeURIComponent(token)}`, {
+          cache: "no-store",
+        }),
+      ]);
+      const payload = await usageResponse.json();
+      const analyticsPayload = await analyticsResponse.json();
 
-      if (!response.ok) {
-        throw new Error(payload.error || `使用統計 API 回應 ${response.status}`);
+      if (!usageResponse.ok) {
+        throw new Error(payload.error || `使用統計 API 回應 ${usageResponse.status}`);
+      }
+      if (!analyticsResponse.ok) {
+        throw new Error(
+          analyticsPayload.error || `Analytics v1 API 回應 ${analyticsResponse.status}`,
+        );
       }
 
       setStats(payload);
+      setAnalyticsStats(analyticsPayload);
       setStatus("ready");
     } catch (fetchError) {
       setStats(null);
+      setAnalyticsStats(null);
       setStatus("error");
       setError(fetchError instanceof Error ? fetchError.message : "使用統計讀取失敗。");
     }
@@ -75,7 +89,7 @@ export default function UsageAdminPage() {
 
       <section className="appCard usageStatsPanel">
         <div className="positionTitle">
-          <strong>匿名使用者數</strong>
+          <strong>Legacy 使用統計</strong>
           <button
             type="button"
             className="secondaryButton compact"
@@ -103,10 +117,160 @@ export default function UsageAdminPage() {
         />
 
         <p className="hint">
-          同一台手機或同一個瀏覽器會用同一個匿名 ID 計為 1 個裝置；重新開啟 app 只會增加開啟次數。
+          Legacy 統計保留既有匿名裝置與開啟次數，不與 Analytics v1 sessions 混合。
         </p>
       </section>
+
+      <AnalyticsV1Panel stats={analyticsStats} />
     </main>
+  );
+}
+
+function AnalyticsV1Panel({ stats }) {
+  const trend = stats?.trend || [];
+
+  return (
+    <section className="appCard usageStatsPanel">
+      <div className="positionTitle">
+        <strong>Analytics v1</strong>
+      </div>
+      <p className="hint">開始收集日：{stats?.startDate || "尚未開始"}。時間以台北日期分組。</p>
+
+      <div className="usageStatsGrid">
+        <UsageMetric label="總裝置" value={stats?.overview?.totalDevices} />
+        <UsageMetric label="今日新增" value={stats?.overview?.todayNewDevices} />
+        <UsageMetric label="DAU" value={stats?.overview?.dau} />
+        <UsageMetric label="WAU" value={stats?.overview?.wau} />
+        <UsageMetric label="MAU" value={stats?.overview?.mau} />
+        <UsageMetric label="今日 Sessions" value={stats?.overview?.todaySessions} />
+        <UsageMetric label="7 日 Sessions" value={stats?.overview?.sessions7Days} />
+        <UsageMetric
+          label="每週平均 Sessions"
+          value={stats?.overview?.averageWeeklySessionsPerActiveDevice}
+          digits={2}
+        />
+      </div>
+
+      <AnalyticsRetention stats={stats?.retention} />
+      <AnalyticsEventUsage events={stats?.events} />
+      <AnalyticsVersionUsage versions={stats?.versions} />
+      <AnalyticsDailyTrend trend={trend} />
+    </section>
+  );
+}
+
+function formatRatio(value) {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+  return `${(Number(value || 0) * 100).toFixed(1)}%`;
+}
+
+function AnalyticsRetention({ stats }) {
+  return (
+    <div className="analyticsSection">
+      <div className="usageTrendHeader">
+        <div>
+          <span>留存</span>
+          <strong>D1 / D7 / D30 classic exact-day</strong>
+        </div>
+      </div>
+      <div className="analyticsRetentionGrid">
+        <UsageMetric label="D1" value={formatRatio(stats?.weighted?.d1?.ratio)} raw />
+        <UsageMetric label="D7" value={formatRatio(stats?.weighted?.d7?.ratio)} raw />
+        <UsageMetric label="D30" value={formatRatio(stats?.weighted?.d30?.ratio)} raw />
+      </div>
+      <div className="analyticsTable">
+        {(stats?.cohorts || []).slice(-5).map((cohort) => (
+          <div key={cohort.date}>
+            <span>{cohort.date}</span>
+            <span>{cohort.size} 裝置</span>
+            <span>D1 {formatRatio(cohort.retention.d1.ratio)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsEventUsage({ events }) {
+  return (
+    <div className="analyticsSection">
+      <div className="usageTrendHeader">
+        <div>
+          <span>功能使用</span>
+          <strong>事件總次數 / 不重複裝置</strong>
+        </div>
+      </div>
+      <div className="analyticsTable">
+        {[
+          ["beta_calculated", "Beta 計算"],
+          ["holding_added", "新增持股"],
+          ["holding_deleted", "刪除持股"],
+        ].map(([eventName, label]) => (
+          <div key={eventName}>
+            <span>{label}</span>
+            <span>{formatMetric(events?.[eventName]?.totalCount)} 次</span>
+            <span>{formatMetric(events?.[eventName]?.uniqueDevices)} 裝置</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsVersionUsage({ versions }) {
+  return (
+    <div className="analyticsSection">
+      <div className="usageTrendHeader">
+        <div>
+          <span>版本分析</span>
+          <strong>活躍裝置 / Sessions / Beta 使用裝置</strong>
+        </div>
+      </div>
+      <div className="analyticsTable">
+        {(versions || []).map((item) => (
+          <div key={item.version}>
+            <span>{item.version}</span>
+            <span>{formatMetric(item.activeDevices)} 裝置</span>
+            <span>{formatMetric(item.sessions)} Sessions</span>
+            <span>{formatMetric(item.betaDevices)} Beta 裝置</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsDailyTrend({ trend }) {
+  const latest = trend.at(-1);
+
+  return (
+    <div className="analyticsSection">
+      <div className="usageTrendHeader">
+        <div>
+          <span>每日趨勢</span>
+          <strong>新增 / 活躍 / Sessions / Beta</strong>
+        </div>
+      </div>
+      <div className="analyticsTable">
+        {trend.slice(-7).map((row) => (
+          <div key={row.date}>
+            <span>{row.date}</span>
+            <span>新增 {formatMetric(row.newDevices)}</span>
+            <span>活躍 {formatMetric(row.activeDevices)}</span>
+            <span>Sessions {formatMetric(row.sessions)}</span>
+            <span>Beta {formatMetric(row.betaCalculated)}</span>
+          </div>
+        ))}
+      </div>
+      {latest && (
+        <p className="hint">
+          最新日：新增 {formatMetric(latest.newDevices)}，活躍{" "}
+          {formatMetric(latest.activeDevices)}，Sessions {formatMetric(latest.sessions)}。
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -191,11 +355,18 @@ function getLastSvgPoint(points) {
   return { x, y };
 }
 
-function UsageMetric({ label, value }) {
+function UsageMetric({ label, value, digits = 0, raw = false }) {
   return (
     <div className="usageMetric">
       <span>{label}</span>
-      <strong>{formatMetric(value)}</strong>
+      <strong>
+        {raw
+          ? value
+          : Number(value || 0).toLocaleString("zh-TW", {
+              minimumFractionDigits: digits,
+              maximumFractionDigits: digits,
+            })}
+      </strong>
     </div>
   );
 }

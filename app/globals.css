@@ -2195,6 +2195,45 @@ p {
   font-weight: 760;
 }
 
+.analyticsSection {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(224, 229, 235, 0.9);
+  border-radius: 18px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.analyticsRetentionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.analyticsTable {
+  display: grid;
+  gap: 8px;
+}
+
+.analyticsTable > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--muted-strong);
+  background: #f8fafb;
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.analyticsTable > div span:first-child {
+  color: var(--text);
+  font-weight: 800;
+}
+
 label {
   display: grid;
   gap: 7px;
