@@ -1104,6 +1104,11 @@ p {
   stroke: var(--purple);
 }
 
+.historyLine.performanceBenchmark {
+  stroke-dasharray: 5 5;
+  stroke-width: 2;
+}
+
 .historyLine.tolerance {
   stroke: rgba(123, 131, 143, 0.34);
   stroke-dasharray: 6 8;

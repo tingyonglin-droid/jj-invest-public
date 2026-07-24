@@ -49,6 +49,13 @@ describe("history UI", () => {
     assert.match(pageSource, /historyRangeDays/);
   });
 
+  it("draws the 0050 performance line above the portfolio line when they overlap", () => {
+    assert.match(
+      pageSource,
+      /<polyline className="historyLine portfolio" points=\{model\.portfolioPoints\} \/>[\s\S]*<polyline className="historyLine benchmark performanceBenchmark" points=\{model\.benchmarkPoints\} \/>/,
+    );
+  });
+
   it("does not show a separate 0050 daily change metric on the history page", () => {
     assert.doesNotMatch(pageSource, /0050 今日漲跌/);
     assert.match(pageSource, /selectBenchmark0050SnapshotPrice/);

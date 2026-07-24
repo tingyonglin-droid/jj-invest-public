@@ -1775,8 +1775,8 @@ function HistoryChart({ model }) {
           </>
         ) : (
           <>
-            <polyline className="historyLine benchmark" points={model.benchmarkPoints} />
             <polyline className="historyLine portfolio" points={model.portfolioPoints} />
+            <polyline className="historyLine benchmark performanceBenchmark" points={model.benchmarkPoints} />
           </>
         )}
         {model.xTicks.map((tick) => (
