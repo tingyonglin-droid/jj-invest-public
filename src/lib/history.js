@@ -60,6 +60,21 @@ export function createHistorySnapshot({ date, calculation, benchmark0050Price })
   };
 }
 
+export function selectBenchmark0050SnapshotPrice({
+  snapshotDate,
+  currentDate = getTaipeiDateKey(),
+  liveQuote,
+  historicalPrice,
+}) {
+  const livePrice = toFiniteNumber(liveQuote?.price ?? liveQuote);
+  if (snapshotDate === currentDate && livePrice !== null && livePrice > 0) {
+    return roundNumber(livePrice);
+  }
+
+  const fallbackPrice = toFiniteNumber(historicalPrice);
+  return fallbackPrice !== null && fallbackPrice > 0 ? roundNumber(fallbackPrice) : null;
+}
+
 export function normalizeHistoryRecords(records, limit = MAX_HISTORY_RECORDS) {
   return (Array.isArray(records) ? records : [])
     .filter((record) => isValidDateText(record?.date))

@@ -9,6 +9,7 @@ import {
   createPerformanceSeries,
   getTaipeiDateKey,
   mergeDemoHistoryRecords,
+  selectBenchmark0050SnapshotPrice,
   upsertDailyHistorySnapshot,
 } from "../src/lib/history.js";
 
@@ -152,6 +153,39 @@ describe("history snapshots", () => {
 
   it("creates Taipei date keys", () => {
     assert.equal(getTaipeiDateKey(new Date("2026-07-22T18:00:00.000Z")), "2026-07-23");
+  });
+
+  it("uses live 0050 price for today's history snapshot benchmark", () => {
+    assert.equal(
+      selectBenchmark0050SnapshotPrice({
+        snapshotDate: "2026-07-24",
+        currentDate: "2026-07-24",
+        liveQuote: { price: 102.5 },
+        historicalPrice: 103.5,
+      }),
+      102.5,
+    );
+  });
+
+  it("uses historical 0050 price when the snapshot is not today or live price is invalid", () => {
+    assert.equal(
+      selectBenchmark0050SnapshotPrice({
+        snapshotDate: "2026-07-23",
+        currentDate: "2026-07-24",
+        liveQuote: { price: 102.5 },
+        historicalPrice: 103.5,
+      }),
+      103.5,
+    );
+    assert.equal(
+      selectBenchmark0050SnapshotPrice({
+        snapshotDate: "2026-07-24",
+        currentDate: "2026-07-24",
+        liveQuote: { price: null },
+        historicalPrice: 103.5,
+      }),
+      103.5,
+    );
   });
 
   it("creates demo history records for local curve preview", () => {

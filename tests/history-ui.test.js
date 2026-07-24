@@ -41,6 +41,11 @@ describe("history UI", () => {
     assert.match(pageSource, /historyRangeDays/);
   });
 
+  it("does not show a separate 0050 daily change metric on the history page", () => {
+    assert.doesNotMatch(pageSource, /0050 今日漲跌/);
+    assert.match(pageSource, /selectBenchmark0050SnapshotPrice/);
+  });
+
   it("shows full app backup controls in settings", () => {
     assert.match(pageSource, /資料備份/);
     assert.match(pageSource, /匯出完整備份/);

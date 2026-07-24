@@ -30,6 +30,7 @@ import {
   getTaipeiDateKey,
   mergeDemoHistoryRecords,
   normalizeHistoryRecords,
+  selectBenchmark0050SnapshotPrice,
   upsertDailyHistorySnapshot,
 } from "../src/lib/history.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
@@ -581,15 +582,34 @@ export default function Home() {
 
     async function saveDailyHistorySnapshot() {
       try {
-        const response = await fetch(
-          `/api/history-quotes?tickers=0050.TW&from=${date}&to=${date}`,
-        );
-        if (!response.ok) {
-          return;
+        let liveQuote = null;
+        let historicalPrice = null;
+
+        if (date === getTaipeiDateKey()) {
+          const liveResponse = await fetch("/api/quotes?tickers=0050");
+          if (liveResponse.ok) {
+            const livePayload = await liveResponse.json();
+            liveQuote = livePayload?.quotes?.[0] || null;
+          }
         }
 
-        const payload = await response.json();
-        const benchmarkPrice = payload?.quotes?.[0]?.prices?.[0]?.price;
+        if (!liveQuote?.price) {
+          const response = await fetch(
+            `/api/history-quotes?tickers=0050.TW&from=${date}&to=${date}`,
+          );
+          if (!response.ok) {
+            return;
+          }
+
+          const payload = await response.json();
+          historicalPrice = payload?.quotes?.[0]?.prices?.[0]?.price;
+        }
+
+        const benchmarkPrice = selectBenchmark0050SnapshotPrice({
+          snapshotDate: date,
+          liveQuote,
+          historicalPrice,
+        });
         const snapshot = createHistorySnapshot({
           date,
           calculation,
