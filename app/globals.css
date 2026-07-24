@@ -679,6 +679,21 @@ p {
   color: var(--primary-dark);
 }
 
+.adviceMeta {
+  margin: 10px 0 0;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 720;
+  line-height: 1.4;
+}
+
+.adviceMeta.muted {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 650;
+}
+
 .precisionControl {
   display: grid;
   grid-template-columns: 1fr 1fr;

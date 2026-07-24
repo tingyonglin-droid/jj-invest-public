@@ -75,16 +75,6 @@ export default function UsageAdminPage() {
         </div>
       </header>
 
-      <section className="appCard usageStatsPanel">
-        <div className="positionTitle">
-          <strong>Legacy 使用統計</strong>
-        </div>
-
-        <p className="hint">
-          舊版統計已停用，不再讀寫 Legacy Redis keys。請改看 Analytics v1 的總裝置、DAU、有效使用裝置與事件資料。
-        </p>
-      </section>
-
       <AnalyticsV1Panel
         stats={analyticsStats}
         status={analyticsStatus}

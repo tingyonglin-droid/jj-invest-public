@@ -51,7 +51,7 @@ import {
 import {
   createOperationRebalance,
 } from "../src/lib/operation-rebalance.js";
-import { createAdviceActionText } from "../src/lib/advice-summary.js";
+import { createAdviceDisplay } from "../src/lib/advice-summary.js";
 import {
   getPositionGroups,
   getPositionGroupTargetStatus,
@@ -266,43 +266,43 @@ function getBetaStatus(calculation) {
 
 function getAdvice(calculation, primaryRecommendation) {
   const betaStatus = getBetaStatus(calculation);
-  const estimatedShares = primaryRecommendation
-    ? getEstimatedShares(primaryRecommendation.tradeAmountTwd, primaryRecommendation.priceTwd)
-    : 0;
+  const actionRecommendations = calculation.recommendations.filter(
+    (item) => item.action !== "none" && Math.abs(item.tradeAmountTwd) > 0.5,
+  );
 
   if (!calculation.isValid) {
     return {
       tone: "none",
       status: "設定需修正",
-      label: "設定需修正",
-      ticker: "同類資產分配需修正",
-      amount: "請先調整比例",
-      shares: "0 股",
+      headline: "設定需修正",
+      netFlowText: "請先調整比例",
+      primaryActionText: "同類資產分配需修正",
     };
   }
 
   if (
     !primaryRecommendation ||
     !calculation.needsRebalance ||
-    Math.abs(calculation.totalTradeAmountTwd) <= 0.5
+    actionRecommendations.length === 0
   ) {
     return {
       tone: "none",
       status: "目前位於容忍區間",
-      label: "無需操作",
-      ticker: "目前位於容忍區間",
-      amount: "",
-      shares: "0 股",
+      headline: "無需操作",
+      netFlowText: "淨調整：無需調整",
+      primaryActionText: "主要動作：不調整",
     };
   }
 
+  const display = createAdviceDisplay({
+    betaBoundaryLabel: betaStatus.boundaryLabel,
+    totalTradeAmountTwd: calculation.totalTradeAmountTwd,
+    recommendations: actionRecommendations,
+  });
+
   return {
-    tone: calculation.totalTradeAmountTwd > 0 ? "buy" : "sell",
+    ...display,
     status: betaStatus.label,
-    label: calculation.totalTradeAmountTwd > 0 ? "買入" : "賣出",
-    ticker: primaryRecommendation.normalizedTicker,
-    amount: formatTwd(Math.abs(calculation.totalTradeAmountTwd)),
-    shares: `${estimatedShares.toLocaleString("zh-TW")} 股`,
   };
 }
 
@@ -1413,11 +1413,6 @@ function GlossaryDialog({ topic, onClose }) {
 }
 
 function AdviceCard({ advice }) {
-  const actionText = createAdviceActionText({
-    label: advice.label,
-    amount: advice.amount,
-  });
-
   return (
     <section className="appCard adviceCard">
       <div className={`adviceIcon ${advice.tone}`} aria-hidden="true">
@@ -1426,7 +1421,9 @@ function AdviceCard({ advice }) {
       <div className="adviceContent">
         <p className="cardLabel">今日操作建議</p>
         <p className={`adviceStatus ${advice.tone}`}>{advice.status}</p>
-        <strong className={advice.tone}>{actionText}</strong>
+        <strong className={advice.tone}>{advice.headline}</strong>
+        <p className="adviceMeta">{advice.netFlowText}</p>
+        <p className="adviceMeta muted">{advice.primaryActionText}</p>
       </div>
     </section>
   );
