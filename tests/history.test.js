@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  addHistoryPerformanceAdjustment,
   createDemoHistoryRecords,
   createHistoryChartModel,
   createHistorySnapshot,
@@ -42,6 +43,7 @@ describe("history snapshots", () => {
       originalValueTwd: 200000,
       cashTwd: 200000,
       benchmark0050Price: 250,
+      performanceAdjustmentTwd: 0,
     });
   });
 
@@ -97,6 +99,54 @@ describe("history snapshots", () => {
 
     assert.deepEqual(series.map((item) => item.portfolioReturn), [0, 0.1, -0.1]);
     assert.deepEqual(series.map((item) => item.benchmarkReturn), [0, 0.05, -0.05]);
+  });
+
+  it("excludes manual cash inflows and data corrections from portfolio performance", () => {
+    const series = createPerformanceSeries([
+      { date: "2026-07-21", totalAssetsTwd: 1000000, benchmark0050Price: 100 },
+      {
+        date: "2026-07-22",
+        totalAssetsTwd: 1300000,
+        benchmark0050Price: 100,
+        performanceAdjustmentTwd: 300000,
+      },
+      {
+        date: "2026-07-23",
+        totalAssetsTwd: 1280000,
+        benchmark0050Price: 100,
+      },
+    ]);
+
+    assert.deepEqual(series.map((item) => item.portfolioReturn), [0, 0, -0.02]);
+  });
+
+  it("preserves same-day performance adjustments when overwriting snapshots", () => {
+    const adjusted = addHistoryPerformanceAdjustment([
+      {
+        date: "2026-07-22",
+        totalAssetsTwd: 1000000,
+        currentBeta: 1.2,
+        targetBeta: 1.2,
+        betaLower: 1.08,
+        betaUpper: 1.32,
+        benchmark0050Price: 100,
+      },
+    ], "2026-07-22", 300000);
+    const result = upsertDailyHistorySnapshot(adjusted, {
+      date: "2026-07-22",
+      totalAssetsTwd: 1300000,
+      currentBeta: 1.2,
+      targetBeta: 1.2,
+      betaLower: 1.08,
+      betaUpper: 1.32,
+      leveragedValueTwd: 600000,
+      originalValueTwd: 100000,
+      cashTwd: 600000,
+      benchmark0050Price: 100,
+    });
+
+    assert.equal(result[0].performanceAdjustmentTwd, 300000);
+    assert.equal(createPerformanceSeries(result)[0].portfolioReturn, 0);
   });
 
   it("creates summary and chart models for history UI", () => {
@@ -213,6 +263,7 @@ describe("history snapshots", () => {
       originalValueTwd: 0,
       cashTwd: 0,
       benchmark0050Price: 103.5,
+      performanceAdjustmentTwd: 0,
     };
     const records = mergeDemoHistoryRecords(
       [officialRecord],

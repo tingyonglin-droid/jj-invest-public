@@ -1772,6 +1772,66 @@ p {
   font-weight: 780;
 }
 
+.cashReasonPanel {
+  display: grid;
+  gap: 8px;
+  border-radius: 16px;
+  padding: 12px;
+  background: #f7f9fb;
+}
+
+.cashReasonPanel p {
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.cashReasonPanel label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+}
+
+.cashReasonPanel label.active {
+  border-color: rgba(47, 160, 115, 0.28);
+  background: #ecf8f2;
+}
+
+.cashReasonPanel input {
+  width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
+  accent-color: var(--primary);
+}
+
+.cashReasonPanel strong,
+.cashReasonPanel em {
+  display: block;
+}
+
+.cashReasonPanel strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.cashReasonPanel em {
+  margin-top: 2px;
+  color: var(--muted);
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 640;
+  line-height: 1.35;
+}
+
 .backupActions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -57,6 +57,7 @@ export function createHistorySnapshot({ date, calculation, benchmark0050Price })
     originalValueTwd: roundNumber(calculation.originalValueTwd, 0),
     cashTwd: roundNumber(calculation.cashTwd, 0),
     benchmark0050Price: roundNumber(benchmarkPrice),
+    performanceAdjustmentTwd: roundNumber(calculation.performanceAdjustmentTwd, 0),
   };
 }
 
@@ -89,6 +90,7 @@ export function normalizeHistoryRecords(records, limit = MAX_HISTORY_RECORDS) {
       originalValueTwd: roundNumber(record.originalValueTwd, 0),
       cashTwd: roundNumber(record.cashTwd, 0),
       benchmark0050Price: roundNumber(record.benchmark0050Price),
+      performanceAdjustmentTwd: roundNumber(record.performanceAdjustmentTwd, 0),
     }))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-limit);
@@ -100,20 +102,69 @@ export function upsertDailyHistorySnapshot(records, snapshot, limit = MAX_HISTOR
     return normalized;
   }
 
+  const existing = normalized.find((record) => record.date === snapshot.date);
+  const nextSnapshot = {
+    ...snapshot,
+    performanceAdjustmentTwd: roundNumber(
+      snapshot.performanceAdjustmentTwd || existing?.performanceAdjustmentTwd || 0,
+      0,
+    ),
+  };
   const next = normalized.filter((record) => record.date !== snapshot.date);
-  next.push(snapshot);
+  next.push(nextSnapshot);
   return normalizeHistoryRecords(next, limit);
+}
+
+export function addHistoryPerformanceAdjustment(records, date, amountTwd, limit = MAX_HISTORY_RECORDS) {
+  const amount = roundNumber(amountTwd, 0);
+  if (!isValidDateText(date) || Math.abs(amount) <= 0.5) {
+    return normalizeHistoryRecords(records, limit);
+  }
+
+  const normalized = normalizeHistoryRecords(records, limit);
+  const existing = normalized.find((record) => record.date === date);
+  if (!existing) {
+    return normalized;
+  }
+
+  return normalizeHistoryRecords(
+    normalized.map((record) =>
+      record.date === date
+        ? {
+            ...record,
+            performanceAdjustmentTwd: roundNumber(
+              (record.performanceAdjustmentTwd || 0) + amount,
+              0,
+            ),
+          }
+        : record,
+    ),
+    limit,
+  );
 }
 
 export function createPerformanceSeries(records) {
   const normalized = normalizeHistoryRecords(records);
-  const firstPortfolio = normalized.find((record) => record.totalAssetsTwd > 0)?.totalAssetsTwd;
   const firstBenchmark = normalized.find((record) => record.benchmark0050Price > 0)?.benchmark0050Price;
+  let cumulativePerformanceAdjustment = 0;
+  const adjustedRecords = normalized.map((record) => {
+    cumulativePerformanceAdjustment += record.performanceAdjustmentTwd || 0;
+    return {
+      ...record,
+      adjustedTotalAssetsTwd: roundNumber(
+        record.totalAssetsTwd - cumulativePerformanceAdjustment,
+        0,
+      ),
+    };
+  });
+  const firstPortfolio = adjustedRecords.find(
+    (record) => record.adjustedTotalAssetsTwd > 0,
+  )?.adjustedTotalAssetsTwd;
   let lastBenchmarkReturn = null;
 
-  return normalized.map((record) => {
+  return adjustedRecords.map((record) => {
     const portfolioReturn = firstPortfolio
-      ? roundNumber(record.totalAssetsTwd / firstPortfolio - 1)
+      ? roundNumber(record.adjustedTotalAssetsTwd / firstPortfolio - 1)
       : null;
     let benchmarkReturn = record.benchmark0050Price > 0 && firstBenchmark
       ? roundNumber(record.benchmark0050Price / firstBenchmark - 1)

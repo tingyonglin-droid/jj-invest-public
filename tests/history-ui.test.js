@@ -68,4 +68,12 @@ describe("history UI", () => {
     assert.match(pageSource, /handleExportBackup/);
     assert.match(pageSource, /handleImportBackup/);
   });
+
+  it("lets users classify manual cash changes for performance accounting", () => {
+    assert.match(pageSource, /本次現金變動原因/);
+    assert.match(pageSource, /手續費 \/ 交易成本/);
+    assert.match(pageSource, /新資金投入 \/ 提領/);
+    assert.match(pageSource, /資料修正/);
+    assert.match(pageSource, /addHistoryPerformanceAdjustment/);
+  });
 });

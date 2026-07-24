@@ -23,6 +23,7 @@ import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { createBetaSummary } from "../src/lib/beta-summary.js";
 import { calculateCashTwdValue } from "../src/lib/cash.js";
 import {
+  addHistoryPerformanceAdjustment,
   createHistoryChartModel,
   createHistorySnapshot,
   createHistorySummary,
@@ -400,6 +401,7 @@ export default function Home() {
   const [rebalanceRestoreStatus, setRebalanceRestoreStatus] = useState("");
   const [hasHistoryRestorePoint, setHasHistoryRestorePoint] = useState(false);
   const [historyRestoreStatus, setHistoryRestoreStatus] = useState("");
+  const [cashChangeReason, setCashChangeReason] = useState("fee");
   const analyticsClient = useMemo(
     () =>
       createAnalyticsClient({
@@ -741,13 +743,39 @@ export default function Home() {
   }, [historyHydrated]);
 
   function updateSetting(field, value) {
-    setFormState((current) => ({
-      ...current,
-      [field]:
-        field === "cashTwd" || field === "cashUsd"
-          ? parseIntegerInput(value)
-          : parseNumericInput(value),
-    }));
+    setFormState((current) => {
+      const isCashField = field === "cashTwd" || field === "cashUsd";
+      const nextValue = isCashField ? parseIntegerInput(value) : parseNumericInput(value);
+
+      if (isCashField && cashChangeReason !== "fee") {
+        const beforeCashValue = calculateCashTwdValue({
+          cashTwd: current.cashTwd,
+          cashUsd: current.cashUsd,
+          usdTwd: quoteResult.fx.usdTwd,
+        });
+        const afterCashValue = calculateCashTwdValue({
+          cashTwd: field === "cashTwd" ? nextValue : current.cashTwd,
+          cashUsd: field === "cashUsd" ? nextValue : current.cashUsd,
+          usdTwd: quoteResult.fx.usdTwd,
+        });
+        const cashDelta = Math.round(afterCashValue - beforeCashValue);
+
+        if (Math.abs(cashDelta) > 0.5) {
+          setHistoryRecords((records) =>
+            addHistoryPerformanceAdjustment(
+              records,
+              getTaipeiDateKey(lastUpdatedAt || new Date()),
+              cashDelta,
+            ),
+          );
+        }
+      }
+
+      return {
+        ...current,
+        [field]: nextValue,
+      };
+    });
   }
 
   function updatePosition(id, field, value) {
@@ -1089,8 +1117,10 @@ export default function Home() {
             onExportBackup={handleExportBackup}
             onImportBackup={handleImportBackup}
             onRemovePosition={removePosition}
+            onSetCashChangeReason={setCashChangeReason}
             onUpdatePosition={updatePosition}
             onUpdateSetting={updateSetting}
+            cashChangeReason={cashChangeReason}
           />
         )}
       </section>
@@ -2230,6 +2260,7 @@ function PositionSection({
 
 function SettingsAccordions({
   backupStatus,
+  cashChangeReason,
   calculation,
   formState,
   fx,
@@ -2238,6 +2269,7 @@ function SettingsAccordions({
   onExportBackup,
   onImportBackup,
   onRemovePosition,
+  onSetCashChangeReason,
   onUpdatePosition,
   onUpdateSetting,
 }) {
@@ -2296,6 +2328,43 @@ function SettingsAccordions({
                 <em>更新 {formatQuoteDate(fx.date)}</em>
               </div>
               <p className="hint">現金分類</p>
+              <div className="cashReasonPanel" role="radiogroup" aria-label="本次現金變動原因">
+                <p>本次現金變動原因</p>
+                {[
+                  {
+                    id: "fee",
+                    label: "手續費 / 交易成本",
+                    hint: "計入績效，適合再平衡後補登費用。",
+                  },
+                  {
+                    id: "external",
+                    label: "新資金投入 / 提領",
+                    hint: "排除績效，避免加錢或領錢扭曲報酬。",
+                  },
+                  {
+                    id: "correction",
+                    label: "資料修正",
+                    hint: "排除績效，只修正目前資料。",
+                  },
+                ].map((item) => (
+                  <label
+                    className={cashChangeReason === item.id ? "active" : ""}
+                    key={item.id}
+                  >
+                    <input
+                      type="radio"
+                      name="cashChangeReason"
+                      value={item.id}
+                      checked={cashChangeReason === item.id}
+                      onChange={() => onSetCashChangeReason(item.id)}
+                    />
+                    <span>
+                      <strong>{item.label}</strong>
+                      <em>{item.hint}</em>
+                    </span>
+                  </label>
+                ))}
+              </div>
               <div className="twoCol">
                 <label>
                   <span>新台幣 TWD</span>
