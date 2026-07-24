@@ -85,7 +85,15 @@ test("keeps usage statistics out of the public settings UI", async () => {
 test("admin page does not load legacy usage stats automatically", async () => {
   const adminPage = await readFile(new URL("../app/admin/usage/page.js", import.meta.url), "utf8");
 
-  assert.match(adminPage, /loadLegacyStats/);
+  assert.doesNotMatch(adminPage, /loadLegacyStats/);
+  assert.doesNotMatch(adminPage, /載入 Legacy/);
   assert.match(adminPage, /loadAnalyticsStats/);
-  assert.doesNotMatch(adminPage, /Promise\.all\(\[\s*fetch\(`\/api\/usage/);
+  assert.doesNotMatch(adminPage, /\/api\/usage/);
+});
+
+test("public app does not write legacy usage stats", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.doesNotMatch(page, /recordUsageOpen/);
+  assert.doesNotMatch(page, /\/api\/usage/);
 });

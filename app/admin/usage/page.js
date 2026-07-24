@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { createUsageChartModel } from "../../../src/lib/usage-chart.js";
-
 function formatMetric(value) {
   return Number(value || 0).toLocaleString("zh-TW");
 }
@@ -17,13 +15,9 @@ function getTokenFromUrl() {
 }
 
 export default function UsageAdminPage() {
-  const [stats, setStats] = useState(null);
   const [analyticsStats, setAnalyticsStats] = useState(null);
-  const [legacyStatus, setLegacyStatus] = useState("idle");
   const [analyticsStatus, setAnalyticsStatus] = useState("idle");
-  const [legacyError, setLegacyError] = useState("");
   const [analyticsError, setAnalyticsError] = useState("");
-  const chartModel = createUsageChartModel(stats?.trend);
 
   const loadAnalyticsStats = useCallback(async () => {
     const token = getTokenFromUrl();
@@ -61,37 +55,6 @@ export default function UsageAdminPage() {
     }
   }, []);
 
-  const loadLegacyStats = useCallback(async () => {
-    const token = getTokenFromUrl();
-
-    if (!token) {
-      setLegacyStatus("error");
-      setLegacyError("缺少管理 token。");
-      return;
-    }
-
-    setLegacyStatus("loading");
-    setLegacyError("");
-
-    try {
-      const response = await fetch(`/api/usage?token=${encodeURIComponent(token)}`, {
-        cache: "no-store",
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error || `Legacy 使用統計 API 回應 ${response.status}`);
-      }
-
-      setStats(payload);
-      setLegacyStatus("ready");
-    } catch (fetchError) {
-      setStats(null);
-      setLegacyStatus("error");
-      setLegacyError(fetchError instanceof Error ? fetchError.message : "Legacy 使用統計讀取失敗。");
-    }
-  }, []);
-
   useEffect(() => {
     const timeoutId = window.setTimeout(loadAnalyticsStats, 0);
     return () => window.clearTimeout(timeoutId);
@@ -115,34 +78,10 @@ export default function UsageAdminPage() {
       <section className="appCard usageStatsPanel">
         <div className="positionTitle">
           <strong>Legacy 使用統計</strong>
-          <button
-            type="button"
-            className="secondaryButton compact"
-            onClick={loadLegacyStats}
-            disabled={legacyStatus === "loading"}
-          >
-            {legacyStatus === "idle" ? "載入 Legacy" : "重新整理"}
-          </button>
         </div>
-
-        {legacyError && <p className="usageWarning">{legacyError}</p>}
-
-        <div className="usageStatsGrid">
-          <UsageMetric label="總匿名裝置" value={stats?.totalDevices} />
-          <UsageMetric label="今日活躍" value={stats?.activeToday} />
-          <UsageMetric label="7 日活躍" value={stats?.active7Days} />
-          <UsageMetric label="30 日活躍" value={stats?.active30Days} />
-          <UsageMetric label="今日開啟" value={stats?.opensToday} />
-          <UsageMetric label="總開啟次數" value={stats?.totalOpens} />
-        </div>
-
-        <UsageTrendChart
-          model={chartModel}
-          trend={stats?.trend}
-        />
 
         <p className="hint">
-          Legacy 統計保留既有匿名裝置與開啟次數，不與 Analytics v1 sessions 混合；為節省 Redis 請求，預設不自動載入。
+          舊版統計已停用，不再讀寫 Legacy Redis keys。請改看 Analytics v1 的總裝置、DAU、有效使用裝置與事件資料。
         </p>
       </section>
 
@@ -322,87 +261,6 @@ function AnalyticsDailyTrend({ trend }) {
       )}
     </div>
   );
-}
-
-function UsageTrendChart({ model, trend }) {
-  const latest = trend?.[trend.length - 1];
-  const latestDevicePoint = getLastSvgPoint(model.devicePoints);
-  const latestOpenPoint = getLastSvgPoint(model.openPoints);
-
-  return (
-    <div className="usageTrend">
-      <div className="usageTrendHeader">
-        <div>
-          <span>累積趨勢</span>
-          <strong>最近 30 天</strong>
-        </div>
-        <div className="usageTrendLegend">
-          <span className="devices">總匿名裝置</span>
-          <span className="opens">總開啟次數</span>
-        </div>
-      </div>
-
-      <div className="usageTrendCanvas">
-        <svg viewBox="0 0 100 100" role="img" aria-label="總匿名裝置與總開啟次數累積曲線">
-          <line x1="0" y1="0" x2="100" y2="0" className="chartGrid" />
-          <line x1="0" y1="50" x2="100" y2="50" className="chartGrid" />
-          <line x1="0" y1="100" x2="100" y2="100" className="chartGrid" />
-          {model.devicePoints && (
-            <polyline className="chartLine devices" points={model.devicePoints} />
-          )}
-          {model.openPoints && (
-            <polyline className="chartLine opens" points={model.openPoints} />
-          )}
-          {latestDevicePoint && (
-            <circle
-              className="chartDot devices"
-              cx={latestDevicePoint.x}
-              cy={latestDevicePoint.y}
-              r="1.8"
-            />
-          )}
-          {latestOpenPoint && (
-            <circle
-              className="chartDot opens"
-              cx={latestOpenPoint.x}
-              cy={latestOpenPoint.y}
-              r="1.8"
-            />
-          )}
-        </svg>
-        <div className="usageTrendScale" aria-hidden="true">
-          <span>{formatMetric(model.maxY)}</span>
-          <span>0</span>
-        </div>
-      </div>
-
-      <div className="usageTrendFooter">
-        <span>{model.labels[0] || ""}</span>
-        <span>{model.labels[1] || model.labels[0] || ""}</span>
-      </div>
-
-      {latest && (
-        <p className="hint">
-          最新累積：總匿名裝置 {formatMetric(latest.totalDevices)}，總開啟次數{" "}
-          {formatMetric(latest.totalOpens)}。
-        </p>
-      )}
-    </div>
-  );
-}
-
-function getLastSvgPoint(points) {
-  const lastPoint = String(points || "").trim().split(" ").filter(Boolean).at(-1);
-  if (!lastPoint) {
-    return null;
-  }
-
-  const [x, y] = lastPoint.split(",").map(Number);
-  if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    return null;
-  }
-
-  return { x, y };
 }
 
 function UsageMetric({ label, value, digits = 0, raw = false }) {

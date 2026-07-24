@@ -67,7 +67,6 @@ const STORAGE_KEY = "jj-invest-public-overview-v1";
 const HISTORY_STORAGE_KEY = "jj-invest-public-history-v1";
 const BEFORE_REBALANCE_STORAGE_KEY = "jj-invest-public-before-rebalance-v1";
 const BEFORE_CLEAR_HISTORY_STORAGE_KEY = "jj-invest-public-before-clear-history-v1";
-const USAGE_DEVICE_KEY = "jj-invest-public-device-id-v1";
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.1.0";
 const BENCHMARK_HISTORY_FROM = "2003-06-30";
 const TARGET_WEIGHT_ERROR_MESSAGES = new Set([
@@ -200,29 +199,6 @@ function normalizeStoredState(state) {
       assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
     })),
   };
-}
-
-function createAnonymousDeviceId() {
-  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-
-  return `device-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
-
-function getOrCreateAnonymousDeviceId() {
-  try {
-    const saved = window.localStorage.getItem(USAGE_DEVICE_KEY);
-    if (saved) {
-      return saved;
-    }
-
-    const deviceId = createAnonymousDeviceId();
-    window.localStorage.setItem(USAGE_DEVICE_KEY, deviceId);
-    return deviceId;
-  } catch {
-    return "";
-  }
 }
 
 function getTradeClass(item) {
@@ -716,36 +692,17 @@ export default function Home() {
     };
   }, [hydrated, refreshQuotes, status, tickers]);
 
-  const recordUsageOpen = useCallback(async () => {
-    const deviceId = getOrCreateAnonymousDeviceId();
-    if (!deviceId) {
-      return;
-    }
-
-    try {
-      await fetch("/api/usage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deviceId }),
-        cache: "no-store",
-      });
-    } catch {
-      // Usage tracking must never block the calculator.
-    }
-  }, []);
-
   useEffect(() => {
     if (!hydrated) {
       return undefined;
     }
 
     const timeoutId = window.setTimeout(() => {
-      recordUsageOpen();
       analyticsClient.startOrResumeSession();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [analyticsClient, hydrated, recordUsageOpen]);
+  }, [analyticsClient, hydrated]);
 
   useEffect(() => {
     if (!hydrated) {
