@@ -1206,6 +1206,16 @@ p {
   margin-top: 10px;
 }
 
+.historyRestoreStatus {
+  margin: 10px 0 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: var(--primary-dark);
+  background: #e8f6ef;
+  font-size: 13px;
+  font-weight: 760;
+}
+
 .dangerTextButton {
   width: 100%;
   min-height: 48px;

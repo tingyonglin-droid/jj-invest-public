@@ -33,6 +33,10 @@ import {
   selectBenchmark0050SnapshotPrice,
   upsertDailyHistorySnapshot,
 } from "../src/lib/history.js";
+import {
+  createHistoryRestorePoint,
+  parseHistoryRestorePoint,
+} from "../src/lib/history-restore.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
@@ -62,6 +66,7 @@ import {
 const STORAGE_KEY = "jj-invest-public-overview-v1";
 const HISTORY_STORAGE_KEY = "jj-invest-public-history-v1";
 const BEFORE_REBALANCE_STORAGE_KEY = "jj-invest-public-before-rebalance-v1";
+const BEFORE_CLEAR_HISTORY_STORAGE_KEY = "jj-invest-public-before-clear-history-v1";
 const USAGE_DEVICE_KEY = "jj-invest-public-device-id-v1";
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.1.0";
 const BENCHMARK_HISTORY_FROM = "2003-06-30";
@@ -417,6 +422,8 @@ export default function Home() {
   const [backupStatus, setBackupStatus] = useState("");
   const [hasRebalanceRestorePoint, setHasRebalanceRestorePoint] = useState(false);
   const [rebalanceRestoreStatus, setRebalanceRestoreStatus] = useState("");
+  const [hasHistoryRestorePoint, setHasHistoryRestorePoint] = useState(false);
+  const [historyRestoreStatus, setHistoryRestoreStatus] = useState("");
   const analyticsClient = useMemo(
     () =>
       createAnalyticsClient({
@@ -640,15 +647,22 @@ export default function Home() {
 
     async function loadBenchmarkDrawdown() {
       try {
-        const response = await fetch(
-          `/api/history-quotes?tickers=0050.TW&from=${BENCHMARK_HISTORY_FROM}&to=${toDate}`,
-        );
-        if (!response.ok) {
+        const [historyResponse, quoteResponse] = await Promise.all([
+          fetch(`/api/history-quotes?tickers=0050.TW&from=${BENCHMARK_HISTORY_FROM}&to=${toDate}`),
+          fetch("/api/quotes?tickers=0050"),
+        ]);
+        if (!historyResponse.ok) {
           return;
         }
 
-        const payload = await response.json();
-        const drawdown = createBenchmarkDrawdown(payload?.quotes?.[0]?.prices || []);
+        const historyPayload = await historyResponse.json();
+        const quotePayload = quoteResponse.ok ? await quoteResponse.json() : null;
+        const drawdown = createBenchmarkDrawdown(
+          historyPayload?.quotes?.[0]?.prices || [],
+          {
+            currentQuote: quotePayload?.quotes?.[0] || null,
+          },
+        );
         if (!cancelled) {
           setBenchmarkDrawdown(drawdown);
         }
@@ -750,6 +764,24 @@ export default function Home() {
 
     return () => window.cancelAnimationFrame(frame);
   }, [hydrated]);
+
+  useEffect(() => {
+    if (!historyHydrated) {
+      return undefined;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        setHasHistoryRestorePoint(
+          Boolean(window.localStorage.getItem(BEFORE_CLEAR_HISTORY_STORAGE_KEY)),
+        );
+      } catch {
+        setHasHistoryRestorePoint(false);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [historyHydrated]);
 
   function updateSetting(field, value) {
     setFormState((current) => ({
@@ -879,6 +911,52 @@ export default function Home() {
     } catch (error) {
       setRebalanceRestoreStatus(
         error instanceof Error ? error.message : "無法復原上一筆再平衡資料。",
+      );
+    }
+  }
+
+  function clearHistoryWithRestore() {
+    if (!historyRecords.length) {
+      setHistoryRestoreStatus("目前沒有可清除的歷史紀錄。");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `清除歷史紀錄？\n\n這會先保留一份清除前資料，可用「復原上一步」救回。\n\n共 ${historyRecords.length} 筆紀錄。`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    let restorePointSaved = false;
+    try {
+      const restorePoint = createHistoryRestorePoint(historyRecords);
+      window.localStorage.setItem(BEFORE_CLEAR_HISTORY_STORAGE_KEY, JSON.stringify(restorePoint));
+      setHasHistoryRestorePoint(true);
+      restorePointSaved = true;
+    } catch {
+      // History can still be cleared if the browser blocks localStorage.
+    }
+
+    setHistoryRecords([]);
+    setHistoryRestoreStatus(
+      restorePointSaved
+        ? "已清除歷史紀錄，可復原上一步。"
+        : "已清除歷史紀錄，但瀏覽器未允許建立復原點。",
+    );
+  }
+
+  function restorePreviousHistoryClear() {
+    try {
+      const saved = window.localStorage.getItem(BEFORE_CLEAR_HISTORY_STORAGE_KEY);
+      const restorePoint = parseHistoryRestorePoint(saved || "");
+      setHistoryRecords(restorePoint.records);
+      window.localStorage.removeItem(BEFORE_CLEAR_HISTORY_STORAGE_KEY);
+      setHasHistoryRestorePoint(false);
+      setHistoryRestoreStatus("已復原到清除歷史紀錄前。");
+    } catch (error) {
+      setHistoryRestoreStatus(
+        error instanceof Error ? error.message : "無法復原上一筆歷史紀錄。",
       );
     }
   }
@@ -1026,14 +1104,13 @@ export default function Home() {
 
         {activeView === "history" && (
           <HistoryView
+            hasRestorePoint={hasHistoryRestorePoint}
             historyMode={historyMode}
             historyRangeDays={historyRangeDays}
             records={historyRecords}
-            onClearHistory={() => {
-              if (window.confirm("確定要清除歷史紀錄？")) {
-                setHistoryRecords([]);
-              }
-            }}
+            restoreStatus={historyRestoreStatus}
+            onClearHistory={clearHistoryWithRestore}
+            onRestorePreviousHistory={restorePreviousHistoryClear}
             onSeedDemoHistory={
               isLocalPreview
                 ? () => setHistoryRecords((current) => mergeDemoHistoryRecords(current))
@@ -1336,8 +1413,8 @@ function GlossaryDialog({ topic, onClose }) {
           ) : isBenchmarkDrawdownTopic ? (
             <>
               <article className="benchmarkIntro">
-                <p>這個數字用 0050 最新收盤價，和系統抓到的歷史最高收盤價相比。</p>
-                <p>例如 -6% 代表目前 0050 收盤價比歷史收盤高點低約 6%。</p>
+                <p>這個數字用 0050 目前即時價，和系統抓到的歷史最高收盤價相比。</p>
+                <p>例如 -6% 代表目前 0050 即時價比歷史收盤高點低約 6%。</p>
               </article>
 
               <article className="glossaryItem benchmarkRules">
@@ -1490,12 +1567,15 @@ function getHistoryChartRecords(records, rangeDays) {
 }
 
 function HistoryView({
+  hasRestorePoint,
   historyMode,
   historyRangeDays,
   records,
+  restoreStatus,
   onClearHistory,
   onModeChange,
   onRangeChange,
+  onRestorePreviousHistory,
   onSeedDemoHistory,
 }) {
   const summary = createHistorySummary(records);
@@ -1515,6 +1595,16 @@ function HistoryView({
             載入示範曲線
           </button>
         ) : null}
+        {hasRestorePoint ? (
+          <button
+            type="button"
+            className="secondaryButton restoreButton"
+            onClick={onRestorePreviousHistory}
+          >
+            復原上一步
+          </button>
+        ) : null}
+        {restoreStatus ? <p className="historyRestoreStatus">{restoreStatus}</p> : null}
       </section>
     );
   }
@@ -1610,7 +1700,17 @@ function HistoryView({
           <button type="button" className="dangerTextButton" onClick={onClearHistory}>
             清除歷史紀錄
           </button>
+          {hasRestorePoint ? (
+            <button
+              type="button"
+              className="secondaryButton restoreButton"
+              onClick={onRestorePreviousHistory}
+            >
+              復原上一步
+            </button>
+          ) : null}
         </div>
+        {restoreStatus ? <p className="historyRestoreStatus">{restoreStatus}</p> : null}
       </section>
     </section>
   );

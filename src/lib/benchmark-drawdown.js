@@ -19,20 +19,32 @@ export function getBenchmarkDrawdownLevel(drawdownRatio) {
   return "deep";
 }
 
-export function createBenchmarkDrawdown(prices) {
+function normalizePriceRecord(item) {
+  const price = Number(item?.price);
+  const date = String(item?.date || "");
+
+  if (!date || !Number.isFinite(price) || price <= 0) {
+    return null;
+  }
+
+  return {
+    date,
+    price,
+  };
+}
+
+export function createBenchmarkDrawdown(prices, options = {}) {
   const validPrices = (Array.isArray(prices) ? prices : [])
-    .filter((item) => item?.date && Number.isFinite(Number(item.price)) && Number(item.price) > 0)
-    .map((item) => ({
-      date: item.date,
-      price: Number(item.price),
-    }))
+    .map(normalizePriceRecord)
+    .filter(Boolean)
     .sort((a, b) => a.date.localeCompare(b.date));
 
   if (!validPrices.length) {
     return null;
   }
 
-  const current = validPrices.at(-1);
+  const liveCurrent = normalizePriceRecord(options.currentQuote);
+  const current = liveCurrent || validPrices.at(-1);
   const high = validPrices.reduce(
     (best, item) => (item.price > best.price ? item : best),
     validPrices[0],

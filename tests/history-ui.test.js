@@ -14,6 +14,14 @@ describe("history UI", () => {
     assert.match(pageSource, /清除歷史紀錄/);
   });
 
+  it("confirms history clearing and offers one-step restore", () => {
+    assert.match(pageSource, /createHistoryRestorePoint/);
+    assert.match(pageSource, /parseHistoryRestorePoint/);
+    assert.match(pageSource, /清除歷史紀錄？/);
+    assert.match(pageSource, /復原上一步/);
+    assert.match(pageSource, /historyRestoreStatus/);
+  });
+
   it("uses browser localStorage for history records", () => {
     assert.match(pageSource, /jj-invest-public-history-v1/);
     assert.match(pageSource, /window\.localStorage\.setItem\(HISTORY_STORAGE_KEY/);
