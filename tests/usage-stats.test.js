@@ -81,3 +81,11 @@ test("keeps usage statistics out of the public settings UI", async () => {
   assert.match(adminPage, /Analytics v1/);
   assert.match(adminPage, /有效使用裝置/);
 });
+
+test("admin page does not load legacy usage stats automatically", async () => {
+  const adminPage = await readFile(new URL("../app/admin/usage/page.js", import.meta.url), "utf8");
+
+  assert.match(adminPage, /loadLegacyStats/);
+  assert.match(adminPage, /loadAnalyticsStats/);
+  assert.doesNotMatch(adminPage, /Promise\.all\(\[\s*fetch\(`\/api\/usage/);
+});

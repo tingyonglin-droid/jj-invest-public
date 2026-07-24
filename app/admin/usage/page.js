@@ -19,58 +19,83 @@ function getTokenFromUrl() {
 export default function UsageAdminPage() {
   const [stats, setStats] = useState(null);
   const [analyticsStats, setAnalyticsStats] = useState(null);
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
+  const [legacyStatus, setLegacyStatus] = useState("idle");
+  const [analyticsStatus, setAnalyticsStatus] = useState("idle");
+  const [legacyError, setLegacyError] = useState("");
+  const [analyticsError, setAnalyticsError] = useState("");
   const chartModel = createUsageChartModel(stats?.trend);
 
-  const refreshStats = useCallback(async () => {
+  const loadAnalyticsStats = useCallback(async () => {
     const token = getTokenFromUrl();
 
     if (!token) {
-      setStatus("error");
-      setError("缺少管理 token。");
+      setAnalyticsStatus("error");
+      setAnalyticsError("缺少管理 token。");
       return;
     }
 
-    setStatus("loading");
-    setError("");
+    setAnalyticsStatus("loading");
+    setAnalyticsError("");
 
     try {
-      const [usageResponse, analyticsResponse] = await Promise.all([
-        fetch(`/api/usage?token=${encodeURIComponent(token)}`, {
+      const analyticsResponse = await fetch(
+        `/api/analytics/admin?token=${encodeURIComponent(token)}`,
+        {
           cache: "no-store",
-        }),
-        fetch(`/api/analytics/admin?token=${encodeURIComponent(token)}`, {
-          cache: "no-store",
-        }),
-      ]);
-      const payload = await usageResponse.json();
+        },
+      );
       const analyticsPayload = await analyticsResponse.json();
 
-      if (!usageResponse.ok) {
-        throw new Error(payload.error || `使用統計 API 回應 ${usageResponse.status}`);
-      }
       if (!analyticsResponse.ok) {
         throw new Error(
           analyticsPayload.error || `Analytics v1 API 回應 ${analyticsResponse.status}`,
         );
       }
 
-      setStats(payload);
       setAnalyticsStats(analyticsPayload);
-      setStatus("ready");
+      setAnalyticsStatus("ready");
+    } catch (fetchError) {
+      setAnalyticsStats(null);
+      setAnalyticsStatus("error");
+      setAnalyticsError(fetchError instanceof Error ? fetchError.message : "Analytics v1 讀取失敗。");
+    }
+  }, []);
+
+  const loadLegacyStats = useCallback(async () => {
+    const token = getTokenFromUrl();
+
+    if (!token) {
+      setLegacyStatus("error");
+      setLegacyError("缺少管理 token。");
+      return;
+    }
+
+    setLegacyStatus("loading");
+    setLegacyError("");
+
+    try {
+      const response = await fetch(`/api/usage?token=${encodeURIComponent(token)}`, {
+        cache: "no-store",
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || `Legacy 使用統計 API 回應 ${response.status}`);
+      }
+
+      setStats(payload);
+      setLegacyStatus("ready");
     } catch (fetchError) {
       setStats(null);
-      setAnalyticsStats(null);
-      setStatus("error");
-      setError(fetchError instanceof Error ? fetchError.message : "使用統計讀取失敗。");
+      setLegacyStatus("error");
+      setLegacyError(fetchError instanceof Error ? fetchError.message : "Legacy 使用統計讀取失敗。");
     }
   }, []);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(refreshStats, 0);
+    const timeoutId = window.setTimeout(loadAnalyticsStats, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [refreshStats]);
+  }, [loadAnalyticsStats]);
 
   return (
     <main className="appShell">
@@ -93,14 +118,14 @@ export default function UsageAdminPage() {
           <button
             type="button"
             className="secondaryButton compact"
-            onClick={refreshStats}
-            disabled={status === "loading"}
+            onClick={loadLegacyStats}
+            disabled={legacyStatus === "loading"}
           >
-            重新整理
+            {legacyStatus === "idle" ? "載入 Legacy" : "重新整理"}
           </button>
         </div>
 
-        {error && <p className="usageWarning">{error}</p>}
+        {legacyError && <p className="usageWarning">{legacyError}</p>}
 
         <div className="usageStatsGrid">
           <UsageMetric label="總匿名裝置" value={stats?.totalDevices} />
@@ -117,23 +142,37 @@ export default function UsageAdminPage() {
         />
 
         <p className="hint">
-          Legacy 統計保留既有匿名裝置與開啟次數，不與 Analytics v1 sessions 混合。
+          Legacy 統計保留既有匿名裝置與開啟次數，不與 Analytics v1 sessions 混合；為節省 Redis 請求，預設不自動載入。
         </p>
       </section>
 
-      <AnalyticsV1Panel stats={analyticsStats} />
+      <AnalyticsV1Panel
+        stats={analyticsStats}
+        status={analyticsStatus}
+        error={analyticsError}
+        onRefresh={loadAnalyticsStats}
+      />
     </main>
   );
 }
 
-function AnalyticsV1Panel({ stats }) {
+function AnalyticsV1Panel({ stats, status, error, onRefresh }) {
   const trend = stats?.trend || [];
 
   return (
     <section className="appCard usageStatsPanel">
       <div className="positionTitle">
         <strong>Analytics v1</strong>
+        <button
+          type="button"
+          className="secondaryButton compact"
+          onClick={onRefresh}
+          disabled={status === "loading"}
+        >
+          重新整理
+        </button>
       </div>
+      {error && <p className="usageWarning">{error}</p>}
       <p className="hint">開始收集日：{stats?.startDate || "尚未開始"}。時間以台北日期分組。</p>
 
       <div className="usageStatsGrid">
