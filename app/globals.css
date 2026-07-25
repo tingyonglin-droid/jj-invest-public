@@ -1009,6 +1009,7 @@ p {
 }
 
 .historyChartWrap {
+  position: relative;
   display: grid;
   gap: 12px;
 }
@@ -1076,6 +1077,7 @@ p {
   z-index: 2;
   display: grid;
   min-width: 140px;
+  max-width: min(210px, calc(100% - 24px));
   gap: 4px;
   padding: 10px 12px;
   border: 1px solid rgba(220, 226, 233, 0.95);
