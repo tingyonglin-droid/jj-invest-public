@@ -31,6 +31,30 @@ export function getTaipeiDateKey(date = new Date()) {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+function getTaipeiDayIndexFromDateKey(date) {
+  if (!isValidDateText(date)) {
+    return null;
+  }
+  return new Date(`${date}T12:00:00+08:00`).getUTCDay();
+}
+
+export function shouldSaveHistorySnapshotForDate({ date, quotes }) {
+  const dayIndex = getTaipeiDayIndexFromDateKey(date);
+  if (dayIndex === null) {
+    return false;
+  }
+
+  if (dayIndex >= 1 && dayIndex <= 5) {
+    return true;
+  }
+
+  const hasUsdHolding = (Array.isArray(quotes) ? quotes : []).some(
+    (quote) => String(quote?.currency || "").toUpperCase() === "USD",
+  );
+
+  return dayIndex === 6 && hasUsdHolding;
+}
+
 export function createHistorySnapshot({ date, calculation, benchmark0050Price }) {
   const totalAssetsTwd = toFiniteNumber(calculation?.totalAssetsTwd);
   const benchmarkPrice = toFiniteNumber(benchmark0050Price);

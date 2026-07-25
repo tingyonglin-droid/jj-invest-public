@@ -32,6 +32,7 @@ import {
   mergeDemoHistoryRecords,
   normalizeHistoryRecords,
   selectBenchmark0050SnapshotPrice,
+  shouldSaveHistorySnapshotForDate,
   upsertDailyHistorySnapshot,
 } from "../src/lib/history.js";
 import {
@@ -564,6 +565,14 @@ export default function Home() {
 
     let cancelled = false;
     const date = getTaipeiDateKey(lastUpdatedAt);
+    const canSaveSnapshot = shouldSaveHistorySnapshotForDate({
+      date,
+      quotes: quoteResult.quotes,
+    });
+
+    if (!canSaveSnapshot) {
+      return undefined;
+    }
 
     async function saveDailyHistorySnapshot() {
       try {

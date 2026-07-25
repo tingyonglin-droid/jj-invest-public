@@ -11,6 +11,7 @@ import {
   getTaipeiDateKey,
   mergeDemoHistoryRecords,
   selectBenchmark0050SnapshotPrice,
+  shouldSaveHistorySnapshotForDate,
   upsertDailyHistorySnapshot,
 } from "../src/lib/history.js";
 
@@ -147,6 +148,46 @@ describe("history snapshots", () => {
 
     assert.equal(result[0].performanceAdjustmentTwd, 300000);
     assert.equal(createPerformanceSeries(result)[0].portfolioReturn, 0);
+  });
+
+  it("allows history snapshots on weekdays", () => {
+    assert.equal(
+      shouldSaveHistorySnapshotForDate({
+        date: "2026-07-24",
+        quotes: [{ currency: "TWD" }],
+      }),
+      true,
+    );
+  });
+
+  it("skips Saturday history snapshots for Taiwan-only portfolios", () => {
+    assert.equal(
+      shouldSaveHistorySnapshotForDate({
+        date: "2026-07-25",
+        quotes: [{ currency: "TWD" }],
+      }),
+      false,
+    );
+  });
+
+  it("allows Saturday history snapshots when the portfolio includes USD holdings", () => {
+    assert.equal(
+      shouldSaveHistorySnapshotForDate({
+        date: "2026-07-25",
+        quotes: [{ currency: "TWD" }, { currency: "USD" }],
+      }),
+      true,
+    );
+  });
+
+  it("skips Sunday history snapshots even when USD holdings exist", () => {
+    assert.equal(
+      shouldSaveHistorySnapshotForDate({
+        date: "2026-07-26",
+        quotes: [{ currency: "USD" }],
+      }),
+      false,
+    );
   });
 
   it("creates summary and chart models for history UI", () => {
