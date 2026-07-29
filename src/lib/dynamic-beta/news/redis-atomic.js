@@ -38,6 +38,7 @@ return {status, ARGV[1], tostring(revisionNumber)}`;
 
 export const SAVE_CONFIRMATION_SNAPSHOT_SCRIPT = `-- jj-news-confirmation-snapshot-save-v1
 local payload = redis.call("HGET", KEYS[1], "payload")
+local wasCommitted = redis.call("HGET", KEYS[1], "committed") == "1"
 local revisionNumber
 if payload then
   revisionNumber = tonumber(redis.call("HGET", KEYS[1], "snapshotRevisionNumber"))
@@ -55,16 +56,16 @@ else
 end
 redis.call("ZADD", KEYS[2], revisionNumber, ARGV[1])
 redis.call("ZADD", KEYS[5], ARGV[2], ARGV[3])
-redis.call("HSET", KEYS[1], "committed", "1")
+redis.call("ZADD", KEYS[6], ARGV[2], ARGV[5])
 local latestNumber = tonumber(redis.call("HGET", KEYS[3], "snapshotRevisionNumber")) or 0
 if revisionNumber >= latestNumber then
   redis.call("HSET", KEYS[3],
     "snapshotId", ARGV[1],
     "snapshotRevisionNumber", tostring(revisionNumber))
 end
-redis.call("ZADD", KEYS[6], ARGV[2], ARGV[5])
+redis.call("HSET", KEYS[1], "committed", "1")
 local status = "inserted"
-if payload then status = "unchanged"
+if wasCommitted then status = "unchanged"
 elseif revisionNumber > 1 then status = "revised" end
 return {status, ARGV[1], tostring(revisionNumber)}`;
 

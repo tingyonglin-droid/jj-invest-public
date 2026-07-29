@@ -43,7 +43,23 @@ function parseTimelineMember(member) {
 }
 
 function parseSnapshot(record) {
-  return parseStoredConfirmationSnapshot(record);
+  if (!record || typeof record !== "object" || Array.isArray(record)) return null;
+  let payload = record.payload;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    try {
+      payload = JSON.stringify(payload);
+    } catch {
+      return null;
+    }
+  }
+  return parseStoredConfirmationSnapshot({
+    ...record,
+    committed: record.committed === 1 ? "1" : record.committed,
+    payload,
+    snapshotRevisionNumber: typeof record.snapshotRevisionNumber === "number"
+      ? String(record.snapshotRevisionNumber)
+      : record.snapshotRevisionNumber,
+  });
 }
 
 function matchesScope(snapshot, { briefDate, revisionId, asOf, snapshotId } = {}) {

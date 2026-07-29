@@ -45,6 +45,29 @@ function revisionKey(value) {
   return `${PREFIX}:revision:${value.briefDate}:${value.revisionId}:${value.asOf}:${value.snapshotId}`;
 }
 
+function applyUpstashAutomaticDeserialization(redis) {
+  for (const [key, row] of redis.hashes.entries()) {
+    const deserialized = Object.fromEntries(Object.entries(row).map(([field, value]) => {
+      if (typeof value !== "string") return [field, value];
+      try {
+        return [field, JSON.parse(value)];
+      } catch {
+        return [field, value];
+      }
+    }));
+    redis.hashes.set(key, deserialized);
+  }
+}
+
+async function upstashReadFixture() {
+  const redis = new FakeRedis();
+  const repository = createConfirmationSnapshotRepository(redis);
+  const first = snapshot();
+  await repository.saveSnapshot(first);
+  applyUpstashAutomaticDeserialization(redis);
+  return { redis, repository, first };
+}
+
 describe("dynamic beta confirmation snapshot repository", () => {
   // Mutation caught: always allocating a new revision for an identical snapshot ID.
   it("keeps identical writes unchanged and appends immutable changed revisions per as-of date", async () => {
@@ -131,6 +154,55 @@ describe("dynamic beta confirmation snapshot repository", () => {
     }), [{ ...first, snapshotRevisionNumber: 1 }]);
   });
 
+  // Mutation caught: passing Upstash's numeric commit marker and object payload directly to the string parser.
+  it("reads an exact latest snapshot from Upstash automatic-deserialization fields", async () => {
+    const { repository, first } = await upstashReadFixture();
+
+    assert.deepEqual(await repository.readLatestSnapshot(identity()), {
+      ...first,
+      snapshotRevisionNumber: 1,
+    });
+  });
+
+  // Mutation caught: discarding automatically deserialized payload objects while scanning revision history.
+  it("reads snapshot revisions from Upstash automatic-deserialization fields", async () => {
+    const { repository, first } = await upstashReadFixture();
+
+    assert.deepEqual(await repository.readSnapshotRevisions(identity()), [{
+      ...first,
+      snapshotRevisionNumber: 1,
+    }]);
+  });
+
+  // Mutation caught: filtering automatically deserialized records before recent-read limiting.
+  it("reads recent latest snapshots from Upstash automatic-deserialization fields", async () => {
+    const { repository, first } = await upstashReadFixture();
+
+    assert.deepEqual(await repository.readRecentLatestSnapshots({
+      since: FIRST_AS_OF,
+      until: FIRST_AS_OF,
+      limit: 1,
+    }), [{ ...first, snapshotRevisionNumber: 1 }]);
+  });
+
+  // Mutation caught: trusting a deserialized object payload without the existing content-hash checks.
+  it("keeps strict content validation for Upstash object payloads", async () => {
+    const { redis, repository, first } = await upstashReadFixture();
+    const key = revisionKey(first);
+    const row = await redis.hgetall(key);
+    await redis.hset(key, {
+      payload: { ...row.payload, snapshotId: "ncs_tampered" },
+    });
+
+    assert.equal(await repository.readLatestSnapshot(identity()), null);
+    assert.deepEqual(await repository.readSnapshotRevisions(identity()), []);
+    assert.deepEqual(await repository.readRecentLatestSnapshots({
+      since: FIRST_AS_OF,
+      until: FIRST_AS_OF,
+      limit: 1,
+    }), []);
+  });
+
   // Mutation caught: issuing Redis reads before rejecting incomplete identities or invalid date keys.
   it("validates every read boundary before accessing Redis", async () => {
     const redis = new FakeRedis();
@@ -172,6 +244,40 @@ describe("dynamic beta confirmation snapshot repository", () => {
     await assert.rejects(repository.saveSnapshot(first), /forced/);
     assert.equal(await repository.readLatestSnapshot(identity()), null);
     assert.equal((await repository.saveSnapshot(first)).status, "inserted");
+  });
+
+  // Mutation caught: setting committed before an index/pointer operation that can still fail.
+  it("keeps a real Lua runtime-error append uncommitted until a successful retry", async () => {
+    const redis = new FakeRedis();
+    const repository = createConfirmationSnapshotRepository(redis);
+    const first = snapshot();
+    await redis.set(`${PREFIX}:timeline`, "poisoned");
+
+    await assert.rejects(repository.saveSnapshot(first), /WRONGTYPE/);
+    assert.equal(await repository.readLatestSnapshot(identity()), null);
+    assert.equal(
+      await repository.readLatestSnapshot({ briefDate: BRIEF_DATE, revisionId: REVISION_ID }),
+      null,
+    );
+    assert.deepEqual(await repository.readSnapshotRevisions(identity()), []);
+    assert.deepEqual(await repository.readRecentLatestSnapshots({
+      since: FIRST_AS_OF,
+      until: FIRST_AS_OF,
+      limit: 1,
+    }), []);
+    assert.equal((await redis.hgetall(revisionKey(first))).committed, "0");
+
+    await redis.del(`${PREFIX}:timeline`);
+    assert.deepEqual(await repository.saveSnapshot(first), {
+      status: "inserted",
+      snapshotId: first.snapshotId,
+      snapshotRevisionNumber: 1,
+    });
+    assert.deepEqual(await repository.saveSnapshot(first), {
+      status: "unchanged",
+      snapshotId: first.snapshotId,
+      snapshotRevisionNumber: 1,
+    });
   });
 
   // Mutation caught: non-atomic read/increment/write allocation that gives concurrent appends one number.
