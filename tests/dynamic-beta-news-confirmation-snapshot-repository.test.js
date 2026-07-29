@@ -45,12 +45,22 @@ function revisionKey(value) {
   return `${PREFIX}:revision:${value.briefDate}:${value.revisionId}:${value.asOf}:${value.snapshotId}`;
 }
 
+function reverseObjectKeys(value) {
+  if (Array.isArray(value)) return value.map(reverseObjectKeys);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .reverse()
+      .map(([key, nested]) => [key, reverseObjectKeys(nested)]),
+  );
+}
+
 function applyUpstashAutomaticDeserialization(redis) {
   for (const [key, row] of redis.hashes.entries()) {
     const deserialized = Object.fromEntries(Object.entries(row).map(([field, value]) => {
       if (typeof value !== "string") return [field, value];
       try {
-        return [field, JSON.parse(value)];
+        return [field, reverseObjectKeys(JSON.parse(value))];
       } catch {
         return [field, value];
       }
@@ -154,8 +164,8 @@ describe("dynamic beta confirmation snapshot repository", () => {
     }), [{ ...first, snapshotRevisionNumber: 1 }]);
   });
 
-  // Mutation caught: passing Upstash's numeric commit marker and object payload directly to the string parser.
-  it("reads an exact latest snapshot from Upstash automatic-deserialization fields", async () => {
+  // Mutation caught: passing Upstash's reordered object payload directly to an order-sensitive parser.
+  it("reads an exact latest snapshot after Upstash reorders top-level and nested object keys", async () => {
     const { repository, first } = await upstashReadFixture();
 
     assert.deepEqual(await repository.readLatestSnapshot(identity()), {

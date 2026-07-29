@@ -12,6 +12,31 @@ import { createConfirmationSnapshotService } from "../src/lib/dynamic-beta/news/
 
 const CREATED_AT = "2026-07-29T23:00:10.000Z";
 
+function reverseObjectKeys(value) {
+  if (Array.isArray(value)) return value.map(reverseObjectKeys);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .reverse()
+      .map(([key, nested]) => [key, reverseObjectKeys(nested)]),
+  );
+}
+
+function withContentHash(snapshot) {
+  return {
+    ...snapshot,
+    snapshotId: confirmationSnapshotId({
+      briefDate: snapshot.briefDate,
+      revisionId: snapshot.revisionId,
+      revisionNumber: snapshot.revisionNumber,
+      asOf: snapshot.asOf,
+      metadata: snapshot.metadata,
+      completion: snapshot.completion,
+      events: snapshot.events,
+    }),
+  };
+}
+
 function d3Row() {
   return {
     observationDate: "2026-07-29",
@@ -197,6 +222,48 @@ describe("canonical confirmation snapshot content", () => {
     assert.equal(parseStoredConfirmationSnapshot({ payload: "{}", committed: "1" }), null);
     assert.equal(parseStoredConfirmationSnapshot({ payload: JSON.stringify(tampered), committed: "1" }), null);
     assert.deepEqual(parseStoredConfirmationSnapshot({ payload, committed: "1" }), snapshot);
+  });
+
+  // Mutation caught: hashing or comparing stored JSON in transport key order.
+  it("accepts a valid stored snapshot after top-level and nested object keys are reordered", () => {
+    const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
+    const reordered = reverseObjectKeys(snapshot);
+
+    assert.deepEqual(
+      parseStoredConfirmationSnapshot({
+        payload: JSON.stringify(reordered),
+        committed: "1",
+      }),
+      snapshot,
+    );
+  });
+
+  // Mutation caught: accepting normalized events or completion objects that carry unknown fields.
+  it("rejects extra event and completion fields even when their content hash is recomputed", () => {
+    const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
+    const extraEvent = withContentHash({
+      ...snapshot,
+      events: [{ ...snapshot.events[0], unexpected: "field" }],
+    });
+    const extraCompletion = withContentHash({
+      ...snapshot,
+      completion: { ...snapshot.completion, unexpected: "field" },
+    });
+
+    assert.equal(
+      parseStoredConfirmationSnapshot({
+        payload: JSON.stringify(reverseObjectKeys(extraEvent)),
+        committed: "1",
+      }),
+      null,
+    );
+    assert.equal(
+      parseStoredConfirmationSnapshot({
+        payload: JSON.stringify(reverseObjectKeys(extraCompletion)),
+        committed: "1",
+      }),
+      null,
+    );
   });
 
   it("round-trips every built snapshot when an optional rule field is omitted", () => {

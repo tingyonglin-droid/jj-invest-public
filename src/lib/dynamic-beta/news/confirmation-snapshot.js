@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 
 const TERMINAL_MISSING_REASONS = new Set([
   "not_configured",
@@ -190,16 +191,23 @@ function isStoredSnapshot(snapshot) {
     return false;
   }
 
+  const metadata = {
+    vintageMode: "latest_stored_revision_by_observation_date",
+    truePointInTime: false,
+  };
+  const events = normalizeEvents(snapshot.events);
+  const completion = completionFor(events);
   const content = {
     briefDate: snapshot.briefDate,
     revisionId: snapshot.revisionId,
     revisionNumber: snapshot.revisionNumber,
     asOf: snapshot.asOf,
-    metadata: snapshot.metadata,
-    completion: snapshot.completion,
-    events: snapshot.events,
+    metadata,
+    completion,
+    events,
   };
-  return JSON.stringify(normalizeEvents(snapshot.events)) === JSON.stringify(snapshot.events)
-    && JSON.stringify(completionFor(snapshot.events)) === JSON.stringify(snapshot.completion)
+  return isDeepStrictEqual(metadata, snapshot.metadata)
+    && isDeepStrictEqual(events, snapshot.events)
+    && isDeepStrictEqual(completion, snapshot.completion)
     && snapshot.snapshotId === confirmationSnapshotId(content);
 }
