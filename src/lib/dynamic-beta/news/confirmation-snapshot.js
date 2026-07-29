@@ -52,6 +52,17 @@ const SNAPSHOT_KEYS = [
   "evaluatedAt",
   "createdAt",
 ];
+const REQUIRED_SNAPSHOT_KEYS = [
+  "snapshotId",
+  "briefDate",
+  "revisionId",
+  "revisionNumber",
+  "asOf",
+  "metadata",
+  "completion",
+  "events",
+  "createdAt",
+];
 const METADATA_KEYS = ["vintageMode", "truePointInTime"];
 const COMPLETION_KEYS = ["complete", "pendingReasons"];
 const PENDING_REASON_KEYS = ["eventRank", "seriesId", "reason"];
@@ -98,10 +109,14 @@ function isRecord(value) {
 }
 
 function hasExactKeys(value, expectedKeys) {
+  return hasAllowedKeys(value, expectedKeys, expectedKeys);
+}
+
+function hasAllowedKeys(value, allowedKeys, requiredKeys = []) {
   if (!isRecord(value)) return false;
   const actualKeys = Reflect.ownKeys(value);
-  return actualKeys.length === expectedKeys.length
-    && expectedKeys.every((key) => Object.hasOwn(value, key));
+  return actualKeys.every((key) => typeof key === "string" && allowedKeys.includes(key))
+    && requiredKeys.every((key) => Object.hasOwn(value, key));
 }
 
 function isNullableEnum(value, values) {
@@ -207,6 +222,59 @@ function isValidCompletion(completion) {
       && pending.seriesId.trim().length > 0
       && WINDOW_REASONS.has(pending.reason)
     ));
+}
+
+function isApprovedObservationInput(observation) {
+  return observation === null || observation === undefined || hasAllowedKeys(
+    observation,
+    OBSERVATION_KEYS,
+    ["observationDate", "value"],
+  );
+}
+
+function isApprovedWindowInput(window) {
+  return hasAllowedKeys(window, WINDOW_KEYS)
+    && isApprovedObservationInput(window.observation);
+}
+
+function isApprovedCountsInput(counts) {
+  return counts === undefined || hasAllowedKeys(counts, WINDOW_STATUSES);
+}
+
+function isApprovedRollupInput(rollup) {
+  return hasAllowedKeys(rollup, ROLLUP_KEYS, ["status"])
+    && isApprovedCountsInput(rollup.counts);
+}
+
+function isApprovedRuleInput(rule) {
+  return hasAllowedKeys(rule, RULE_KEYS, ["seriesId", "d1", "d3", "persistence"])
+    && isApprovedObservationInput(rule.baseline)
+    && isApprovedWindowInput(rule.d1)
+    && isApprovedWindowInput(rule.d3);
+}
+
+function isApprovedEventInput(event) {
+  return hasAllowedKeys(event, EVENT_KEYS, EVENT_KEYS)
+    && Array.isArray(event.rules)
+    && event.rules.every(isApprovedRuleInput)
+    && isApprovedRollupInput(event.d1)
+    && isApprovedRollupInput(event.d3);
+}
+
+function isApprovedCompletionInput(completion) {
+  return hasAllowedKeys(completion, COMPLETION_KEYS, COMPLETION_KEYS)
+    && Array.isArray(completion.pendingReasons)
+    && completion.pendingReasons.every((pending) => (
+      hasAllowedKeys(pending, PENDING_REASON_KEYS, PENDING_REASON_KEYS)
+    ));
+}
+
+function isApprovedSnapshotInput(snapshot) {
+  return hasAllowedKeys(snapshot, SNAPSHOT_KEYS, REQUIRED_SNAPSHOT_KEYS)
+    && hasExactKeys(snapshot.metadata, METADATA_KEYS)
+    && isApprovedCompletionInput(snapshot.completion)
+    && Array.isArray(snapshot.events)
+    && snapshot.events.every(isApprovedEventInput);
 }
 
 function hasExactBriefIdentity(value) {
@@ -346,31 +414,27 @@ export function parseStoredConfirmationSnapshot(record) {
     const payload = record?.payload;
     if (committed !== "1" || typeof payload !== "string") return null;
     const snapshot = JSON.parse(payload);
-    if (!isStoredSnapshot(snapshot)) return null;
-    return snapshot;
+    return normalizeStoredSnapshot(snapshot);
   } catch {
     return null;
   }
 }
 
-function isStoredSnapshot(snapshot) {
-  if (!hasExactKeys(snapshot, SNAPSHOT_KEYS)) return false;
-  if (!hasExactBriefIdentity(snapshot) || !validDateKey(snapshot.asOf)) return false;
-  if (!validTimestamp(snapshot.createdAt)) return false;
-  if (snapshot.evaluatedAt !== null && !validTimestamp(snapshot.evaluatedAt)) return false;
-  if (snapshot.snapshotRevisionNumber !== null
-    && (!Number.isInteger(snapshot.snapshotRevisionNumber) || snapshot.snapshotRevisionNumber < 1)) {
-    return false;
+function normalizeStoredSnapshot(snapshot) {
+  if (!isApprovedSnapshotInput(snapshot)) return null;
+  if (!hasExactBriefIdentity(snapshot) || !validDateKey(snapshot.asOf)) return null;
+  if (!validTimestamp(snapshot.createdAt)) return null;
+  const evaluatedAt = nullable(snapshot.evaluatedAt);
+  const snapshotRevisionNumber = nullable(snapshot.snapshotRevisionNumber);
+  if (evaluatedAt !== null && !validTimestamp(evaluatedAt)) return null;
+  if (snapshotRevisionNumber !== null
+    && (!Number.isInteger(snapshotRevisionNumber) || snapshotRevisionNumber < 1)) {
+    return null;
   }
   if (!hasExactKeys(snapshot.metadata, METADATA_KEYS)
     || snapshot.metadata.vintageMode !== "latest_stored_revision_by_observation_date"
     || snapshot.metadata?.truePointInTime !== false) {
-    return false;
-  }
-  if (!Array.isArray(snapshot.events)
-    || !snapshot.events.every(isValidEvent)
-    || !isValidCompletion(snapshot.completion)) {
-    return false;
+    return null;
   }
 
   const metadata = {
@@ -379,6 +443,11 @@ function isStoredSnapshot(snapshot) {
   };
   const events = normalizeEvents(snapshot.events);
   const completion = completionFor(events);
+  if (!events.every(isValidEvent)
+    || !isValidCompletion(completion)
+    || !isDeepStrictEqual(completion, snapshot.completion)) {
+    return null;
+  }
   const content = {
     briefDate: snapshot.briefDate,
     revisionId: snapshot.revisionId,
@@ -388,8 +457,15 @@ function isStoredSnapshot(snapshot) {
     completion,
     events,
   };
-  return isDeepStrictEqual(metadata, snapshot.metadata)
-    && isDeepStrictEqual(events, snapshot.events)
-    && isDeepStrictEqual(completion, snapshot.completion)
-    && snapshot.snapshotId === confirmationSnapshotId(content);
+  if (!isDeepStrictEqual(metadata, snapshot.metadata)
+    || snapshot.snapshotId !== confirmationSnapshotId(content)) {
+    return null;
+  }
+  return {
+    snapshotId: snapshot.snapshotId,
+    snapshotRevisionNumber,
+    ...content,
+    evaluatedAt,
+    createdAt: snapshot.createdAt,
+  };
 }

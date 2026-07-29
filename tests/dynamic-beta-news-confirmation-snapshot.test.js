@@ -22,6 +22,17 @@ function reverseObjectKeys(value) {
   );
 }
 
+function omitNullValuesAndReverseKeys(value) {
+  if (Array.isArray(value)) return value.map(omitNullValuesAndReverseKeys);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, nested]) => nested !== null)
+      .reverse()
+      .map(([key, nested]) => [key, omitNullValuesAndReverseKeys(nested)]),
+  );
+}
+
 function withContentHash(snapshot) {
   return {
     ...snapshot,
@@ -256,6 +267,68 @@ describe("canonical confirmation snapshot content", () => {
     assert.deepEqual(
       parseStoredConfirmationSnapshot({
         payload: JSON.stringify(reordered),
+        committed: "1",
+      }),
+      snapshot,
+    );
+  });
+
+  // Mutation caught: requiring transport-preserved null properties instead of the canonical builder shape.
+  it("restores omitted optional nulls from a live-like reordered payload", () => {
+    const marketObservation = {
+      ...d3Row(),
+      releasedAt: null,
+      sourceRealtimeStart: null,
+      sourceRealtimeEnd: null,
+    };
+    const sparseEvaluation = evaluation([rule({
+      baseline: { observationDate: "2026-07-24", value: 100 },
+      d1: {
+        status: "confirmed",
+        observation: marketObservation,
+        rawMove: 3,
+        normalizedMove: 3,
+        reason: null,
+      },
+      d3: {
+        status: "observing",
+        observation: null,
+        rawMove: null,
+        normalizedMove: null,
+        reason: "awaiting_observation",
+      },
+    })]);
+    sparseEvaluation.evaluatedAt = undefined;
+    const snapshot = buildConfirmationSnapshot({ evaluation: sparseEvaluation, createdAt: CREATED_AT });
+    const liveLike = omitNullValuesAndReverseKeys(snapshot);
+
+    assert.equal(Object.hasOwn(liveLike, "evaluatedAt"), false);
+    assert.equal(Object.hasOwn(liveLike.events[0].rules[0].d3, "observation"), false);
+    assert.equal(Object.hasOwn(liveLike.events[0].rules[0].d1, "reason"), false);
+    assert.equal(Object.hasOwn(liveLike.events[0].rules[0].d1.observation, "releasedAt"), false);
+    assert.deepEqual(
+      parseStoredConfirmationSnapshot({
+        payload: JSON.stringify(liveLike),
+        committed: "1",
+      }),
+      snapshot,
+    );
+  });
+
+  // Mutation caught: rejecting an older builder-normalized sparse result after Redis removes null leaves.
+  it("restores an older sparse snapshot to the exact canonical shape", () => {
+    const oldEvaluation = evaluation([rule({
+      expectedDirection: undefined,
+      baseline: { observationDate: "2026-07-24", value: 100 },
+      d1: { status: "observing" },
+      d3: { status: "observing", reason: "missing_observation" },
+    })]);
+    oldEvaluation.evaluatedAt = undefined;
+    const snapshot = buildConfirmationSnapshot({ evaluation: oldEvaluation, createdAt: CREATED_AT });
+
+    assert.deepEqual(
+      parseStoredConfirmationSnapshot({
+        payload: JSON.stringify(omitNullValuesAndReverseKeys(snapshot)),
         committed: "1",
       }),
       snapshot,

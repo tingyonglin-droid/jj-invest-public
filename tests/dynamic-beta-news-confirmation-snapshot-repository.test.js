@@ -45,13 +45,14 @@ function revisionKey(value) {
   return `${PREFIX}:revision:${value.briefDate}:${value.revisionId}:${value.asOf}:${value.snapshotId}`;
 }
 
-function reverseObjectKeys(value) {
-  if (Array.isArray(value)) return value.map(reverseObjectKeys);
+function omitNullValuesAndReverseKeys(value) {
+  if (Array.isArray(value)) return value.map(omitNullValuesAndReverseKeys);
   if (!value || typeof value !== "object") return value;
   return Object.fromEntries(
     Object.entries(value)
+      .filter(([, nested]) => nested !== null)
       .reverse()
-      .map(([key, nested]) => [key, reverseObjectKeys(nested)]),
+      .map(([key, nested]) => [key, omitNullValuesAndReverseKeys(nested)]),
   );
 }
 
@@ -60,7 +61,7 @@ function applyUpstashAutomaticDeserialization(redis) {
     const deserialized = Object.fromEntries(Object.entries(row).map(([field, value]) => {
       if (typeof value !== "string") return [field, value];
       try {
-        return [field, reverseObjectKeys(JSON.parse(value))];
+        return [field, omitNullValuesAndReverseKeys(JSON.parse(value))];
       } catch {
         return [field, value];
       }
@@ -164,8 +165,8 @@ describe("dynamic beta confirmation snapshot repository", () => {
     }), [{ ...first, snapshotRevisionNumber: 1 }]);
   });
 
-  // Mutation caught: passing Upstash's reordered object payload directly to an order-sensitive parser.
-  it("reads an exact latest snapshot after Upstash reorders top-level and nested object keys", async () => {
+  // Mutation caught: passing Upstash's reordered, null-omitting object payload directly to a strict transport parser.
+  it("reads an exact latest snapshot after Upstash omits nulls and reorders nested object keys", async () => {
     const { repository, first } = await upstashReadFixture();
 
     assert.deepEqual(await repository.readLatestSnapshot(identity()), {
