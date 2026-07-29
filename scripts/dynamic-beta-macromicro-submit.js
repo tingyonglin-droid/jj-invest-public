@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import { createConfiguredMacroMicroIngestionService } from "../app/api/dynamic-beta/_shared.js";
 import { getDynamicBetaFlags } from "../src/lib/dynamic-beta/config.js";
 import {
-  MacroMicroSubmissionError,
+  getMacroMicroSubmissionErrorSummary,
   submitMacroMicroFile,
 } from "../src/lib/dynamic-beta/macromicro-submission.js";
 
@@ -39,12 +39,12 @@ export async function runMacroMicroSubmit({
     writeJsonLine(stdout, { ok: true, ...result });
     return 0;
   } catch (error) {
-    const known = error instanceof MacroMicroSubmissionError;
+    const known = getMacroMicroSubmissionErrorSummary(error);
     writeJsonLine(stderr, {
       ok: false,
-      code: known ? error.code : "SUBMISSION_FAILED",
+      code: known ? known.code : "SUBMISSION_FAILED",
       error: known
-        ? error.message
+        ? known.message
         : "M 平方提交失敗，既有 observation 未受影響。",
     });
     return 1;

@@ -3,6 +3,8 @@ import {
   MACROMICRO_SOURCE_ERROR_MESSAGES,
 } from "./macromicro.js";
 
+const trustedSubmissionErrors = new WeakMap();
+
 export class MacroMicroSubmissionError extends Error {
   constructor(code, message) {
     super(message);
@@ -12,7 +14,13 @@ export class MacroMicroSubmissionError extends Error {
 }
 
 function submissionError(code, message) {
-  return new MacroMicroSubmissionError(code, message);
+  const error = new MacroMicroSubmissionError(code, message);
+  trustedSubmissionErrors.set(error, Object.freeze({ code, message }));
+  return error;
+}
+
+export function getMacroMicroSubmissionErrorSummary(error) {
+  return trustedSubmissionErrors.get(error) || null;
 }
 
 function isIsoDate(value) {
@@ -102,10 +110,20 @@ export async function submitMacroMicroFile({
     throw submissionError("SERVICE_UNCONFIGURED", "M 平方同步服務尚未設定。");
   }
 
-  const result = snapshotSubmissionResult(await service.ingest(payload));
+  let serviceResult;
+  try {
+    serviceResult = await service.ingest(payload);
+  } catch {
+    throw submissionError(
+      "INVALID_RESULT",
+      "M 平方同步結果無效，既有 observation 未受影響。",
+    );
+  }
+
+  const result = snapshotSubmissionResult(serviceResult);
   const sourceErrorCode = sourceErrorCodeFromSummary(result);
   if (sourceErrorCode) {
-    throw new MacroMicroSubmissionError(
+    throw submissionError(
       sourceErrorCode,
       "M 平方來源同步失敗，已保留既有 observation。",
     );

@@ -194,6 +194,14 @@ async function runWithServiceResult(result) {
   return { exitCode, stdout: stdout.read(), stderr: stderr.read() };
 }
 
+async function captureCliWithServiceResult(result) {
+  try {
+    return { rejected: false, ...(await runWithServiceResult(result)) };
+  } catch {
+    return { rejected: true, exitCode: null, stdout: "", stderr: "" };
+  }
+}
+
 describe("MacroMicro submission CLI", () => {
   it("requires exactly one JSON file path", async () => {
     const stdout = outputBuffer();
@@ -451,6 +459,150 @@ describe("MacroMicro submission CLI", () => {
     });
   });
 
+  it("maps hostile thenable rejection values and throwing then getters to INVALID_RESULT", async () => {
+    const secretObjectThenable = {
+      then(_resolve, reject) {
+        reject({
+          code: "UPSTASH_REDIS_REST_TOKEN=REJECTION_SECRET",
+          message: "REJECTION_MESSAGE_SECRET",
+        });
+      },
+    };
+    const throwingThenGetter = Object.defineProperty({}, "then", {
+      get() {
+        throw new Error("THEN_GETTER_SECRET");
+      },
+    });
+
+    for (const result of [secretObjectThenable, throwingThenGetter]) {
+      const output = await captureCliWithServiceResult(result);
+
+      assert.equal(output.rejected, false);
+      assert.equal(output.exitCode, 1);
+      assert.equal(output.stdout, "");
+      assert.deepEqual(JSON.parse(output.stderr), {
+        ok: false,
+        code: "INVALID_RESULT",
+        error: "M 平方同步結果無效，既有 observation 未受影響。",
+      });
+      assert.doesNotMatch(
+        output.stderr,
+        /REJECTION_SECRET|REJECTION_MESSAGE_SECRET|THEN_GETTER_SECRET/,
+      );
+    }
+  });
+
+  it("settles with INVALID_RESULT when a thenable revokes and rejects with itself", async () => {
+    let proxy;
+    let revoke;
+    const revocable = Proxy.revocable({
+      then(_resolve, reject) {
+        revoke();
+        reject(proxy);
+      },
+    }, {});
+    proxy = revocable.proxy;
+    revoke = revocable.revoke;
+
+    const output = await captureCliWithServiceResult(proxy);
+
+    assert.equal(output.rejected, false);
+    assert.equal(output.exitCode, 1);
+    assert.equal(output.stdout, "");
+    assert.deepEqual(JSON.parse(output.stderr), {
+      ok: false,
+      code: "INVALID_RESULT",
+      error: "M 平方同步結果無效，既有 observation 未受影響。",
+    });
+  });
+
+  it("does not trust a thenable proxy impersonating a submission error", async () => {
+    let proxy;
+    const target = new MacroMicroSubmissionError(
+      "PAGE_UNAVAILABLE",
+      "M 平方來源同步失敗，已保留既有 observation。",
+    );
+    proxy = new Proxy(target, {
+      get(value, property, receiver) {
+        if (property === "then") {
+          return (_resolve, reject) => reject(proxy);
+        }
+        if (property === "code") {
+          return "UPSTASH_REDIS_REST_TOKEN=REFLECTED_SECRET";
+        }
+        if (property === "message") {
+          return "REFLECTED_MESSAGE_SECRET";
+        }
+        return Reflect.get(value, property, receiver);
+      },
+    });
+
+    const output = await captureCliWithServiceResult(proxy);
+
+    assert.equal(output.rejected, false);
+    assert.equal(output.exitCode, 1);
+    assert.equal(output.stdout, "");
+    assert.deepEqual(JSON.parse(output.stderr), {
+      ok: false,
+      code: "INVALID_RESULT",
+      error: "M 平方同步結果無效，既有 observation 未受影響。",
+    });
+    assert.doesNotMatch(output.stderr, /REFLECTED_SECRET|REFLECTED_MESSAGE_SECRET/);
+  });
+
+  it("never reads code or message accessors from an arbitrary caught error", async () => {
+    let codeReads = 0;
+    let messageReads = 0;
+    const thrown = new MacroMicroSubmissionError(
+      "PAGE_UNAVAILABLE",
+      "M 平方來源同步失敗，已保留既有 observation。",
+    );
+    Object.defineProperties(thrown, {
+      code: {
+        configurable: true,
+        get() {
+          codeReads += 1;
+          throw new Error("CODE_GETTER_SECRET");
+        },
+      },
+      message: {
+        configurable: true,
+        get() {
+          messageReads += 1;
+          throw new Error("MESSAGE_GETTER_SECRET");
+        },
+      },
+    });
+    const stdout = outputBuffer();
+    const stderr = outputBuffer();
+    let rejected = false;
+    let exitCode = null;
+    try {
+      exitCode = await runMacroMicroSubmit({
+        argv: ["/private/tmp/macromicro.json"],
+        environment: { DYNAMIC_BETA_DATA_ENABLED: "true" },
+        readFile: async () => "{}",
+        getService() { throw thrown; },
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+      });
+    } catch {
+      rejected = true;
+    }
+
+    assert.equal(rejected, false);
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.read(), "");
+    assert.deepEqual(JSON.parse(stderr.read()), {
+      ok: false,
+      code: "SUBMISSION_FAILED",
+      error: "M 平方提交失敗，既有 observation 未受影響。",
+    });
+    assert.equal(codeReads, 0);
+    assert.equal(messageReads, 0);
+    assert.doesNotMatch(stderr.read(), /CODE_GETTER_SECRET|MESSAGE_GETTER_SECRET/);
+  });
+
   it("snapshots each successful result field once before validation and output", async () => {
     const reads = new Map();
     const expected = {
@@ -489,7 +641,7 @@ describe("MacroMicro submission CLI", () => {
     assert.equal(output.stdout.includes("_SECRET"), false);
   });
 
-  it("does not expose unexpected errors or their stack", async () => {
+  it("maps unexpected ingestion rejections to INVALID_RESULT without exposing them", async () => {
     const stderr = outputBuffer();
     const secret = "KV_REST_API_TOKEN=do-not-print";
     const exitCode = await runMacroMicroSubmit({
@@ -508,8 +660,8 @@ describe("MacroMicro submission CLI", () => {
     assert.equal(exitCode, 1);
     assert.deepEqual(JSON.parse(stderr.read()), {
       ok: false,
-      code: "SUBMISSION_FAILED",
-      error: "M 平方提交失敗，既有 observation 未受影響。",
+      code: "INVALID_RESULT",
+      error: "M 平方同步結果無效，既有 observation 未受影響。",
     });
     assert.doesNotMatch(stderr.read(), /do-not-print|stack/);
   });
