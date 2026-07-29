@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test": "node --test",
     "morning-brief:draft:submit": "node --env-file=.env.local scripts/dynamic-beta-morning-brief-submit.js",
+    "market-data:macromicro:submit": "node --env-file=.env.local scripts/dynamic-beta-macromicro-submit.js",
     "backtest:dynamic-beta-events": "node --env-file=.env.local scripts/dynamic-beta-event-backtest.js",
     "forensics:dynamic-beta-events": "node --env-file=.env.local scripts/dynamic-beta-event-forensics.js"
   },
