@@ -1,5 +1,8 @@
 import { getRedis, isAdminAuthorized } from "../analytics/_shared.js";
-import { DYNAMIC_BETA_SERIES } from "../../../src/lib/dynamic-beta/catalog.js";
+import {
+  DYNAMIC_BETA_SERIES,
+  getDynamicBetaSeries,
+} from "../../../src/lib/dynamic-beta/catalog.js";
 import {
   getDynamicBetaFlags,
   getDynamicBetaNewsFlags,

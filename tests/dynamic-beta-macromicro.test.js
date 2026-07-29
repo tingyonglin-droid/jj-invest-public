@@ -10,6 +10,7 @@ import {
 } from "../src/lib/dynamic-beta/macromicro.js";
 import { getDynamicBetaSeries } from "../src/lib/dynamic-beta/catalog.js";
 import { createMacroMicroIngestionService } from "../src/lib/dynamic-beta/macromicro-service.js";
+import { createConfiguredMacroMicroIngestionService } from "../app/api/dynamic-beta/_shared.js";
 
 const context = Object.freeze({
   retrievedAt: "2026-07-29T00:00:00.000Z",
@@ -196,6 +197,22 @@ const successfulPayload = Object.freeze({
   observationDate: "2026-07-28",
   value: 140.38,
   sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+});
+
+test("constructs and ingests through the configured MacroMicro service factory", async () => {
+  const { repository } = createRepositorySpy();
+  const service = createConfiguredMacroMicroIngestionService(repository);
+
+  const result = await service.ingest(successfulPayload);
+
+  assert.deepEqual(result, {
+    seriesId: MACROMICRO_MARGIN_SERIES_ID,
+    status: "success",
+    inserted: 1,
+    revised: 0,
+    unchanged: 0,
+    latestObservationDate: "2026-07-28",
+  });
 });
 
 test("ingests a MacroMicro observation while preserving repository revision counts", async () => {

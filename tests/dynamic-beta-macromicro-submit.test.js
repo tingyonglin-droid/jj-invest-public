@@ -134,6 +134,18 @@ describe("MacroMicro submission", () => {
     assert.equal("payload" in result, false);
   });
 
+  it("rejects a success result with invalid observation counts", async () => {
+    const error = await captureSubmissionError(() => submitMacroMicroFile({
+      inputPath: "/private/tmp/macromicro.json",
+      readFile: async () => "{}",
+      dataEnabled: true,
+      getService: () => successfulService({ inserted: -1 }),
+    }));
+
+    assert.equal(error.code, "INVALID_RESULT");
+    assert.equal(error.message, "M 平方同步結果無效，既有 observation 未受影響。");
+  });
+
   it("converts a reported MacroMicro source error into a safe submission error", async () => {
     const error = await captureSubmissionError(() => submitMacroMicroFile({
       inputPath: "/private/tmp/macromicro.json",
@@ -227,6 +239,27 @@ describe("MacroMicro submission CLI", () => {
       revised: 0,
       unchanged: 0,
       latestObservationDate: "2026-07-28",
+    });
+  });
+
+  it("rejects a non-success ingestion result instead of reporting a stored observation", async () => {
+    const stdout = outputBuffer();
+    const stderr = outputBuffer();
+    const exitCode = await runMacroMicroSubmit({
+      argv: ["/private/tmp/macromicro.json"],
+      environment: { DYNAMIC_BETA_DATA_ENABLED: "true" },
+      readFile: async () => "{}",
+      getService: () => successfulService({ status: "pending" }),
+      stdout: stdout.stream,
+      stderr: stderr.stream,
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.read(), "");
+    assert.deepEqual(JSON.parse(stderr.read()), {
+      ok: false,
+      code: "INVALID_RESULT",
+      error: "M 平方同步結果無效，既有 observation 未受影響。",
     });
   });
 

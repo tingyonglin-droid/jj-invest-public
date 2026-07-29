@@ -1,3 +1,5 @@
+import { MACROMICRO_MARGIN_SERIES_ID } from "./macromicro.js";
+
 export class MacroMicroSubmissionError extends Error {
   constructor(code, message) {
     super(message);
@@ -8,6 +10,26 @@ export class MacroMicroSubmissionError extends Error {
 
 function submissionError(code, message) {
   return new MacroMicroSubmissionError(code, message);
+}
+
+function isIsoDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function isStoredObservationSummary(result) {
+  if (!result || typeof result !== "object") return false;
+  const counts = [result.inserted, result.revised, result.unchanged];
+  return (
+    result.seriesId === MACROMICRO_MARGIN_SERIES_ID &&
+    result.status === "success" &&
+    counts.every((count) => Number.isInteger(count) && count >= 0) &&
+    counts.reduce((total, count) => total + count, 0) === 1 &&
+    isIsoDate(result.latestObservationDate)
+  );
 }
 
 export async function submitMacroMicroFile({
@@ -43,10 +65,16 @@ export async function submitMacroMicroFile({
   }
 
   const result = await service.ingest(payload);
-  if (result.status === "error") {
+  if (result && result.status === "error") {
     throw new MacroMicroSubmissionError(
       result.errorCode,
       "M 平方來源同步失敗，已保留既有 observation。",
+    );
+  }
+  if (!isStoredObservationSummary(result)) {
+    throw submissionError(
+      "INVALID_RESULT",
+      "M 平方同步結果無效，既有 observation 未受影響。",
     );
   }
 
