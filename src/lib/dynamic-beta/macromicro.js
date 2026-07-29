@@ -43,10 +43,13 @@ export function normalizeMacroMicroPayload(payload, { retrievedAt, today }) {
   }
 
   if (Object.hasOwn(payload, "errorCode")) {
-    if (!hasExactKeys(payload, ["errorCode"])) {
+    if (!hasExactKeys(payload, ["errorCode", "sourceUrl"])) {
       invalidPayload();
     }
-    if (!Object.hasOwn(MACROMICRO_SOURCE_ERROR_MESSAGES, payload.errorCode)) {
+    if (
+      !Object.hasOwn(MACROMICRO_SOURCE_ERROR_MESSAGES, payload.errorCode) ||
+      payload.sourceUrl !== MACROMICRO_MARGIN_SOURCE_URL
+    ) {
       invalidPayload();
     }
     const errorMessage = MACROMICRO_SOURCE_ERROR_MESSAGES[payload.errorCode];

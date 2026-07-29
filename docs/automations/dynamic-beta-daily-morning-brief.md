@@ -22,7 +22,10 @@
 1. 使用瀏覽器開啟 `https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin`。
 2. 僅從「最新數據」讀取「大盤融資維持率(L)」的日期與數值；不得使用未標日期的前值建立 observation。
 3. 成功時建立 JSON：`{"observationDate":"YYYY-MM-DD","value":NUMBER,"sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
-4. 無法讀取頁面、找不到最新資料或數值格式異常時，分別使用 `PAGE_UNAVAILABLE`、`LATEST_DATA_MISSING`、`INVALID_PAGE_VALUE` failure payload。
+4. 失敗時只建立對應的 exact JSON，不得缺少 `sourceUrl`、混入成功欄位或加入其他欄位：
+   - 無法讀取頁面：`{"errorCode":"PAGE_UNAVAILABLE","sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
+   - 找不到最新資料：`{"errorCode":"LATEST_DATA_MISSING","sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
+   - 數值格式異常：`{"errorCode":"INVALID_PAGE_VALUE","sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
 5. 找出 Codex workspace 提供的 Node.js runtime，執行 `node --env-file=.env.local scripts/dynamic-beta-macromicro-submit.js <json-file>`；不論結果成功或失敗，都繼續產生待核准晨報草稿。
 
 ## 研究範圍

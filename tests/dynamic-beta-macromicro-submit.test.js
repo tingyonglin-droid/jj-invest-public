@@ -149,7 +149,11 @@ describe("MacroMicro submission", () => {
   it("converts a reported MacroMicro source error into a safe submission error", async () => {
     const error = await captureSubmissionError(() => submitMacroMicroFile({
       inputPath: "/private/tmp/macromicro.json",
-      readFile: async () => JSON.stringify({ errorCode: "PAGE_UNAVAILABLE" }),
+      readFile: async () => JSON.stringify({
+        errorCode: "PAGE_UNAVAILABLE",
+        sourceUrl:
+          "https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin",
+      }),
       dataEnabled: true,
       getService: () => successfulService({
         status: "error",

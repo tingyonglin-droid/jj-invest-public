@@ -61,11 +61,45 @@ test("normalizes each fixed MacroMicro source failure", () => {
   for (const [errorCode, errorMessage] of Object.entries(
     MACROMICRO_SOURCE_ERROR_MESSAGES,
   )) {
-    assert.deepEqual(normalizeMacroMicroPayload({ errorCode }, context), {
-      kind: "source-error",
-      errorCode,
-      errorMessage,
-    });
+    assert.deepEqual(
+      normalizeMacroMicroPayload({
+        errorCode,
+        sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+      }, context),
+      {
+        kind: "source-error",
+        errorCode,
+        errorMessage,
+      },
+    );
+  }
+});
+
+test("rejects MacroMicro source failures without the exact failure shape", () => {
+  const invalidFailurePayloads = [
+    { errorCode: "PAGE_UNAVAILABLE" },
+    {
+      errorCode: "PAGE_UNAVAILABLE",
+      sourceUrl: "https://example.com/not-macromicro",
+    },
+    {
+      errorCode: "PAGE_UNAVAILABLE",
+      sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+      extra: true,
+    },
+    {
+      errorCode: "PAGE_UNAVAILABLE",
+      sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+      observationDate: "2026-07-28",
+      value: 140.38,
+    },
+  ];
+
+  for (const payload of invalidFailurePayloads) {
+    assert.throws(
+      () => normalizeMacroMicroPayload(payload, context),
+      MacroMicroPayloadError,
+    );
   }
 });
 
@@ -107,9 +141,12 @@ test("rejects invalid MacroMicro payloads with a stable error code", () => {
       value: 140.38,
       sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
     },
-    { errorCode: "NOT_A_SUPPORTED_FAILURE" },
-    { errorCode: "toString" },
-    { errorCode: "__proto__" },
+    {
+      errorCode: "NOT_A_SUPPORTED_FAILURE",
+      sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+    },
+    { errorCode: "toString", sourceUrl: MACROMICRO_MARGIN_SOURCE_URL },
+    { errorCode: "__proto__", sourceUrl: MACROMICRO_MARGIN_SOURCE_URL },
   ];
 
   for (const payload of invalidPayloads) {
@@ -257,6 +294,7 @@ test("records a MacroMicro source failure without saving an observation", async 
 
   const result = await createService({ repository }).ingest({
     errorCode: "LATEST_DATA_MISSING",
+    sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
   });
 
   assert.deepEqual(result, {
