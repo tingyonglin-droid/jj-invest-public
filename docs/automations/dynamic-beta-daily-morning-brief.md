@@ -17,6 +17,14 @@
 3. 不讀取、顯示或摘要 `.env.local`。CLI 會自行在 server side 載入需要的設定。
 4. 不修改 repository 內任何檔案，不 commit、不 push。每日暫存 JSON 應放在系統暫存目錄。
 
+### M 平方同步前置步驟
+
+1. 使用瀏覽器開啟 `https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin`。
+2. 僅從「最新數據」讀取「大盤融資維持率(L)」的日期與數值；不得使用未標日期的前值建立 observation。
+3. 成功時建立 JSON：`{"observationDate":"YYYY-MM-DD","value":NUMBER,"sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
+4. 無法讀取頁面、找不到最新資料或數值格式異常時，分別使用 `PAGE_UNAVAILABLE`、`LATEST_DATA_MISSING`、`INVALID_PAGE_VALUE` failure payload。
+5. 找出 Codex workspace 提供的 Node.js runtime，執行 `node --env-file=.env.local scripts/dynamic-beta-macromicro-submit.js <json-file>`；不論結果成功或失敗，都繼續產生待核准晨報草稿。
+
 ## 研究範圍
 
 研究窗優先涵蓋前一個美股交易日收盤後至台北早上 07:00 前的新發展，也可使用較早的官方背景資料解釋當前事件。週一應涵蓋週末；台灣或美國假日仍照常研究全球市場，但不得把尚未交易的市場反應寫成已發生。
