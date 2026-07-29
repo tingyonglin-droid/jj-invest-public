@@ -538,16 +538,35 @@ describe("dynamic beta repository", () => {
       { seriesId: "DGS10", observationDate: "2026-07-24", value: 4.3, releasedAt: null, retrievedAt: "2026-07-25T00:00:00.000Z", sourceRealtimeStart: "2026-07-25", sourceRealtimeEnd: "2026-07-25" },
     ]);
 
-    assert.deepEqual(
-      await repository.readObservationHistory("DGS10", {
-        from: "2026-07-10",
-        to: "2026-07-24",
-      }),
-      [
-        { observationDate: "2026-07-15", value: 4.2, releasedAt: null, retrievedAt: "2026-07-16T00:00:00.000Z" },
-        { observationDate: "2026-07-24", value: 4.3, releasedAt: null, retrievedAt: "2026-07-25T00:00:00.000Z" },
-      ],
-    );
+    const history = await repository.readObservationHistory("DGS10", {
+      from: "2026-07-10",
+      to: "2026-07-24",
+    });
+
+    assert.deepEqual({ ...history[0], revisionId: "checked-separately" }, {
+      revisionId: "checked-separately",
+      observationDate: "2026-07-15",
+      value: 4.2,
+      releasedAt: null,
+      retrievedAt: "2026-07-16T00:00:00.000Z",
+      firstSeenAt: "2026-07-16T00:00:00.000Z",
+      lastSeenAt: "2026-07-16T00:00:00.000Z",
+      sourceRealtimeStart: "2026-07-16",
+      sourceRealtimeEnd: "2026-07-16",
+    });
+    assert.match(history[0].revisionId, /^[a-f0-9]{24}$/);
+    assert.deepEqual({ ...history[1], revisionId: "checked-separately" }, {
+      revisionId: "checked-separately",
+      observationDate: "2026-07-24",
+      value: 4.3,
+      releasedAt: null,
+      retrievedAt: "2026-07-25T00:00:00.000Z",
+      firstSeenAt: "2026-07-25T00:00:00.000Z",
+      lastSeenAt: "2026-07-25T00:00:00.000Z",
+      sourceRealtimeStart: "2026-07-25",
+      sourceRealtimeEnd: "2026-07-25",
+    });
+    assert.match(history[1].revisionId, /^[a-f0-9]{24}$/);
   });
 
   it("reads the latest observation and status for admin validation", async () => {

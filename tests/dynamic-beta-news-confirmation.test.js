@@ -292,7 +292,12 @@ describe("dynamic beta news market confirmation service", () => {
         { observationDate: "2026-07-24", value: 100 },
         { observationDate: "2026-07-27", value: 97 },
         { observationDate: "2026-07-28", value: 98 },
-        { observationDate: "2026-07-29", value: 95 },
+        {
+          revisionId: "obs_dgs10_r3",
+          observationDate: "2026-07-29",
+          value: 95,
+          retrievedAt: "2026-07-29T00:00:00.000Z",
+        },
       ],
       DGS10: [
         { observationDate: "2026-07-24", value: 4 },
@@ -328,6 +333,12 @@ describe("dynamic beta news market confirmation service", () => {
     assert.equal(new Set(calls.map((item) => item.seriesId)).size, calls.length);
     assert.equal(result.metadata.vintageMode, "latest_stored_revision_by_observation_date");
     assert.equal(result.metadata.truePointInTime, false);
+    assert.deepEqual(result.events[0].rules[0].d3.observation, {
+      revisionId: "obs_dgs10_r3",
+      observationDate: "2026-07-29",
+      value: 95,
+      retrievedAt: "2026-07-29T00:00:00.000Z",
+    });
   });
 
   it("reads an exact dated revision instead of the recent-brief timeline", async () => {

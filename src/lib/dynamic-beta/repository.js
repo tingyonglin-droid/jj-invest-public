@@ -301,10 +301,15 @@ export function createDynamicBetaRepository(redis) {
         dates.map((date) => this.readObservation(seriesId, date)),
       );
       return observations.filter(Boolean).map((observation) => ({
+        revisionId: observation.revision_id || null,
         observationDate: observation.observation_date,
         value: Number(observation.value),
         releasedAt: observation.released_at || null,
         retrievedAt: observation.retrieved_at || null,
+        firstSeenAt: observation.first_seen_at || observation.retrieved_at || null,
+        lastSeenAt: observation.last_seen_at || observation.retrieved_at || null,
+        sourceRealtimeStart: observation.source_realtime_start || null,
+        sourceRealtimeEnd: observation.source_realtime_end || null,
       }));
     },
   };
