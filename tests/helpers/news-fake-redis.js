@@ -144,7 +144,9 @@ export class FakeRedis {
   }
 
   async zrange(key, min, max, options = {}) {
-    let values = [...(this.sortedSets.get(key) || new Map()).entries()]
+    const normalizedKey = String(key);
+    this.#assertType(normalizedKey, "zset");
+    let values = [...(this.sortedSets.get(normalizedKey) || new Map()).entries()]
       .sort((left, right) => left[1] - right[1]);
     if (options.rev) values.reverse();
     if (options.byScore) {

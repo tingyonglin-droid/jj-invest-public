@@ -416,6 +416,17 @@ return 'completed'`);
     assert.deepEqual(await delRedis.zrange("key", 0, -1), []);
   });
 
+  // Mutation caught: public FakeRedis ZRANGE silently treating a non-zset key as empty.
+  it("enforces Redis cross-type errors through public FakeRedis zrange", async () => {
+    const stringRedis = new FakeRedis();
+    await stringRedis.set("key", "value");
+    await assert.rejects(stringRedis.zrange("key", 0, -1), /WRONGTYPE/);
+
+    const hashRedis = new FakeRedis();
+    await hashRedis.hset("key", { field: "value" });
+    await assert.rejects(hashRedis.zrange("key", 0, -1), /WRONGTYPE/);
+  });
+
   // Mutation caught: retaining an empty hash key after HDEL removes its final field.
   it("removes an empty HDEL hash so a later SET NX can acquire the key", async () => {
     const redis = new FakeRedis();

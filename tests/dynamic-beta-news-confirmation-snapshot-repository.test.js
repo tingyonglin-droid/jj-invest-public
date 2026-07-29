@@ -254,6 +254,9 @@ describe("dynamic beta confirmation snapshot repository", () => {
     await redis.set(`${PREFIX}:timeline`, "poisoned");
 
     await assert.rejects(repository.saveSnapshot(first), /WRONGTYPE/);
+    assert.equal((await redis.hgetall(revisionKey(first))).committed, "0");
+    await redis.del(`${PREFIX}:timeline`);
+
     assert.equal(await repository.readLatestSnapshot(identity()), null);
     assert.equal(
       await repository.readLatestSnapshot({ briefDate: BRIEF_DATE, revisionId: REVISION_ID }),
@@ -265,9 +268,7 @@ describe("dynamic beta confirmation snapshot repository", () => {
       until: FIRST_AS_OF,
       limit: 1,
     }), []);
-    assert.equal((await redis.hgetall(revisionKey(first))).committed, "0");
 
-    await redis.del(`${PREFIX}:timeline`);
     assert.deepEqual(await repository.saveSnapshot(first), {
       status: "inserted",
       snapshotId: first.snapshotId,
