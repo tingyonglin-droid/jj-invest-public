@@ -669,6 +669,27 @@ describe("dynamic beta saved confirmation snapshot route", () => {
     }
   });
 
+  it("sanitizes repository construction failures", async () => {
+    for (const unavailable of ["snapshot", "news"]) {
+      const secret = `KV_REST_API_TOKEN=${unavailable}-do-not-reflect`;
+      const response = await enabledSnapshotGet({
+        getSnapshotRepository: () => {
+          if (unavailable === "snapshot") throw new Error(secret);
+          return { readRecentLatestSnapshots: async () => [] };
+        },
+        getNewsRepository: () => {
+          if (unavailable === "news") throw new Error(secret);
+          return { readMorningBrief: async () => null };
+        },
+      })(snapshotRequest());
+      const body = await response.json();
+
+      assert.equal(response.status, 500);
+      assert.deepEqual(body, { error: "Confirmation snapshot 讀取失敗。" });
+      assert.equal(JSON.stringify(body).includes(secret), false);
+    }
+  });
+
   it("rejects invalid snapshot dates and unscoped revision IDs before reading repositories", async () => {
     for (const query of ["briefDate=2026-02-30", "asOf=2026-99-99", "revisionId=revision-1"]) {
       let repositoriesRead = false;

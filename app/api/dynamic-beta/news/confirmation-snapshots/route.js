@@ -52,13 +52,13 @@ export function createConfirmationSnapshotGet({
       );
     }
 
-    const snapshotRepository = getSnapshotRepository();
-    const newsRepository = getNewsRepository();
-    if (!snapshotRepository || !newsRepository) {
-      return dynamicBetaUnconfiguredResponse("缺少 Upstash Redis 設定。");
-    }
-
     try {
+      const snapshotRepository = getSnapshotRepository();
+      const newsRepository = getNewsRepository();
+      if (!snapshotRepository || !newsRepository) {
+        return dynamicBetaUnconfiguredResponse("缺少 Upstash Redis 設定。");
+      }
+
       if (!briefDate) {
         const snapshots = await snapshotRepository.readRecentLatestSnapshots({
           since: "1900-01-01",
