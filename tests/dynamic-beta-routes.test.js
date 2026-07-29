@@ -3,6 +3,7 @@ import { afterEach, describe, it } from "node:test";
 
 import { GET as readDynamicBetaAdmin } from "../app/api/dynamic-beta/admin/route.js";
 import { POST as syncDynamicBeta } from "../app/api/dynamic-beta/sync/route.js";
+import { POST as ingestMacroMicro } from "../app/api/dynamic-beta/macromicro/route.js";
 import { GET as runDynamicBetaCron } from "../app/api/dynamic-beta/cron/route.js";
 import { GET as previewMarketRiskScore } from "../app/api/dynamic-beta/score-preview/route.js";
 import {
@@ -144,6 +145,45 @@ describe("dynamic beta internal routes", () => {
     );
 
     assert.equal(response.status, 404);
+  });
+});
+
+describe("MacroMicro ingestion route", () => {
+  it("rejects requests without the existing admin token", async () => {
+    process.env.USAGE_ADMIN_TOKEN = "admin-secret";
+    process.env.DYNAMIC_BETA_DATA_ENABLED = "true";
+
+    const response = await ingestMacroMicro(new Request(
+      "https://example.com/api/dynamic-beta/macromicro",
+      { method: "POST", body: "{}" },
+    ));
+
+    assert.equal(response.status, 401);
+  });
+
+  it("hides ingestion when the data feature flag is disabled", async () => {
+    process.env.USAGE_ADMIN_TOKEN = "admin-secret";
+    process.env.DYNAMIC_BETA_DATA_ENABLED = "false";
+
+    const response = await ingestMacroMicro(new Request(
+      "https://example.com/api/dynamic-beta/macromicro?token=admin-secret",
+      { method: "POST", body: "{}" },
+    ));
+
+    assert.equal(response.status, 404);
+  });
+
+  it("rejects malformed JSON before requiring Redis", async () => {
+    process.env.USAGE_ADMIN_TOKEN = "admin-secret";
+    process.env.DYNAMIC_BETA_DATA_ENABLED = "true";
+
+    const response = await ingestMacroMicro(new Request(
+      "https://example.com/api/dynamic-beta/macromicro?token=admin-secret",
+      { method: "POST", body: "{broken" },
+    ));
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "JSON 格式無效。" });
   });
 });
 

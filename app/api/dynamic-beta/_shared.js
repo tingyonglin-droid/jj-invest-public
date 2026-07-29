@@ -5,6 +5,8 @@ import {
   getDynamicBetaNewsFlags,
 } from "../../../src/lib/dynamic-beta/config.js";
 import { createFredClient } from "../../../src/lib/dynamic-beta/fred-client.js";
+import { MACROMICRO_MARGIN_SERIES_ID } from "../../../src/lib/dynamic-beta/macromicro.js";
+import { createMacroMicroIngestionService } from "../../../src/lib/dynamic-beta/macromicro-service.js";
 import { createDynamicBetaRepository } from "../../../src/lib/dynamic-beta/repository.js";
 import { createDynamicBetaSyncService } from "../../../src/lib/dynamic-beta/sync.js";
 import { createNewsRepository } from "../../../src/lib/dynamic-beta/news/repository.js";
@@ -91,6 +93,16 @@ export function createConfiguredSyncService(repository) {
   return createDynamicBetaSyncService({
     repository,
     fredClient: createFredClient({ apiKey: process.env.FRED_API_KEY }),
+  });
+}
+
+export function createConfiguredMacroMicroIngestionService(
+  repository = getDynamicBetaRepository(),
+) {
+  if (!repository) return null;
+  return createMacroMicroIngestionService({
+    repository,
+    series: getDynamicBetaSeries(MACROMICRO_MARGIN_SERIES_ID),
   });
 }
 
