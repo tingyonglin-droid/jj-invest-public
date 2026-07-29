@@ -25,7 +25,7 @@ function hasExactKeys(payload, expectedKeys) {
 }
 
 function isIsoDate(text) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+  if (typeof text !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(text)) {
     return false;
   }
 
@@ -33,11 +33,25 @@ function isIsoDate(text) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === text;
 }
 
+function isIsoInstant(text) {
+  if (typeof text !== "string") return false;
+  const date = new Date(text);
+  return !Number.isNaN(date.getTime()) && date.toISOString() === text;
+}
+
 function invalidPayload() {
   throw new MacroMicroPayloadError();
 }
 
-export function normalizeMacroMicroPayload(payload, { retrievedAt, today }) {
+export function normalizeMacroMicroPayload(payload, context = {}) {
+  if (!context || typeof context !== "object" || Array.isArray(context)) {
+    invalidPayload();
+  }
+  const { retrievedAt, today } = context;
+  if (!isIsoInstant(retrievedAt) || !isIsoDate(today)) {
+    invalidPayload();
+  }
+
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     invalidPayload();
   }

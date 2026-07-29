@@ -267,6 +267,91 @@ describe("MacroMicro submission CLI", () => {
     });
   });
 
+  it("maps every malformed source-error summary to sanitized INVALID_RESULT", async () => {
+    const inherited = Object.create({ errorCode: "PAGE_UNAVAILABLE" });
+    inherited.seriesId = "MACROMICRO:TAIEX_MARGIN_MAINTENANCE";
+    inherited.status = "error";
+    const cases = [
+      {
+        result: { status: "error", errorCode: "PAGE_UNAVAILABLE" },
+        untrusted: "PAGE_UNAVAILABLE",
+      },
+      {
+        result: {
+          seriesId: "WRONG_SERIES_SECRET",
+          status: "error",
+          errorCode: "PAGE_UNAVAILABLE",
+        },
+        untrusted: "WRONG_SERIES_SECRET",
+      },
+      {
+        result: {
+          seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+          status: "error",
+        },
+      },
+      {
+        result: {
+          seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+          status: "error",
+          errorCode: { secret: "OBJECT_CODE_SECRET" },
+        },
+        untrusted: "OBJECT_CODE_SECRET",
+      },
+      {
+        result: {
+          seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+          status: "error",
+          errorCode: {
+            [Symbol.toPrimitive]() {
+              throw new Error("COERCION_SECRET");
+            },
+          },
+        },
+        untrusted: "COERCION_SECRET",
+      },
+      {
+        result: {
+          seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+          status: "error",
+          errorCode: "UNSUPPORTED_CODE_SECRET",
+        },
+        untrusted: "UNSUPPORTED_CODE_SECRET",
+      },
+      {
+        result: {
+          seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+          status: "error",
+          errorCode: "UPSTASH_REDIS_REST_TOKEN=leak-me",
+        },
+        untrusted: "leak-me",
+      },
+      { result: inherited },
+    ];
+
+    for (const { result, untrusted } of cases) {
+      const stdout = outputBuffer();
+      const stderr = outputBuffer();
+      const exitCode = await runMacroMicroSubmit({
+        argv: ["/private/tmp/macromicro.json"],
+        environment: { DYNAMIC_BETA_DATA_ENABLED: "true" },
+        readFile: async () => "{}",
+        getService: () => ({ async ingest() { return result; } }),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+      });
+
+      assert.equal(exitCode, 1);
+      assert.equal(stdout.read(), "");
+      assert.deepEqual(JSON.parse(stderr.read()), {
+        ok: false,
+        code: "INVALID_RESULT",
+        error: "M 平方同步結果無效，既有 observation 未受影響。",
+      });
+      if (untrusted) assert.equal(stderr.read().includes(untrusted), false);
+    }
+  });
+
   it("does not expose unexpected errors or their stack", async () => {
     const stderr = outputBuffer();
     const secret = "KV_REST_API_TOKEN=do-not-print";

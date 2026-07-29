@@ -3,7 +3,11 @@ import { afterEach, describe, it } from "node:test";
 
 import { GET as readDynamicBetaAdmin } from "../app/api/dynamic-beta/admin/route.js";
 import { POST as syncDynamicBeta } from "../app/api/dynamic-beta/sync/route.js";
-import { POST as ingestMacroMicro } from "../app/api/dynamic-beta/macromicro/route.js";
+import {
+  POST as ingestMacroMicro,
+  createMacroMicroPost,
+} from "../app/api/dynamic-beta/macromicro/route.js";
+import { MacroMicroPayloadError } from "../src/lib/dynamic-beta/macromicro.js";
 import { GET as runDynamicBetaCron } from "../app/api/dynamic-beta/cron/route.js";
 import { GET as previewMarketRiskScore } from "../app/api/dynamic-beta/score-preview/route.js";
 import {
@@ -149,6 +153,22 @@ describe("dynamic beta internal routes", () => {
 });
 
 describe("MacroMicro ingestion route", () => {
+  function request(body = {}) {
+    return new Request(
+      "https://example.com/api/dynamic-beta/macromicro?token=admin-secret",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  function enableRoute() {
+    process.env.USAGE_ADMIN_TOKEN = "admin-secret";
+    process.env.DYNAMIC_BETA_DATA_ENABLED = "true";
+  }
+
   it("rejects requests without the existing admin token", async () => {
     process.env.USAGE_ADMIN_TOKEN = "admin-secret";
     process.env.DYNAMIC_BETA_DATA_ENABLED = "true";
@@ -184,6 +204,93 @@ describe("MacroMicro ingestion route", () => {
 
     assert.equal(response.status, 400);
     assert.deepEqual(await response.json(), { error: "JSON 格式無效。" });
+  });
+
+  it("returns 200 for both successful storage and a fixed source error", async () => {
+    enableRoute();
+    const results = [
+      {
+        seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+        status: "success",
+        inserted: 1,
+        revised: 0,
+        unchanged: 0,
+        latestObservationDate: "2026-07-28",
+      },
+      {
+        seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+        status: "error",
+        errorCode: "LATEST_DATA_MISSING",
+      },
+    ];
+
+    for (const result of results) {
+      const post = createMacroMicroPost({
+        getService: () => ({ async ingest() { return result; } }),
+      });
+      const response = await post(request());
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), result);
+    }
+  });
+
+  it("maps semantic payload validation failures to 400", async () => {
+    enableRoute();
+    const post = createMacroMicroPost({
+      getService: () => ({
+        async ingest() { throw new MacroMicroPayloadError(); },
+      }),
+    });
+
+    const response = await post(request({ observationDate: "invalid" }));
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "MacroMicro payload 無效。" });
+  });
+
+  it("maps lock contention to 409", async () => {
+    enableRoute();
+    const post = createMacroMicroPost({
+      getService: () => ({
+        async ingest() { throw new Error("Dynamic Beta 資料同步已在執行中。"); },
+      }),
+    });
+
+    const response = await post(request());
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), {
+      error: "Dynamic Beta 資料同步已在執行中。",
+    });
+  });
+
+  it("returns 503 when the ingestion service is unconfigured", async () => {
+    enableRoute();
+    const response = await createMacroMicroPost({
+      getService: () => null,
+    })(request());
+
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), {
+      configured: false,
+      error: "缺少 Upstash Redis 設定。",
+    });
+  });
+
+  it("sanitizes unexpected ingestion failures as 500", async () => {
+    enableRoute();
+    const secret = "UPSTASH_REDIS_REST_TOKEN=do-not-reflect";
+    const post = createMacroMicroPost({
+      getService: () => ({ async ingest() { throw new Error(secret); } }),
+    });
+
+    const response = await post(request());
+    const body = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.deepEqual(body, { error: "MacroMicro 資料寫入失敗。" });
+    assert.equal(JSON.stringify(body).includes(secret), false);
   });
 });
 

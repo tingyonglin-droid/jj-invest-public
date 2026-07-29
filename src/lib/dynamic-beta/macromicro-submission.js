@@ -1,4 +1,7 @@
-import { MACROMICRO_MARGIN_SERIES_ID } from "./macromicro.js";
+import {
+  MACROMICRO_MARGIN_SERIES_ID,
+  MACROMICRO_SOURCE_ERROR_MESSAGES,
+} from "./macromicro.js";
 
 export class MacroMicroSubmissionError extends Error {
   constructor(code, message) {
@@ -29,6 +32,19 @@ function isStoredObservationSummary(result) {
     counts.every((count) => Number.isInteger(count) && count >= 0) &&
     counts.reduce((total, count) => total + count, 0) === 1 &&
     isIsoDate(result.latestObservationDate)
+  );
+}
+
+function isSourceErrorSummary(result) {
+  return (
+    result &&
+    typeof result === "object" &&
+    !Array.isArray(result) &&
+    result.seriesId === MACROMICRO_MARGIN_SERIES_ID &&
+    result.status === "error" &&
+    Object.hasOwn(result, "errorCode") &&
+    typeof result.errorCode === "string" &&
+    Object.hasOwn(MACROMICRO_SOURCE_ERROR_MESSAGES, result.errorCode)
   );
 }
 
@@ -65,7 +81,7 @@ export async function submitMacroMicroFile({
   }
 
   const result = await service.ingest(payload);
-  if (result && result.status === "error") {
+  if (isSourceErrorSummary(result)) {
     throw new MacroMicroSubmissionError(
       result.errorCode,
       "M 平方來源同步失敗，已保留既有 observation。",

@@ -10,6 +10,7 @@ import {
 } from "../src/lib/dynamic-beta/macromicro.js";
 import { getDynamicBetaSeries } from "../src/lib/dynamic-beta/catalog.js";
 import { createMacroMicroIngestionService } from "../src/lib/dynamic-beta/macromicro-service.js";
+import { createDynamicBetaRepository } from "../src/lib/dynamic-beta/repository.js";
 import { createConfiguredMacroMicroIngestionService } from "../app/api/dynamic-beta/_shared.js";
 
 const context = Object.freeze({
@@ -40,6 +41,45 @@ test("normalizes a MacroMicro margin observation", () => {
       },
     },
   );
+});
+
+test("rejects a non-canonical or invalid retrieval timestamp context", () => {
+  const invalidRetrievedAtValues = [
+    undefined,
+    "2026-07-29",
+    "2026-07-29T00:00:00Z",
+    "2026-07-29T08:00:00.000+08:00",
+    "not-an-instant",
+  ];
+
+  for (const retrievedAt of invalidRetrievedAtValues) {
+    assert.throws(
+      () => normalizeMacroMicroPayload({
+        errorCode: "PAGE_UNAVAILABLE",
+        sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+      }, { ...context, retrievedAt }),
+      MacroMicroPayloadError,
+    );
+  }
+});
+
+test("rejects a missing or invalid injected calendar date", () => {
+  const invalidTodayValues = [
+    undefined,
+    "2026-02-30",
+    "2026-7-29",
+    "2026-07-29T00:00:00.000Z",
+  ];
+
+  for (const today of invalidTodayValues) {
+    assert.throws(
+      () => normalizeMacroMicroPayload({
+        errorCode: "PAGE_UNAVAILABLE",
+        sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+      }, { ...context, today }),
+      MacroMicroPayloadError,
+    );
+  }
 });
 
 test("accepts inclusive MacroMicro margin value boundaries", () => {
@@ -221,6 +261,45 @@ function createRepositorySpy({ saveObservations } = {}) {
   };
 }
 
+class StatusMergeRedis {
+  constructor() {
+    this.hashes = new Map();
+    this.sets = new Map();
+    this.strings = new Map();
+  }
+
+  async hgetall(key) {
+    return { ...(this.hashes.get(key) || {}) };
+  }
+
+  async hset(key, values) {
+    this.hashes.set(key, { ...(this.hashes.get(key) || {}), ...values });
+    return 1;
+  }
+
+  async sadd(key, value) {
+    const values = this.sets.get(key) || new Set();
+    const size = values.size;
+    values.add(value);
+    this.sets.set(key, values);
+    return values.size === size ? 0 : 1;
+  }
+
+  async set(key, value, options = {}) {
+    if (options.nx && this.strings.has(key)) return null;
+    this.strings.set(key, value);
+    return "OK";
+  }
+
+  async get(key) {
+    return this.strings.get(key) ?? null;
+  }
+
+  async del(key) {
+    return this.strings.delete(key) ? 1 : 0;
+  }
+}
+
 function createService({ repository, logger = { error() {} } } = {}) {
   return createMacroMicroIngestionService({
     repository,
@@ -286,7 +365,7 @@ test("ingests a MacroMicro observation while preserving repository revision coun
       updated_at: "2026-07-29T00:00:00.000Z",
     },
   });
-  assert.equal(calls.releaseSyncLock.length, 1);
+  assert.deepEqual(calls.releaseSyncLock, calls.acquireSyncLock);
 });
 
 test("records a MacroMicro source failure without saving an observation", async () => {
@@ -313,7 +392,31 @@ test("records a MacroMicro source failure without saving an observation", async 
       updated_at: "2026-07-29T00:00:00.000Z",
     },
   });
-  assert.equal(calls.releaseSyncLock.length, 1);
+  assert.deepEqual(calls.releaseSyncLock, calls.acquireSyncLock);
+});
+
+test("repository status patches preserve the last successful observation on source error", async () => {
+  const repository = createDynamicBetaRepository(new StatusMergeRedis());
+  await repository.writeSeriesStatus(MACROMICRO_MARGIN_SERIES_ID, {
+    series_id: MACROMICRO_MARGIN_SERIES_ID,
+    status: "success",
+    last_success_at: "2026-07-28T00:00:00.000Z",
+    latest_observation_date: "2026-07-27",
+  });
+
+  await createService({ repository }).ingest({
+    errorCode: "LATEST_DATA_MISSING",
+    sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+  });
+
+  const status = await repository.readSeriesStatus(MACROMICRO_MARGIN_SERIES_ID);
+  assert.equal(status.status, "error");
+  assert.equal(status.last_success_at, "2026-07-28T00:00:00.000Z");
+  assert.equal(status.latest_observation_date, "2026-07-27");
+  assert.equal(
+    status.error,
+    MACROMICRO_SOURCE_ERROR_MESSAGES.LATEST_DATA_MISSING,
+  );
 });
 
 test("rejects MacroMicro ingestion when the Dynamic Beta sync lock is held", async () => {
@@ -344,7 +447,7 @@ test("releases the lock and logs no raw secret when MacroMicro repository writes
 
   await assert.rejects(createService({ repository, logger }).ingest(successfulPayload));
 
-  assert.equal(calls.releaseSyncLock.length, 1);
+  assert.deepEqual(calls.releaseSyncLock, calls.acquireSyncLock);
   assert.equal(calls.statuses.at(-1).status.status, "error");
   assert.deepEqual(errors, [
     {
