@@ -339,6 +339,7 @@ The script marker is `-- jj-news-confirmation-snapshot-save-v1`. Its ordered beh
 
 ```lua
 local payload = redis.call("HGET", KEYS[1], "payload")
+local wasCommitted = redis.call("HGET", KEYS[1], "committed") == "1"
 local revisionNumber
 if payload then
   revisionNumber = tonumber(redis.call("HGET", KEYS[1], "snapshotRevisionNumber"))
@@ -356,21 +357,21 @@ else
 end
 redis.call("ZADD", KEYS[2], revisionNumber, ARGV[1])
 redis.call("ZADD", KEYS[5], ARGV[2], ARGV[3])
-redis.call("HSET", KEYS[1], "committed", "1")
+redis.call("ZADD", KEYS[6], ARGV[2], ARGV[5])
 local latestNumber = tonumber(redis.call("HGET", KEYS[3], "snapshotRevisionNumber")) or 0
 if revisionNumber >= latestNumber then
   redis.call("HSET", KEYS[3],
     "snapshotId", ARGV[1],
     "snapshotRevisionNumber", tostring(revisionNumber))
 end
-redis.call("ZADD", KEYS[6], ARGV[2], ARGV[5])
+redis.call("HSET", KEYS[1], "committed", "1")
 local status = "inserted"
-if payload then status = "unchanged"
+if wasCommitted then status = "unchanged"
 elseif revisionNumber > 1 then status = "revised" end
 return {status, ARGV[1], tostring(revisionNumber)}
 ```
 
-Pass `snapshotId`, `asOfScore`, `asOf`, serialized snapshot, and timeline member as arguments. Validate the three returned fields before returning success.
+Pass `snapshotId`, `asOfScore`, `asOf`, serialized snapshot, and timeline member as arguments. All index and pointer operations must complete before `committed` becomes `"1"`; the final commit-marker HSET is deliberately last. A retry of an uncommitted payload reuses its allocated revision number but returns `inserted` or `revised` after the first successful commit, while a previously committed identical payload returns `unchanged`. Validate the three returned fields before returning success.
 
 - [ ] **Step 5: Add Lua execution and failure-retry tests**
 
@@ -385,7 +386,9 @@ assert.equal(await repository.readLatestSnapshot(identity), null);
 assert.equal((await repository.saveSnapshot(snapshot)).status, "inserted");
 ```
 
-Also call two different same-day snapshots concurrently with `Promise.all`; assert revision numbers are `{1, 2}`, both payloads exist, and latest is revision 2.
+Also inject a real Lua runtime error after record allocation but before the commit marker by pre-seeding the timeline key with the wrong Redis type. Assert `saveSnapshot` rejects, all repository reads ignore the uncommitted record, clearing the bad key and retrying returns `inserted`, and the same subsequent retry returns `unchanged`. Call two different same-day snapshots concurrently with `Promise.all`; assert revision numbers are `{1, 2}`, both payloads exist, and latest is revision 2.
+
+Add real-client compatibility fixtures where `hgetall` returns `committed: 1`, an already-deserialized payload object, and numeric `snapshotRevisionNumber`. Assert exact, history, and recent reads accept these Upstash automatic-deserialization shapes without weakening structural or content-hash validation.
 
 - [ ] **Step 6: Run repository and Lua tests and verify GREEN**
 
