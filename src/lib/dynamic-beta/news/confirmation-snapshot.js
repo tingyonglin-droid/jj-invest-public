@@ -30,6 +30,14 @@ function validTimestamp(value) {
   return typeof value === "string" && !Number.isNaN(new Date(value).getTime());
 }
 
+function hasExactBriefIdentity(value) {
+  return validDateKey(value?.briefDate)
+    && typeof value?.revisionId === "string"
+    && value.revisionId.length > 0
+    && Number.isInteger(value?.revisionNumber)
+    && value.revisionNumber > 0;
+}
+
 function normalizeObservation(observation) {
   if (!observation || typeof observation !== "object" || Array.isArray(observation)) return null;
   return {
@@ -117,6 +125,7 @@ function completionFor(events) {
 }
 
 export function buildConfirmationSnapshot({ evaluation, createdAt }) {
+  if (!hasExactBriefIdentity(evaluation)) throw new ConfirmationSnapshotError("IDENTITY_MISMATCH");
   if (!validDateKey(evaluation?.asOf)) throw new ConfirmationSnapshotError("INVALID_AS_OF");
   if (!validTimestamp(createdAt)) throw new ConfirmationSnapshotError("INVALID_CREATED_AT");
 
@@ -155,8 +164,41 @@ export function parseStoredConfirmationSnapshot(record) {
   if (record?.committed !== "1" || typeof record?.payload !== "string") return null;
   try {
     const snapshot = JSON.parse(record.payload);
-    return snapshot && typeof snapshot === "object" && !Array.isArray(snapshot) ? snapshot : null;
+    if (!isStoredSnapshot(snapshot)) return null;
+    return snapshot;
   } catch {
     return null;
   }
+}
+
+function isStoredSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
+  if (!hasExactBriefIdentity(snapshot) || !validDateKey(snapshot.asOf)) return false;
+  if (!validTimestamp(snapshot.createdAt)) return false;
+  if (snapshot.evaluatedAt !== null && !validTimestamp(snapshot.evaluatedAt)) return false;
+  if (snapshot.snapshotRevisionNumber !== null
+    && (!Number.isInteger(snapshot.snapshotRevisionNumber) || snapshot.snapshotRevisionNumber < 1)) {
+    return false;
+  }
+  if (snapshot.metadata?.vintageMode !== "latest_stored_revision_by_observation_date"
+    || snapshot.metadata?.truePointInTime !== false) {
+    return false;
+  }
+  if (!Array.isArray(snapshot.events) || typeof snapshot.completion?.complete !== "boolean"
+    || !Array.isArray(snapshot.completion.pendingReasons)) {
+    return false;
+  }
+
+  const content = {
+    briefDate: snapshot.briefDate,
+    revisionId: snapshot.revisionId,
+    revisionNumber: snapshot.revisionNumber,
+    asOf: snapshot.asOf,
+    metadata: snapshot.metadata,
+    completion: snapshot.completion,
+    events: snapshot.events,
+  };
+  return JSON.stringify(normalizeEvents(snapshot.events)) === JSON.stringify(snapshot.events)
+    && JSON.stringify(completionFor(snapshot.events)) === JSON.stringify(snapshot.completion)
+    && snapshot.snapshotId === confirmationSnapshotId(content);
 }

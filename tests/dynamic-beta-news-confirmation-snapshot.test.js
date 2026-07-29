@@ -164,9 +164,12 @@ describe("canonical confirmation snapshot content", () => {
   it("parses only committed and well-formed stored snapshots", () => {
     const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
     const payload = JSON.stringify(snapshot);
+    const tampered = { ...snapshot, snapshotId: "ncs_tampered" };
 
     assert.equal(parseStoredConfirmationSnapshot({ payload, committed: "0" }), null);
     assert.equal(parseStoredConfirmationSnapshot({ payload: "not json", committed: "1" }), null);
+    assert.equal(parseStoredConfirmationSnapshot({ payload: "{}", committed: "1" }), null);
+    assert.equal(parseStoredConfirmationSnapshot({ payload: JSON.stringify(tampered), committed: "1" }), null);
     assert.deepEqual(parseStoredConfirmationSnapshot({ payload, committed: "1" }), snapshot);
   });
 
@@ -179,6 +182,19 @@ describe("canonical confirmation snapshot content", () => {
       () => buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: "not a timestamp" }),
       (error) => error instanceof ConfirmationSnapshotError && error.code === "INVALID_CREATED_AT",
     );
+  });
+
+  it("requires an exact brief identity with a stable error code", () => {
+    for (const identity of [
+      { briefDate: null },
+      { revisionId: "" },
+      { revisionNumber: null },
+    ]) {
+      assert.throws(
+        () => buildConfirmationSnapshot({ evaluation: { ...evaluation([rule()]), ...identity }, createdAt: CREATED_AT }),
+        (error) => error instanceof ConfirmationSnapshotError && error.code === "IDENTITY_MISMATCH",
+      );
+    }
   });
 
   it("reports only explicitly complete snapshots as complete", () => {
