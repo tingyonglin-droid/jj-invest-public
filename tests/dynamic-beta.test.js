@@ -105,8 +105,8 @@ class FakeRedis {
 
 describe("dynamic beta catalog", () => {
   it("contains every requested FRED and equity series exactly once", () => {
-    assert.equal(DYNAMIC_BETA_SERIES.length, 20);
-    assert.equal(new Set(DYNAMIC_BETA_SERIES.map((series) => series.seriesId)).size, 20);
+    assert.equal(DYNAMIC_BETA_SERIES.length, 21);
+    assert.equal(new Set(DYNAMIC_BETA_SERIES.map((series) => series.seriesId)).size, 21);
     assert.deepEqual(
       DYNAMIC_BETA_SERIES.filter((series) => series.source === "FRED").map(
         (series) => series.seriesId,
@@ -146,6 +146,20 @@ describe("dynamic beta catalog", () => {
     assert.equal(getDynamicBetaSeries("YAHOO:CL=F")?.unit, "Dollars per Barrel");
     assert.equal(getDynamicBetaSeries("YAHOO:^TNX")?.unit, "Percent");
     assert.equal(getDynamicBetaSeries("YAHOO:2YY=F")?.unit, "Percent");
+    const macroMicro = getDynamicBetaSeries(
+      "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+    );
+    assert.deepEqual(macroMicro, {
+      seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+      name: "Taiwan TAIEX Margin Maintenance Ratio",
+      category: "market_stress",
+      source: "MacroMicro",
+      frequency: "Daily",
+      unit: "Percent",
+      enabled: true,
+      syncMode: "external",
+      freshnessPolicy: { kind: "weekdays", fresh: 1, delayed: 2 },
+    });
   });
 });
 
@@ -679,6 +693,42 @@ describe("dynamic beta synchronization", () => {
     await assert.rejects(
       service.sync({ seriesIds: ["NOT_ALLOWED"] }),
       /不支援的 Dynamic Beta series：NOT_ALLOWED/,
+    );
+  });
+
+  it("excludes externally managed series from Yahoo synchronization", async () => {
+    const repository = createDynamicBetaRepository(new FakeRedis());
+    const fetchedSeriesIds = [];
+    const service = createDynamicBetaSyncService({
+      repository,
+      seriesCatalog: [
+        {
+          seriesId: "YAHOO:SPY",
+          symbol: "SPY",
+          source: "Yahoo Finance",
+          enabled: true,
+        },
+        {
+          seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+          source: "MacroMicro",
+          enabled: true,
+          syncMode: "external",
+        },
+      ],
+      equityFetcher: async (series) => {
+        fetchedSeriesIds.push(series.seriesId);
+        return [];
+      },
+      now: () => new Date("2026-07-27T12:00:00.000Z"),
+      logger: { info() {}, error() {} },
+    });
+
+    await service.sync();
+
+    assert.deepEqual(fetchedSeriesIds, ["YAHOO:SPY"]);
+    await assert.rejects(
+      service.sync({ seriesIds: ["MACROMICRO:TAIEX_MARGIN_MAINTENANCE"] }),
+      /不支援的 Dynamic Beta series：MACROMICRO:TAIEX_MARGIN_MAINTENANCE/,
     );
   });
 

@@ -60,9 +60,22 @@ const EQUITY_SERIES = [
   freshnessPolicy: MARKET_DAILY_FRESHNESS,
 }));
 
+const EXTERNAL_SERIES = [{
+  seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+  name: "Taiwan TAIEX Margin Maintenance Ratio",
+  category: "market_stress",
+  source: "MacroMicro",
+  frequency: "Daily",
+  unit: "Percent",
+  enabled: true,
+  syncMode: "external",
+  freshnessPolicy: MARKET_DAILY_FRESHNESS,
+}];
+
 export const DYNAMIC_BETA_SERIES = Object.freeze([
   ...FRED_SERIES,
   ...EQUITY_SERIES,
+  ...EXTERNAL_SERIES,
 ].map((series) => Object.freeze(series)));
 
 export function getDynamicBetaSeries(seriesId) {

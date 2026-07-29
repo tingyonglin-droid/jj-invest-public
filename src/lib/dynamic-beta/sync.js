@@ -27,13 +27,16 @@ export function createDynamicBetaSyncService({
   return {
     async sync({ seriesIds } = {}) {
       const requested = seriesIds?.length ? [...new Set(seriesIds)] : null;
-      const allowedIds = new Set(seriesCatalog.map((series) => series.seriesId));
+      const automaticSeries = seriesCatalog.filter(
+        (series) => series.syncMode !== "external",
+      );
+      const allowedIds = new Set(automaticSeries.map((series) => series.seriesId));
       const unknown = (requested || []).find((seriesId) => !allowedIds.has(seriesId));
       if (unknown) {
         throw new Error(`不支援的 Dynamic Beta series：${unknown}`);
       }
 
-      const selectedSeries = seriesCatalog.filter(
+      const selectedSeries = automaticSeries.filter(
         (series) =>
           series.enabled && (!requested || requested.includes(series.seriesId)),
       );
