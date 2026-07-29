@@ -1,0 +1,162 @@
+{
+  "briefDate": "2026-07-27",
+  "generatedAt": "2026-07-28T00:30:00.000Z",
+  "analystLabel": "risk_elevated",
+  "analystRationale": "美伊暫停攻擊使原油與美債殖利率回落，短線降低通膨與估值壓力；但荷莫茲海峽運輸尚未完全恢復，本週 FOMC 仍存在升息尾部風險，大型科技公司也將面臨 AI 資本支出與現金流回報的集中檢驗，因此維持風險升高而非 Risk-On。",
+  "evidence": [
+    {
+      "url": "https://in.marketscreener.com/news/oil-slips-5-after-us-iran-pause-fighting-over-weekend-ce7f51dcd88dff27",
+      "sourceName": "Reuters via MarketScreener",
+      "sourceTier": "reputable_media",
+      "title": "Oil prices dip over 6% after US, Iran pause fighting over weekend",
+      "summary": "Brent and WTI fell more than 6% after the United States and Iran paused strikes, although shipping through the Strait of Hormuz remained limited.",
+      "publishedAt": "2026-07-27T00:13:00.000Z"
+    },
+    {
+      "url": "https://in.marketscreener.com/news/global-stocks-climb-oil-slides-after-pause-in-middle-east-fighting-ce7f51dcda81f521",
+      "sourceName": "Reuters via MarketScreener",
+      "sourceTier": "reputable_media",
+      "title": "Falling oil prices spark relief rally in global stocks, bonds",
+      "summary": "Lower oil prices eased inflation concerns, supported stocks and bonds, and pushed the US 10-year Treasury yield lower ahead of central-bank meetings and major earnings.",
+      "publishedAt": "2026-07-27T09:04:00.000Z"
+    },
+    {
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "sourceName": "Federal Reserve Board",
+      "sourceTier": "primary",
+      "title": "2026 FOMC meeting calendar",
+      "summary": "The Federal Reserve calendar confirms the next FOMC meeting will be held July 28-29, 2026.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://news.microsoft.com/source/2026/07/08/microsoft-announces-quarterly-earnings-release-date-68/",
+      "sourceName": "Microsoft",
+      "sourceTier": "primary",
+      "title": "Microsoft announces quarterly earnings release date",
+      "summary": "Microsoft will release fiscal 2026 fourth-quarter results after the market close on July 29, 2026.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3",
+      "sourceName": "Microsoft Investor Relations",
+      "sourceTier": "primary",
+      "title": "Microsoft Fiscal Year 2026 Third Quarter Earnings Conference Call",
+      "summary": "Microsoft previously guided calendar-2026 capital expenditure to roughly $190 billion while reporting continued AI demand and capacity constraints.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://pr.tsmc.com/english/news/3326",
+      "sourceName": "TSMC",
+      "sourceTier": "primary",
+      "title": "TSMC Reports Second Quarter EPS of NT$27.25",
+      "summary": "TSMC reported second-quarter revenue growth of 36% year over year, net income growth of 77.4%, and continued strong demand for leading-edge processes including the 2-nanometer ramp.",
+      "publishedAt": null
+    }
+  ],
+  "events": [
+    {
+      "rank": 1,
+      "headline": "美伊暫停攻擊，Brent 與 WTI 單日急跌超過 6%",
+      "summary": "中東衝突暫時降溫使原油戰爭溢價快速回吐，但荷莫茲海峽船運仍低迷，供應風險尚未完全解除。",
+      "topicIds": ["energy_geopolitics", "inflation_rates"],
+      "evidenceUrls": ["https://in.marketscreener.com/news/oil-slips-5-after-us-iran-pause-fighting-over-weekend-ce7f51dcd88dff27"],
+      "transmissionPath": ["美伊暫停攻擊", "原油戰爭溢價下降", "通膨預期降溫", "Fed 升息壓力下降", "科技股估值壓力暫緩"],
+      "affectedAssets": ["Brent", "WTI", "DGS2", "DGS10", "QQQ", "SOXX"],
+      "dataToConfirm": ["YAHOO:BZ=F", "YAHOO:CL=F", "DCOILBRENTEU", "DCOILWTICO", "DGS2", "DGS10"],
+      "marketDate": "2026-07-27",
+      "confirmationRules": [
+        { "seriesId": "YAHOO:BZ=F", "expectedDirection": "down", "changeType": "percent", "threshold": 2 },
+        { "seriesId": "YAHOO:CL=F", "expectedDirection": "down", "changeType": "percent", "threshold": 2 },
+        { "seriesId": "DGS2", "expectedDirection": "down", "changeType": "basis_points", "threshold": 5 },
+        { "seriesId": "DGS10", "expectedDirection": "down", "changeType": "basis_points", "threshold": 5 }
+      ],
+      "interpretation": "短線屬風險資產利多，但必須觀察油價是否持續回落以及海峽運輸是否恢復；若停火破裂，通膨與殖利率壓力可能迅速反轉。",
+      "confidence": 0.9,
+      "techEarnings": null
+    },
+    {
+      "rank": 2,
+      "headline": "FOMC 將於 7 月 28–29 日召開，市場仍保留升息尾部風險",
+      "summary": "Fed 官方日程確認本週會議；Reuters 報導市場雖因油價下跌而稍微降低升息押注，但仍存在約三分之一的升息機率。",
+      "topicIds": ["global_macro_fed", "inflation_rates"],
+      "evidenceUrls": ["https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "https://in.marketscreener.com/news/global-stocks-climb-oil-slides-after-pause-in-middle-east-fighting-ce7f51dcda81f521"],
+      "transmissionPath": ["FOMC 政策訊號", "短端殖利率與終端利率預期", "美元與金融條件", "科技股折現率", "大盤估值"],
+      "affectedAssets": ["DGS2", "DGS10", "US Dollar", "SPY", "QQQ", "SOXX"],
+      "dataToConfirm": ["DGS2", "DGS10", "YAHOO:2YY=F", "YAHOO:^TNX", "YAHOO:QQQ", "YAHOO:SOXX"],
+      "marketDate": "2026-07-30",
+      "confirmationRules": [
+        { "seriesId": "DGS2", "expectedDirection": "up", "changeType": "basis_points", "threshold": 5 },
+        { "seriesId": "DGS10", "expectedDirection": "up", "changeType": "basis_points", "threshold": 5 },
+        { "seriesId": "YAHOO:QQQ", "expectedDirection": "down", "changeType": "percent", "threshold": 1 },
+        { "seriesId": "YAHOO:SOXX", "expectedDirection": "down", "changeType": "percent", "threshold": 1.5 }
+      ],
+      "interpretation": "真正風險不是單次利率決議，而是 Fed 是否認為能源衝擊會轉成持續性通膨；若兩年期殖利率重新上行，需提高警戒。",
+      "confidence": 0.85,
+      "techEarnings": null
+    },
+    {
+      "rank": 3,
+      "headline": "油價與殖利率下跌帶動跨資產 relief rally，但尚未確認為持續 Risk-On",
+      "summary": "全球股債同步反彈，美國十年期殖利率回落；然而 Nasdaq 當日表現仍受科技股分化影響，這次跨資產反彈仍需後續市場數據確認。",
+      "topicIds": ["market_stress", "credit_liquidity", "inflation_rates"],
+      "evidenceUrls": ["https://in.marketscreener.com/news/global-stocks-climb-oil-slides-after-pause-in-middle-east-fighting-ce7f51dcda81f521"],
+      "transmissionPath": ["油價回落", "通膨風險下降", "公債殖利率下降", "金融條件放鬆", "股債反彈"],
+      "affectedAssets": ["SPY", "QQQ", "SOXX", "VIX", "US High Yield", "DGS10"],
+      "dataToConfirm": ["YAHOO:SPY", "YAHOO:QQQ", "YAHOO:SOXX", "YAHOO:^VIX", "BAMLH0A0HYM2", "DGS10"],
+      "marketDate": "2026-07-27",
+      "confirmationRules": [
+        { "seriesId": "YAHOO:SPY", "expectedDirection": "up", "changeType": "percent", "threshold": 0.75 },
+        { "seriesId": "YAHOO:QQQ", "expectedDirection": "up", "changeType": "percent", "threshold": 1 },
+        { "seriesId": "YAHOO:SOXX", "expectedDirection": "up", "changeType": "percent", "threshold": 1.5 },
+        { "seriesId": "YAHOO:^VIX", "expectedDirection": "down", "changeType": "absolute", "threshold": 1 },
+        { "seriesId": "BAMLH0A0HYM2", "expectedDirection": "down", "changeType": "basis_points", "threshold": 5 },
+        { "seriesId": "DGS10", "expectedDirection": "down", "changeType": "basis_points", "threshold": 5 }
+      ],
+      "interpretation": "若 VIX、HY spread 與殖利率同時下降，才可視為風險真正收斂；若只有股價反彈而信用利差不改善，可能只是事件驅動的短線反彈。",
+      "confidence": 0.75,
+      "techEarnings": null
+    },
+    {
+      "rank": 4,
+      "headline": "Microsoft 與其他科技巨頭本週財報將檢驗 AI CapEx 的現金流回報",
+      "summary": "Microsoft 將於 7 月 29 日公布財報。公司先前預估 2026 年資本支出約 1,900 億美元，市場焦點將從 AI 成長轉向 CapEx、自由現金流與投資報酬能否同步。",
+      "topicIds": ["megacap_earnings", "ai_semiconductors", "data_centers"],
+      "evidenceUrls": ["https://news.microsoft.com/source/2026/07/08/microsoft-announces-quarterly-earnings-release-date-68/", "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q3", "https://in.marketscreener.com/news/global-stocks-climb-oil-slides-after-pause-in-middle-east-fighting-ce7f51dcda81f521"],
+      "transmissionPath": ["AI 與 Cloud 成長", "資料中心 CapEx", "自由現金流與融資需求", "大型科技股估值", "Nasdaq 與半導體"],
+      "affectedAssets": ["Microsoft", "QQQ", "SOXX", "SPY", "DGS10"],
+      "dataToConfirm": ["YAHOO:QQQ", "YAHOO:SOXX", "YAHOO:SPY", "DGS10"],
+      "confirmationRules": [],
+      "interpretation": "營收與 AI 成長若無法抵銷 CapEx 與現金流壓力，風險可能由單一公司擴散到 Nasdaq 估值；正式數字公布前不推測 FCF。",
+      "confidence": 0.8,
+      "techEarnings": {
+        "company": "Microsoft",
+        "revenueGrowthPct": null,
+        "aiCloudGrowthPct": null,
+        "capexGrowthPct": null,
+        "freeCashFlowGrowthPct": null,
+        "capexGrowingFasterThanFcf": null
+      }
+    },
+    {
+      "rank": 5,
+      "headline": "TSMC 第二季營收年增 36%，先進製程需求維持強勁",
+      "summary": "TSMC 第二季營收達新台幣 1.27 兆元、淨利年增 77.4%，並表示第三季將受先進製程與 2 奈米量產爬坡支持。",
+      "topicIds": ["ai_semiconductors", "taiwan_tech_supply_chain"],
+      "evidenceUrls": ["https://pr.tsmc.com/english/news/3326"],
+      "transmissionPath": ["AI 算力需求", "先進製程與 2 奈米需求", "台灣半導體供應鏈訂單", "SOXX 與台股科技權值", "0050 表現"],
+      "affectedAssets": ["TSMC", "SOXX", "0050", "Taiwan semiconductor supply chain"],
+      "dataToConfirm": ["YAHOO:SOXX", "YAHOO:0050.TW", "YAHOO:QQQ"],
+      "confirmationRules": [],
+      "interpretation": "基本面仍支持 AI 供應鏈，但若美國利率或大型雲端公司的 CapEx 回報惡化，強勁晶圓需求未必能完全抵銷估值壓縮。",
+      "confidence": 0.9,
+      "techEarnings": {
+        "company": "TSMC",
+        "revenueGrowthPct": 36,
+        "aiCloudGrowthPct": null,
+        "capexGrowthPct": null,
+        "freeCashFlowGrowthPct": null,
+        "capexGrowingFasterThanFcf": null
+      }
+    }
+  ]
+}

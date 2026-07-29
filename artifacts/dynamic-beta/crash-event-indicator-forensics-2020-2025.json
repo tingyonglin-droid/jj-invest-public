@@ -1,0 +1,4137 @@
+{
+  "generatedAt": "2026-07-27T15:04:19.117Z",
+  "method": "fixed-rule-event-forensics-v0.1.0",
+  "anomalyScore": 50,
+  "macroHistoryQuality": "revised-data-with-conservative-release-lag",
+  "controlCandidateCount": 30,
+  "events": [
+    {
+      "id": "covid-2020",
+      "name": "2020 年 3 月疫情崩盤",
+      "peakDate": "2020-02-19",
+      "troughDate": "2020-03-23",
+      "drawdownPercent": -34.1,
+      "matchedControls": [
+        {
+          "date": "2024-01-16",
+          "future20Drawdown": -0.5559,
+          "future60Drawdown": -0.5559,
+          "coverage": 1,
+          "vector": {
+            "vix": 13.84,
+            "spy60": 5.355039746506218
+          },
+          "distance": 0.06755550679320148
+        },
+        {
+          "date": "2024-03-15",
+          "future20Drawdown": -1.0552,
+          "future60Drawdown": -2.8774,
+          "coverage": 1,
+          "vector": {
+            "vix": 14.41,
+            "spy60": 6.954349753678812
+          },
+          "distance": 0.14937549392405797
+        },
+        {
+          "date": "2024-02-15",
+          "future20Drawdown": -1.0458,
+          "future60Drawdown": -1.3645,
+          "coverage": 1,
+          "vector": {
+            "vix": 14.01,
+            "spy60": 6.963122776798625
+          },
+          "distance": 0.18425279623603935
+        },
+        {
+          "date": "2023-06-15",
+          "future20Drawdown": -2.5215,
+          "future60Drawdown": -2.5215,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 14.5,
+            "spy60": 7.307378963498845
+          },
+          "distance": 0.19367841490606122
+        },
+        {
+          "date": "2021-08-16",
+          "future20Drawdown": -1.7428,
+          "future60Drawdown": -4.1009,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 16.12,
+            "spy60": 5.924591778486232
+          },
+          "distance": 0.21739969640480003
+        }
+      ],
+      "signals": [
+        {
+          "id": "vix_level",
+          "name": "VIX 水位",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2020-02-24",
+          "leadTradingDays": -3,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 12.78,
+              "score": 0,
+              "riskPercentile1y": 10.3
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 12.5,
+              "score": 0,
+              "riskPercentile1y": 8.3
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 12.85,
+              "score": 0,
+              "riskPercentile1y": 20.6
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 16.05,
+              "score": 25,
+              "riskPercentile1y": 74.2
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 15.18,
+              "score": 25,
+              "riskPercentile1y": 62.3
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 14.38,
+              "score": 0,
+              "riskPercentile1y": 49.2
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 61.59,
+              "score": 100,
+              "riskPercentile1y": 97.6
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "vix_20d_change",
+          "name": "VIX 20 日變化",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2020-01-27",
+          "leadTradingDays": 16,
+          "anomalyDaysBeforePeak": 6,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": -0.4400000000000013,
+              "score": 0,
+              "riskPercentile1y": 54
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": -0.11999999999999922,
+              "score": 0,
+              "riskPercentile1y": 58.3
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": -0.9299999999999997,
+              "score": 0,
+              "riskPercentile1y": 44
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 3.630000000000001,
+              "score": 50,
+              "riskPercentile1y": 89.7
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 2.2699999999999996,
+              "score": 25,
+              "riskPercentile1y": 79.4
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": -1.1099999999999994,
+              "score": 0,
+              "riskPercentile1y": 33.3
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 24.770000000000003,
+              "score": 100,
+              "riskPercentile1y": 95.2
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_20d_return",
+          "name": "SPY 20 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2020-01-29",
+          "leadTradingDays": 14,
+          "anomalyDaysBeforePeak": 3,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 2.4527751197568337,
+              "score": 0,
+              "riskPercentile1y": 33.3
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 2.0966550186371613,
+              "score": 0,
+              "riskPercentile1y": 41.3
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 2.932953107263425,
+              "score": 0,
+              "riskPercentile1y": 23
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 0.26508885423552897,
+              "score": 25,
+              "riskPercentile1y": 73
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 1.1830788528580882,
+              "score": 25,
+              "riskPercentile1y": 57.9
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 3.253175018426213,
+              "score": 0,
+              "riskPercentile1y": 11.1
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": -25.742737743162813,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_60d_return",
+          "name": "SPY 60 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2020-02-24",
+          "leadTradingDays": -3,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 4.187337496811705,
+              "score": 25,
+              "riskPercentile1y": 32.1
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 7.695403088177755,
+              "score": 0,
+              "riskPercentile1y": 9.1
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 6.5410332186830455,
+              "score": 0,
+              "riskPercentile1y": 19.4
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 4.506622625672874,
+              "score": 25,
+              "riskPercentile1y": 47.2
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 5.653599529599229,
+              "score": 0,
+              "riskPercentile1y": 32.9
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 5.490594814438232,
+              "score": 0,
+              "riskPercentile1y": 35.7
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": -32.78970332575546,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "spy_drawdown",
+          "name": "SPY 近一年回撤",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2020-02-25",
+          "leadTradingDays": -4,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": -0.4006153592759798,
+              "score": 0,
+              "riskPercentile1y": 17.5
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 12.3
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": -0.1958199699227836,
+              "score": 0,
+              "riskPercentile1y": 22.6
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": -0.8706174249618837,
+              "score": 0,
+              "riskPercentile1y": 39.7
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 17.5
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 18.7
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": -34.10474689324394,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "qqq_relative_20d",
+          "name": "QQQ 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2020-04-09",
+          "leadTradingDays": -36,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 0.11978019703065002,
+              "score": 0,
+              "riskPercentile1y": 62.3
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 0.7117283725992296,
+              "score": 0,
+              "riskPercentile1y": 35.3
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 2.085624635229566,
+              "score": 0,
+              "riskPercentile1y": 5.2
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 3.0505323078068303,
+              "score": 0,
+              "riskPercentile1y": 0.8
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 2.452959726312587,
+              "score": 0,
+              "riskPercentile1y": 3.6
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 3.2068381126319823,
+              "score": 0,
+              "riskPercentile1y": 0.4
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 7.115666037269065,
+              "score": 0,
+              "riskPercentile1y": 0.4
+            }
+          },
+          "classification": "late"
+        },
+        {
+          "id": "soxx_relative_20d",
+          "name": "SOXX 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2019-11-29",
+          "leadTradingDays": 54,
+          "anomalyDaysBeforePeak": 10,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 1.1353697906548277,
+              "score": 0,
+              "riskPercentile1y": 59.9
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 4.533742041887567,
+              "score": 0,
+              "riskPercentile1y": 15.5
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 0.5995113805015606,
+              "score": 0,
+              "riskPercentile1y": 64.7
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": -0.540510713279041,
+              "score": 25,
+              "riskPercentile1y": 73.4
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": -1.0493458129352096,
+              "score": 25,
+              "riskPercentile1y": 76.2
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 3.352651429306963,
+              "score": 0,
+              "riskPercentile1y": 24.2
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 4.76238905990305,
+              "score": 0,
+              "riskPercentile1y": 12.3
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "hy_oas_level",
+          "name": "高收益債利差",
+          "category": "credit",
+          "available": false,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            }
+          },
+          "classification": "insufficient-data"
+        },
+        {
+          "id": "hy_oas_20d_change",
+          "name": "高收益債利差 20 日變化",
+          "category": "credit",
+          "available": false,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            }
+          },
+          "classification": "insufficient-data"
+        },
+        {
+          "id": "yield_curve",
+          "name": "10Y−2Y 殖利率曲線",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.8,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 0.16999999999999993,
+              "score": 25,
+              "riskPercentile1y": 58.3
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 0.2999999999999998,
+              "score": 25,
+              "riskPercentile1y": 1.2
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 0.25,
+              "score": 25,
+              "riskPercentile1y": 16.7
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 0.20000000000000018,
+              "score": 25,
+              "riskPercentile1y": 38.9
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 0.18000000000000016,
+              "score": 25,
+              "riskPercentile1y": 51.6
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 0.14000000000000012,
+              "score": 25,
+              "riskPercentile1y": 79.4
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 0.48,
+              "score": 25,
+              "riskPercentile1y": 2
+            }
+          },
+          "classification": "quiet"
+        },
+        {
+          "id": "dgs2_20d_move",
+          "name": "2Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2020-02-28",
+          "leadTradingDays": -7,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 0.040000000000000036,
+              "score": 0,
+              "riskPercentile1y": 19.4
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 0.010000000000000009,
+              "score": 0,
+              "riskPercentile1y": 6
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 0.050000000000000044,
+              "score": 0,
+              "riskPercentile1y": 34.1
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 0.15000000000000013,
+              "score": 25,
+              "riskPercentile1y": 70.6
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 0.1200000000000001,
+              "score": 0,
+              "riskPercentile1y": 65.9
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 0.010000000000000009,
+              "score": 0,
+              "riskPercentile1y": 6.7
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 0.42999999999999994,
+              "score": 50,
+              "riskPercentile1y": 94
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "dgs10_20d_move",
+          "name": "10Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2020-01-31",
+          "leadTradingDays": 12,
+          "anomalyDaysBeforePeak": 1,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 0.040000000000000036,
+              "score": 0,
+              "riskPercentile1y": 20.6
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 0.1399999999999999,
+              "score": 0,
+              "riskPercentile1y": 60.3
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 0.1399999999999999,
+              "score": 0,
+              "riskPercentile1y": 62.7
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 0.17999999999999994,
+              "score": 25,
+              "riskPercentile1y": 69.8
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 0.17999999999999994,
+              "score": 25,
+              "riskPercentile1y": 68.7
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 0.010000000000000009,
+              "score": 0,
+              "riskPercentile1y": 3.2
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 0.26,
+              "score": 25,
+              "riskPercentile1y": 80.2
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "unrate_3m_change",
+          "name": "失業率 3 個月變化",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2020-01-13",
+          "leadTradingDays": 25,
+          "anomalyDaysBeforePeak": 21,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": -0.10000000000000009,
+              "score": 0,
+              "riskPercentile1y": 44
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 83.3
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 0.10000000000000009,
+              "score": 50,
+              "riskPercentile1y": 85.3
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 0.10000000000000009,
+              "score": 50,
+              "riskPercentile1y": 89.3
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 0.10000000000000009,
+              "score": 50,
+              "riskPercentile1y": 91.3
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 84.9
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": -0.10000000000000009,
+              "score": 0,
+              "riskPercentile1y": 52.4
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "payems_3m_gain",
+          "name": "非農 3 個月平均增量",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2020-01-13",
+          "leadTradingDays": 25,
+          "anomalyDaysBeforePeak": 21,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 174.33333333333334,
+              "score": 25,
+              "riskPercentile1y": 53.6
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 166,
+              "score": 25,
+              "riskPercentile1y": 61.5
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 143,
+              "score": 50,
+              "riskPercentile1y": 91.3
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 143,
+              "score": 50,
+              "riskPercentile1y": 91.3
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 143,
+              "score": 50,
+              "riskPercentile1y": 91.3
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 190.33333333333334,
+              "score": 25,
+              "riskPercentile1y": 2
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 208.66666666666666,
+              "score": 0,
+              "riskPercentile1y": 2.4
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "core_cpi_yoy",
+          "name": "核心 CPI 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 1,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 2.3378148209658223,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 2.3546960942649298,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 2.2905988164406255,
+              "score": 0,
+              "riskPercentile1y": 63.5
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 2.2905988164406255,
+              "score": 0,
+              "riskPercentile1y": 65
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 2.2905988164406255,
+              "score": 0,
+              "riskPercentile1y": 65.7
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 2.2817391837892886,
+              "score": 0,
+              "riskPercentile1y": 58.7
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 2.3676613601035346,
+              "score": 0,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "quiet"
+        },
+        {
+          "id": "core_pce_yoy",
+          "name": "核心 PCE 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 1,
+          "checkpoints": {
+            "pre60": {
+              "date": "2019-11-20",
+              "value": 1.6320140893302693,
+              "score": 0,
+              "riskPercentile1y": 29.8
+            },
+            "pre40": {
+              "date": "2019-12-19",
+              "value": 1.6235859562745425,
+              "score": 0,
+              "riskPercentile1y": 26.4
+            },
+            "pre20": {
+              "date": "2020-01-21",
+              "value": 1.4977183197472543,
+              "score": 0,
+              "riskPercentile1y": 5
+            },
+            "pre10": {
+              "date": "2020-02-04",
+              "value": 1.544751058548699,
+              "score": 0,
+              "riskPercentile1y": 9.1
+            },
+            "pre5": {
+              "date": "2020-02-11",
+              "value": 1.544751058548699,
+              "score": 0,
+              "riskPercentile1y": 11
+            },
+            "peak": {
+              "date": "2020-02-19",
+              "value": 1.544751058548699,
+              "score": 0,
+              "riskPercentile1y": 12.9
+            },
+            "trough": {
+              "date": "2020-03-23",
+              "value": 1.5913288616700605,
+              "score": 0,
+              "riskPercentile1y": 29.8
+            }
+          },
+          "classification": "quiet"
+        }
+      ]
+    },
+    {
+      "id": "bear-market-2022",
+      "name": "2022 年 10 月熊市低點",
+      "peakDate": "2022-08-16",
+      "troughDate": "2022-10-12",
+      "drawdownPercent": -17.02,
+      "matchedControls": [
+        {
+          "date": "2020-08-17",
+          "future20Drawdown": -1.3909,
+          "future60Drawdown": -4.519,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 21.35,
+            "spy60": 8.380911214676544
+          },
+          "distance": 1.0728394369841947
+        },
+        {
+          "date": "2021-05-17",
+          "future20Drawdown": -1.1215,
+          "future60Drawdown": -1.1215,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 19.72,
+            "spy60": 6.140793234059472
+          },
+          "distance": 1.1338512350459016
+        },
+        {
+          "date": "2020-11-16",
+          "future20Drawdown": -1.9969,
+          "future60Drawdown": -1.9969,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 22.45,
+            "spy60": 7.959150571046014
+          },
+          "distance": 1.2250155013472477
+        },
+        {
+          "date": "2021-02-16",
+          "future20Drawdown": -3.9765,
+          "future60Drawdown": -3.9765,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 21.46,
+            "spy60": 6.262526565867232
+          },
+          "distance": 1.2956779018651259
+        },
+        {
+          "date": "2021-03-15",
+          "future20Drawdown": -2.2426,
+          "future60Drawdown": -2.2426,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 20.03,
+            "spy60": 4.742908791499523
+          },
+          "distance": 1.3046396793018968
+        }
+      ],
+      "signals": [
+        {
+          "id": "vix_level",
+          "name": "VIX 水位",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2022-05-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 57,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.8,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 29.35,
+              "score": 75,
+              "riskPercentile1y": 87.3
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 31.13,
+              "score": 75,
+              "riskPercentile1y": 92.1
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 24.5,
+              "score": 50,
+              "riskPercentile1y": 62.7
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 23.93,
+              "score": 50,
+              "riskPercentile1y": 58.7
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 21.77,
+              "score": 50,
+              "riskPercentile1y": 45.6
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 19.69,
+              "score": 25,
+              "riskPercentile1y": 31.3
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 33.57,
+              "score": 75,
+              "riskPercentile1y": 98
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "vix_20d_change",
+          "name": "VIX 20 日變化",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2022-05-24",
+          "leadTradingDays": 57,
+          "anomalyDaysBeforePeak": 9,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": -4.049999999999997,
+              "score": 0,
+              "riskPercentile1y": 17.1
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 5.41,
+              "score": 50,
+              "riskPercentile1y": 83.7
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": -3.66,
+              "score": 0,
+              "riskPercentile1y": 20.2
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": -2.8900000000000006,
+              "score": 0,
+              "riskPercentile1y": 26.6
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": -2.1099999999999994,
+              "score": 0,
+              "riskPercentile1y": 34.5
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": -3.549999999999997,
+              "score": 0,
+              "riskPercentile1y": 24.2
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 6.219999999999999,
+              "score": 50,
+              "riskPercentile1y": 83.3
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_20d_return",
+          "name": "SPY 20 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2022-05-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 22,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": -5.470875860417934,
+              "score": 75,
+              "riskPercentile1y": 90.5
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": -11.89616704048727,
+              "score": 100,
+              "riskPercentile1y": 100
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 3.136665297010399,
+              "score": 0,
+              "riskPercentile1y": 15.1
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 7.7158651697051495,
+              "score": 0,
+              "riskPercentile1y": 2.4
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 4.19991831984714,
+              "score": 0,
+              "riskPercentile1y": 15.1
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 7.146420070679582,
+              "score": 0,
+              "riskPercentile1y": 5.6
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": -4.719150126797755,
+              "score": 50,
+              "riskPercentile1y": 74.2
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_60d_return",
+          "name": "SPY 60 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2022-05-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 48,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": -12.38639406987394,
+              "score": 75,
+              "riskPercentile1y": 100
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": -16.46460160927843,
+              "score": 100,
+              "riskPercentile1y": 100
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 0.6775618144843287,
+              "score": 25,
+              "riskPercentile1y": 44.8
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": -0.6040850915159379,
+              "score": 50,
+              "riskPercentile1y": 51.6
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 5.528481012162723,
+              "score": 0,
+              "riskPercentile1y": 7.1
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 17.44930558451849,
+              "score": 0,
+              "riskPercentile1y": 0.4
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": -16.516040163161506,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_drawdown",
+          "name": "SPY 近一年回撤",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2022-05-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 60,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": -18.4735512295222,
+              "score": 75,
+              "riskPercentile1y": 100
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": -23.41378830340699,
+              "score": 100,
+              "riskPercentile1y": 100
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": -17.885328749595697,
+              "score": 75,
+              "riskPercentile1y": 88.9
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": -14.579974281955954,
+              "score": 75,
+              "riskPercentile1y": 81.3
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": -13.891270130112554,
+              "score": 75,
+              "riskPercentile1y": 78.6
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": -10.050026188862226,
+              "score": 75,
+              "riskPercentile1y": 64.7
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": -25.360573583036906,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "leading"
+        },
+        {
+          "id": "qqq_relative_20d",
+          "name": "QQQ 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2022-05-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 5,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.6,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": -2.0853933902554527,
+              "score": 50,
+              "riskPercentile1y": 79.8
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 0.7638464378840855,
+              "score": 0,
+              "riskPercentile1y": 29.8
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 1.9725667761698595,
+              "score": 0,
+              "riskPercentile1y": 9.5
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 2.3243915390607883,
+              "score": 0,
+              "riskPercentile1y": 7.5
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 0.4365823070104913,
+              "score": 0,
+              "riskPercentile1y": 33.3
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 1.1551351013740607,
+              "score": 0,
+              "riskPercentile1y": 23.8
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": -1.497154085296959,
+              "score": 25,
+              "riskPercentile1y": 66.7
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "soxx_relative_20d",
+          "name": "SOXX 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2022-05-24",
+          "leadTradingDays": 57,
+          "anomalyDaysBeforePeak": 21,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.4,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 4.567638425817844,
+              "score": 0,
+              "riskPercentile1y": 13.5
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": -5.449863782737118,
+              "score": 75,
+              "riskPercentile1y": 89.3
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 5.374269245758011,
+              "score": 0,
+              "riskPercentile1y": 9.5
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 7.817037833380035,
+              "score": 0,
+              "riskPercentile1y": 7.9
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": -4.265865555091464,
+              "score": 50,
+              "riskPercentile1y": 80.2
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": -2.2152978515679767,
+              "score": 50,
+              "riskPercentile1y": 68.7
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": -5.727513485314628,
+              "score": 75,
+              "riskPercentile1y": 84.5
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "hy_oas_level",
+          "name": "高收益債利差",
+          "category": "credit",
+          "available": false,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": null,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            }
+          },
+          "classification": "insufficient-data"
+        },
+        {
+          "id": "hy_oas_20d_change",
+          "name": "高收益債利差 20 日變化",
+          "category": "credit",
+          "available": false,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": null,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": null,
+              "score": null,
+              "riskPercentile1y": null
+            }
+          },
+          "classification": "insufficient-data"
+        },
+        {
+          "id": "yield_curve",
+          "name": "10Y−2Y 殖利率曲線",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2022-07-06",
+          "leadTradingDays": 29,
+          "anomalyDaysBeforePeak": 29,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 0.20999999999999996,
+              "score": 25,
+              "riskPercentile1y": 92.5
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 0.08000000000000007,
+              "score": 25,
+              "riskPercentile1y": 96.8
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": -0.2200000000000002,
+              "score": 50,
+              "riskPercentile1y": 100
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": -0.31000000000000005,
+              "score": 75,
+              "riskPercentile1y": 100
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": -0.48,
+              "score": 75,
+              "riskPercentile1y": 100
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": -0.43000000000000016,
+              "score": 75,
+              "riskPercentile1y": 98.8
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": -0.3700000000000001,
+              "score": 75,
+              "riskPercentile1y": 90.5
+            }
+          },
+          "classification": "leading"
+        },
+        {
+          "id": "dgs2_20d_move",
+          "name": "2Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2022-06-10",
+          "leadTradingDays": 45,
+          "anomalyDaysBeforePeak": 14,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 0.07000000000000028,
+              "score": 0,
+              "riskPercentile1y": 46
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 0.6999999999999997,
+              "score": 75,
+              "riskPercentile1y": 97.6
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 0.16999999999999993,
+              "score": 25,
+              "riskPercentile1y": 59.5
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 0.06999999999999984,
+              "score": 0,
+              "riskPercentile1y": 32.5
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 0.029999999999999805,
+              "score": 0,
+              "riskPercentile1y": 10.7
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 0.29000000000000004,
+              "score": 25,
+              "riskPercentile1y": 79
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 0.16999999999999993,
+              "score": 25,
+              "riskPercentile1y": 42.1
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "dgs10_20d_move",
+          "name": "10Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2022-05-26",
+          "leadTradingDays": 55,
+          "anomalyDaysBeforePeak": 15,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 0.050000000000000266,
+              "score": 0,
+              "riskPercentile1y": 27
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 0.5099999999999998,
+              "score": 75,
+              "riskPercentile1y": 94.8
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 0.0900000000000003,
+              "score": 0,
+              "riskPercentile1y": 36.9
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 0.16000000000000014,
+              "score": 25,
+              "riskPercentile1y": 56
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 0.2400000000000002,
+              "score": 25,
+              "riskPercentile1y": 75.4
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 0.040000000000000036,
+              "score": 0,
+              "riskPercentile1y": 18.3
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 0.20999999999999996,
+              "score": 25,
+              "riskPercentile1y": 56.7
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "unrate_3m_change",
+          "name": "失業率 3 個月變化",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": -0.2999999999999998,
+              "score": 0,
+              "riskPercentile1y": 74.6
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": -0.2999999999999998,
+              "score": 0,
+              "riskPercentile1y": 74.6
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": -0.10000000000000009,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": -0.10000000000000009,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": -0.10000000000000009,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": -0.20000000000000018,
+              "score": 0,
+              "riskPercentile1y": 74.6
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "quiet"
+        },
+        {
+          "id": "payems_3m_gain",
+          "name": "非農 3 個月平均增量",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 539,
+              "score": 0,
+              "riskPercentile1y": 66.7
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 366.3333333333333,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 347.6666666666667,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 347.6666666666667,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 347.6666666666667,
+              "score": 0,
+              "riskPercentile1y": 100
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 483,
+              "score": 0,
+              "riskPercentile1y": 75.4
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 479.3333333333333,
+              "score": 0,
+              "riskPercentile1y": 75.4
+            }
+          },
+          "classification": "quiet"
+        },
+        {
+          "id": "core_cpi_yoy",
+          "name": "核心 CPI 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2022-05-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 60,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 6.158737119052837,
+              "score": 100,
+              "riskPercentile1y": 83.3
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 6.158737119052837,
+              "score": 100,
+              "riskPercentile1y": 83.3
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 5.906335651591377,
+              "score": 100,
+              "riskPercentile1y": 59.5
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 5.906335651591377,
+              "score": 100,
+              "riskPercentile1y": 59.5
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 5.906335651591377,
+              "score": 100,
+              "riskPercentile1y": 59.5
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 5.906335651591377,
+              "score": 100,
+              "riskPercentile1y": 59.5
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 6.286089097732228,
+              "score": 100,
+              "riskPercentile1y": 83.3
+            }
+          },
+          "classification": "leading"
+        },
+        {
+          "id": "core_pce_yoy",
+          "name": "核心 PCE 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2022-05-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 60,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2022-05-19",
+              "value": 5.593221924008485,
+              "score": 100,
+              "riskPercentile1y": 92.5
+            },
+            "pre40": {
+              "date": "2022-06-17",
+              "value": 5.345023150300299,
+              "score": 100,
+              "riskPercentile1y": 75
+            },
+            "pre20": {
+              "date": "2022-07-19",
+              "value": 5.184136763522318,
+              "score": 100,
+              "riskPercentile1y": 59.5
+            },
+            "pre10": {
+              "date": "2022-08-02",
+              "value": 5.184136763522318,
+              "score": 100,
+              "riskPercentile1y": 59.5
+            },
+            "pre5": {
+              "date": "2022-08-09",
+              "value": 5.31569109508947,
+              "score": 100,
+              "riskPercentile1y": 67.5
+            },
+            "peak": {
+              "date": "2022-08-16",
+              "value": 5.31569109508947,
+              "score": 100,
+              "riskPercentile1y": 67.5
+            },
+            "trough": {
+              "date": "2022-10-12",
+              "value": 5.362447330658338,
+              "score": 100,
+              "riskPercentile1y": 84.1
+            }
+          },
+          "classification": "leading"
+        }
+      ]
+    },
+    {
+      "id": "selloff-2024-08",
+      "name": "2024 年 8 月急跌",
+      "peakDate": "2024-07-16",
+      "troughDate": "2024-08-05",
+      "drawdownPercent": -8.41,
+      "matchedControls": [
+        {
+          "date": "2024-02-15",
+          "future20Drawdown": -1.0458,
+          "future60Drawdown": -1.3645,
+          "coverage": 1,
+          "vector": {
+            "vix": 14.01,
+            "spy60": 6.963122776798625
+          },
+          "distance": 0.10950554752372295
+        },
+        {
+          "date": "2023-07-17",
+          "future20Drawdown": -1.1512,
+          "future60Drawdown": -6.4879,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 13.48,
+            "spy60": 7.540010143165388
+          },
+          "distance": 0.1141942841603993
+        },
+        {
+          "date": "2024-03-15",
+          "future20Drawdown": -1.0552,
+          "future60Drawdown": -2.8774,
+          "coverage": 1,
+          "vector": {
+            "vix": 14.41,
+            "spy60": 6.954349753678812
+          },
+          "distance": 0.14862824521174173
+        },
+        {
+          "date": "2023-12-15",
+          "future20Drawdown": -0.4368,
+          "future60Drawdown": -0.4368,
+          "coverage": 1,
+          "vector": {
+            "vix": 12.28,
+            "spy60": 7.634615488251506
+          },
+          "distance": 0.18565481866901107
+        },
+        {
+          "date": "2023-06-15",
+          "future20Drawdown": -2.5215,
+          "future60Drawdown": -2.5215,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 14.5,
+            "spy60": 7.307378963498845
+          },
+          "distance": 0.192931166193745
+        }
+      ],
+      "signals": [
+        {
+          "id": "vix_level",
+          "name": "VIX 水位",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2024-08-02",
+          "leadTradingDays": -13,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 18,
+              "score": 25,
+              "riskPercentile1y": 89.7
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 12.42,
+              "score": 0,
+              "riskPercentile1y": 2
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 12.66,
+              "score": 0,
+              "riskPercentile1y": 11.5
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 12.22,
+              "score": 0,
+              "riskPercentile1y": 4
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 12.51,
+              "score": 0,
+              "riskPercentile1y": 11.5
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 13.19,
+              "score": 0,
+              "riskPercentile1y": 34.1
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 38.57,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "vix_20d_change",
+          "name": "VIX 20 日變化",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 2,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 4.99,
+              "score": 50,
+              "riskPercentile1y": 98
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": -2.6099999999999994,
+              "score": 0,
+              "riskPercentile1y": 16.3
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 0.7300000000000004,
+              "score": 25,
+              "riskPercentile1y": 66.7
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": -0.629999999999999,
+              "score": 0,
+              "riskPercentile1y": 33.7
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 0.02999999999999936,
+              "score": 25,
+              "riskPercentile1y": 50
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 0.6399999999999988,
+              "score": 25,
+              "riskPercentile1y": 65.9
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 25.380000000000003,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_20d_return",
+          "name": "SPY 20 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 12,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": -4.502268908710283,
+              "score": 50,
+              "riskPercentile1y": 98
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 4.019594751356137,
+              "score": 0,
+              "riskPercentile1y": 12.3
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 2.5196484576068823,
+              "score": 0,
+              "riskPercentile1y": 32.9
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 1.5625317921033055,
+              "score": 25,
+              "riskPercentile1y": 52.8
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 1.3363994275832791,
+              "score": 25,
+              "riskPercentile1y": 56.7
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 3.5471348352069887,
+              "score": 0,
+              "riskPercentile1y": 19
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": -8.405619392423237,
+              "score": 75,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_60d_return",
+          "name": "SPY 60 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-04-19",
+          "leadTradingDays": 59,
+          "anomalyDaysBeforePeak": 10,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 0.0019978074216275843,
+              "score": 25,
+              "riskPercentile1y": 81.3
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 3.6992755165191404,
+              "score": 25,
+              "riskPercentile1y": 60.3
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 7.598377671187917,
+              "score": 0,
+              "riskPercentile1y": 20.2
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 7.981709635784973,
+              "score": 0,
+              "riskPercentile1y": 17.9
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 6.716069938007441,
+              "score": 0,
+              "riskPercentile1y": 34.9
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 6.688067301561396,
+              "score": 0,
+              "riskPercentile1y": 35.3
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": -3.2319547244370916,
+              "score": 50,
+              "riskPercentile1y": 90.5
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_drawdown",
+          "name": "SPY 近一年回撤",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-04-19",
+          "leadTradingDays": 59,
+          "anomalyDaysBeforePeak": 1,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": -4.520518123943241,
+              "score": 25,
+              "riskPercentile1y": 81.7
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": -0.20575083906342329,
+              "score": 0,
+              "riskPercentile1y": 27
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 20.6
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": -0.5742973317635625,
+              "score": 0,
+              "riskPercentile1y": 42.9
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 22.2
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 22.6
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": -8.405619392423237,
+              "score": 50,
+              "riskPercentile1y": 98
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "qqq_relative_20d",
+          "name": "QQQ 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-07-23",
+          "leadTradingDays": -5,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": -0.13726750948658228,
+              "score": 25,
+              "riskPercentile1y": 60.3
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 0.8481572176294971,
+              "score": 0,
+              "riskPercentile1y": 36.5
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 2.118410209978161,
+              "score": 0,
+              "riskPercentile1y": 6
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 1.4074320428508535,
+              "score": 0,
+              "riskPercentile1y": 23
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 1.252170012408671,
+              "score": 0,
+              "riskPercentile1y": 29.4
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": -0.2226138653226739,
+              "score": 25,
+              "riskPercentile1y": 62.3
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": -3.8782992259741675,
+              "score": 50,
+              "riskPercentile1y": 97.6
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "soxx_relative_20d",
+          "name": "SOXX 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 6,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": -4.036148868589606,
+              "score": 50,
+              "riskPercentile1y": 90.1
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 1.8079754401307602,
+              "score": 0,
+              "riskPercentile1y": 44
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 3.1309198964727614,
+              "score": 0,
+              "riskPercentile1y": 31.3
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": -0.2271165539039277,
+              "score": 25,
+              "riskPercentile1y": 60.3
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": -1.2631186337307643,
+              "score": 25,
+              "riskPercentile1y": 72.2
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 3.1230674702740657,
+              "score": 0,
+              "riskPercentile1y": 32.1
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": -13.990195179985044,
+              "score": 100,
+              "riskPercentile1y": 99.6
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "hy_oas_level",
+          "name": "高收益債利差",
+          "category": "credit",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 3.39,
+              "score": 25,
+              "riskPercentile1y": 29
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 3.08,
+              "score": 25,
+              "riskPercentile1y": 2.9
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 3.29,
+              "score": 25,
+              "riskPercentile1y": 32.3
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 3.21,
+              "score": 25,
+              "riskPercentile1y": 25.8
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 3.21,
+              "score": 25,
+              "riskPercentile1y": 26.1
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 3.08,
+              "score": 25,
+              "riskPercentile1y": 3.7
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 3.93,
+              "score": 25,
+              "riskPercentile1y": 81.7
+            }
+          },
+          "classification": "quiet"
+        },
+        {
+          "id": "hy_oas_20d_change",
+          "name": "高收益債利差 20 日變化",
+          "category": "credit",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 1,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 0.27,
+              "score": 50,
+              "riskPercentile1y": 91.9
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": -0.08000000000000007,
+              "score": 0,
+              "riskPercentile1y": 50.5
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 0.18000000000000016,
+              "score": 25,
+              "riskPercentile1y": 85.8
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 0.020000000000000018,
+              "score": 25,
+              "riskPercentile1y": 64.4
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": -0.03000000000000025,
+              "score": 0,
+              "riskPercentile1y": 54.6
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": -0.10000000000000009,
+              "score": 0,
+              "riskPercentile1y": 36.6
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 0.8500000000000001,
+              "score": 75,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "yield_curve",
+          "name": "10Y−2Y 殖利率曲線",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 60,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 1,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": -0.34000000000000075,
+              "score": 75,
+              "riskPercentile1y": 25.4
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": -0.40000000000000036,
+              "score": 75,
+              "riskPercentile1y": 47.6
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": -0.46999999999999975,
+              "score": 75,
+              "riskPercentile1y": 68.3
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": -0.28999999999999915,
+              "score": 75,
+              "riskPercentile1y": 11.9
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": -0.3200000000000003,
+              "score": 75,
+              "riskPercentile1y": 23.4
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": -0.2599999999999998,
+              "score": 75,
+              "riskPercentile1y": 11.1
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": -0.11000000000000032,
+              "score": 50,
+              "riskPercentile1y": 1.2
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "dgs2_20d_move",
+          "name": "2Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 2,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 0.39000000000000057,
+              "score": 50,
+              "riskPercentile1y": 94
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 0.17999999999999972,
+              "score": 25,
+              "riskPercentile1y": 63.1
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 0.2599999999999998,
+              "score": 25,
+              "riskPercentile1y": 82.1
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 0.040000000000000036,
+              "score": 0,
+              "riskPercentile1y": 23
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 0.07000000000000028,
+              "score": 0,
+              "riskPercentile1y": 43.7
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 0.28000000000000025,
+              "score": 25,
+              "riskPercentile1y": 87.7
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 0.5399999999999996,
+              "score": 75,
+              "riskPercentile1y": 99.2
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "dgs10_20d_move",
+          "name": "10Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 6,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 0.4399999999999995,
+              "score": 50,
+              "riskPercentile1y": 95.6
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 0.29000000000000004,
+              "score": 25,
+              "riskPercentile1y": 75.4
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 0.2599999999999998,
+              "score": 25,
+              "riskPercentile1y": 69.4
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 0.09000000000000075,
+              "score": 0,
+              "riskPercentile1y": 33.3
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 0.08000000000000007,
+              "score": 0,
+              "riskPercentile1y": 29.4
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 0.15000000000000036,
+              "score": 25,
+              "riskPercentile1y": 47.6
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 0.3900000000000001,
+              "score": 50,
+              "riskPercentile1y": 92.1
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "unrate_3m_change",
+          "name": "失業率 3 個月變化",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 39,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.4,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 0.10000000000000009,
+              "score": 50,
+              "riskPercentile1y": 83.7
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 0.19999999999999973,
+              "score": 50,
+              "riskPercentile1y": 91.7
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 25
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 25
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 25
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 0.19999999999999973,
+              "score": 50,
+              "riskPercentile1y": 91.7
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 0.19999999999999973,
+              "score": 50,
+              "riskPercentile1y": 91.7
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "payems_3m_gain",
+          "name": "非農 3 個月平均增量",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2024-06-12",
+          "leadTradingDays": 22,
+          "anomalyDaysBeforePeak": 22,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 203,
+              "score": 0,
+              "riskPercentile1y": 25.8
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 166,
+              "score": 25,
+              "riskPercentile1y": 75.4
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 123.33333333333333,
+              "score": 50,
+              "riskPercentile1y": 100
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 123.33333333333333,
+              "score": 50,
+              "riskPercentile1y": 100
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 123.33333333333333,
+              "score": 50,
+              "riskPercentile1y": 100
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 76.33333333333333,
+              "score": 75,
+              "riskPercentile1y": 100
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 76.33333333333333,
+              "score": 75,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "leading"
+        },
+        {
+          "id": "core_cpi_yoy",
+          "name": "核心 CPI 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 60,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 1,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 3.8161935067360986,
+              "score": 50,
+              "riskPercentile1y": 8.3
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 3.8161935067360986,
+              "score": 50,
+              "riskPercentile1y": 16.3
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 3.6260251717590952,
+              "score": 50,
+              "riskPercentile1y": 7.5
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 3.394419668976645,
+              "score": 50,
+              "riskPercentile1y": 3.6
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 3.394419668976645,
+              "score": 50,
+              "riskPercentile1y": 5.6
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 3.394419668976645,
+              "score": 50,
+              "riskPercentile1y": 7.5
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 3.2654173234475614,
+              "score": 50,
+              "riskPercentile1y": 4.8
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "core_pce_yoy",
+          "name": "核心 PCE 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2024-04-18",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 53,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 1,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-04-18",
+              "value": 3.059467984974007,
+              "score": 50,
+              "riskPercentile1y": 3.6
+            },
+            "pre40": {
+              "date": "2024-05-16",
+              "value": 3.122173857921662,
+              "score": 50,
+              "riskPercentile1y": 19.8
+            },
+            "pre20": {
+              "date": "2024-06-14",
+              "value": 3.006720905553606,
+              "score": 50,
+              "riskPercentile1y": 3.2
+            },
+            "pre10": {
+              "date": "2024-07-01",
+              "value": 3.006720905553606,
+              "score": 50,
+              "riskPercentile1y": 7.1
+            },
+            "pre5": {
+              "date": "2024-07-09",
+              "value": 2.7711764063720334,
+              "score": 25,
+              "riskPercentile1y": 1.2
+            },
+            "peak": {
+              "date": "2024-07-16",
+              "value": 2.7711764063720334,
+              "score": 25,
+              "riskPercentile1y": 3.2
+            },
+            "trough": {
+              "date": "2024-08-05",
+              "value": 2.7531619063573265,
+              "score": 25,
+              "riskPercentile1y": 0.4
+            }
+          },
+          "classification": "high-false-positive"
+        }
+      ]
+    },
+    {
+      "id": "selloff-2025-04",
+      "name": "2025 年 4 月急跌",
+      "peakDate": "2025-02-19",
+      "troughDate": "2025-04-08",
+      "drawdownPercent": -19,
+      "matchedControls": [
+        {
+          "date": "2024-11-15",
+          "future20Drawdown": 0.4097,
+          "future60Drawdown": -0.898,
+          "coverage": 1,
+          "vector": {
+            "vix": 16.14,
+            "spy60": 4.070423575332227
+          },
+          "distance": 0.12560850212897626
+        },
+        {
+          "date": "2021-11-15",
+          "future20Drawdown": -3.6219,
+          "future60Drawdown": -7.7423,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 16.49,
+            "spy60": 4.530710611104305
+          },
+          "distance": 0.20663720570618382
+        },
+        {
+          "date": "2021-07-15",
+          "future20Drawdown": -2.2496,
+          "future60Drawdown": -2.2496,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 17.01,
+            "spy60": 4.361710599023794
+          },
+          "distance": 0.24173720449813302
+        },
+        {
+          "date": "2023-05-15",
+          "future20Drawdown": -0.6683,
+          "future60Drawdown": -0.6683,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 17.12,
+            "spy60": 4.266497952346016
+          },
+          "distance": 0.24321593983035514
+        },
+        {
+          "date": "2021-09-15",
+          "future20Drawdown": -4.2958,
+          "future60Drawdown": -4.2958,
+          "coverage": 0.8,
+          "vector": {
+            "vix": 18.18,
+            "spy60": 3.8345640759836375
+          },
+          "distance": 0.3060225521941172
+        }
+      ],
+      "signals": [
+        {
+          "id": "vix_level",
+          "name": "VIX 水位",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2024-12-18",
+          "leadTradingDays": 40,
+          "anomalyDaysBeforePeak": 2,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 16.35,
+              "score": 25,
+              "riskPercentile1y": 74.2
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 27.62,
+              "score": 75,
+              "riskPercentile1y": 98.8
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 15.06,
+              "score": 25,
+              "riskPercentile1y": 52.4
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 17.21,
+              "score": 25,
+              "riskPercentile1y": 73.4
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 16.02,
+              "score": 25,
+              "riskPercentile1y": 60.3
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 15.27,
+              "score": 25,
+              "riskPercentile1y": 49.2
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 52.33,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "vix_20d_change",
+          "name": "VIX 20 日變化",
+          "category": "volatility",
+          "available": true,
+          "firstAnomaly": "2024-12-18",
+          "leadTradingDays": 40,
+          "anomalyDaysBeforePeak": 10,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": -4,
+              "score": 0,
+              "riskPercentile1y": 9.1
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 13.72,
+              "score": 100,
+              "riskPercentile1y": 99.6
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": -2.290000000000001,
+              "score": 0,
+              "riskPercentile1y": 20.2
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 1.0899999999999999,
+              "score": 25,
+              "riskPercentile1y": 67.5
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 0.9199999999999999,
+              "score": 25,
+              "riskPercentile1y": 65.5
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": -0.5700000000000003,
+              "score": 0,
+              "riskPercentile1y": 37.3
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 32.43,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_20d_return",
+          "name": "SPY 20 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-12-18",
+          "leadTradingDays": 40,
+          "anomalyDaysBeforePeak": 19,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 1.7741035247825776,
+              "score": 25,
+              "riskPercentile1y": 50.4
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": -2.095751287478609,
+              "score": 50,
+              "riskPercentile1y": 90.9
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 2.895504062293175,
+              "score": 0,
+              "riskPercentile1y": 24.6
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 1.518269772123615,
+              "score": 25,
+              "riskPercentile1y": 53.2
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": -0.1863341597294621,
+              "score": 50,
+              "riskPercentile1y": 75.8
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 1.3040484819138554,
+              "score": 25,
+              "riskPercentile1y": 55.2
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": -12.457460068804327,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_60d_return",
+          "name": "SPY 60 日報酬",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2025-01-06",
+          "leadTradingDays": 29,
+          "anomalyDaysBeforePeak": 14,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 3.8803322116971017,
+              "score": 25,
+              "riskPercentile1y": 62.7
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 0.2890919043721629,
+              "score": 25,
+              "riskPercentile1y": 88.5
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 1.2661379160211261,
+              "score": 25,
+              "riskPercentile1y": 79.4
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": -0.9920811250126671,
+              "score": 50,
+              "riskPercentile1y": 93.3
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 0.18205186043525057,
+              "score": 25,
+              "riskPercentile1y": 82.9
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 3.6843385540424656,
+              "score": 25,
+              "riskPercentile1y": 48.4
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": -17.359389642361656,
+              "score": 100,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "spy_drawdown",
+          "name": "SPY 近一年回撤",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2025-03-04",
+          "leadTradingDays": -9,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": -1.4129236813874346,
+              "score": 0,
+              "riskPercentile1y": 76.6
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": -3.542220158963938,
+              "score": 25,
+              "riskPercentile1y": 90.1
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": -0.7831410777619063,
+              "score": 0,
+              "riskPercentile1y": 56
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": -1.3070882661951666,
+              "score": 0,
+              "riskPercentile1y": 68.3
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": -0.7281676820674488,
+              "score": 0,
+              "riskPercentile1y": 49.6
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 19.8
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": -18.9989041295049,
+              "score": 75,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "qqq_relative_20d",
+          "name": "QQQ 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-11-27",
+          "leadTradingDays": 54,
+          "anomalyDaysBeforePeak": 2,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": -0.3477796393277055,
+              "score": 25,
+              "riskPercentile1y": 61.9
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 4.306315938181271,
+              "score": 0,
+              "riskPercentile1y": 1.2
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": -0.241126088578425,
+              "score": 25,
+              "riskPercentile1y": 59.1
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": -0.014503890078221282,
+              "score": 25,
+              "riskPercentile1y": 48.4
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": -0.47593361821929303,
+              "score": 25,
+              "riskPercentile1y": 64.3
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 1.8447962026596487,
+              "score": 0,
+              "riskPercentile1y": 10.7
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": -1.0237965834550842,
+              "score": 25,
+              "riskPercentile1y": 76.6
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "soxx_relative_20d",
+          "name": "SOXX 相對 SPY 20 日",
+          "category": "trend",
+          "available": true,
+          "firstAnomaly": "2024-11-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 24,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0.4,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": -7.375900684431691,
+              "score": 75,
+              "riskPercentile1y": 92.9
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 3.521230594073743,
+              "score": 0,
+              "riskPercentile1y": 24.2
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 4.974926594694362,
+              "score": 0,
+              "riskPercentile1y": 12.3
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": -4.569214000673616,
+              "score": 50,
+              "riskPercentile1y": 80.6
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": -6.560624759243461,
+              "score": 75,
+              "riskPercentile1y": 87.7
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 4.085908997309695,
+              "score": 0,
+              "riskPercentile1y": 16.7
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": -11.298140273378387,
+              "score": 100,
+              "riskPercentile1y": 97.6
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "hy_oas_level",
+          "name": "高收益債利差",
+          "category": "credit",
+          "available": true,
+          "firstAnomaly": "2025-04-03",
+          "leadTradingDays": -31,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 2.69,
+              "score": 0,
+              "riskPercentile1y": 2.4
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 2.73,
+              "score": 0,
+              "riskPercentile1y": 11.1
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 2.61,
+              "score": 0,
+              "riskPercentile1y": 2
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 2.71,
+              "score": 0,
+              "riskPercentile1y": 13.5
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 2.66,
+              "score": 0,
+              "riskPercentile1y": 9.1
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 2.68,
+              "score": 0,
+              "riskPercentile1y": 15.5
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 4.57,
+              "score": 50,
+              "riskPercentile1y": 99.6
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "hy_oas_20d_change",
+          "name": "高收益債利差 20 日變化",
+          "category": "credit",
+          "available": true,
+          "firstAnomaly": "2024-12-30",
+          "leadTradingDays": 33,
+          "anomalyDaysBeforePeak": 2,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": -0.10999999999999988,
+              "score": 0,
+              "riskPercentile1y": 44
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 0.040000000000000036,
+              "score": 25,
+              "riskPercentile1y": 71.8
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": -0.31000000000000005,
+              "score": 0,
+              "riskPercentile1y": 6
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": -0.010000000000000231,
+              "score": 0,
+              "riskPercentile1y": 62.7
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 0.07000000000000028,
+              "score": 25,
+              "riskPercentile1y": 79.4
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 0.010000000000000231,
+              "score": 25,
+              "riskPercentile1y": 64.3
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 1.3800000000000003,
+              "score": 75,
+              "riskPercentile1y": 100
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "yield_curve",
+          "name": "10Y−2Y 殖利率曲線",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 0.1200000000000001,
+              "score": 25,
+              "riskPercentile1y": 12.3
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 0.15000000000000036,
+              "score": 25,
+              "riskPercentile1y": 7.1
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 0.28000000000000025,
+              "score": 25,
+              "riskPercentile1y": 7.1
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 0.3099999999999996,
+              "score": 25,
+              "riskPercentile1y": 9.1
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 0.25,
+              "score": 25,
+              "riskPercentile1y": 13.1
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 0.25,
+              "score": 25,
+              "riskPercentile1y": 14.3
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 0.5499999999999998,
+              "score": 0,
+              "riskPercentile1y": 0.4
+            }
+          },
+          "classification": "quiet"
+        },
+        {
+          "id": "dgs2_20d_move",
+          "name": "2Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2025-03-03",
+          "leadTradingDays": -8,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 0.11999999999999922,
+              "score": 0,
+              "riskPercentile1y": 35.3
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 0.15999999999999925,
+              "score": 25,
+              "riskPercentile1y": 46.8
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 0.040000000000000036,
+              "score": 0,
+              "riskPercentile1y": 16.3
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 0.05999999999999961,
+              "score": 0,
+              "riskPercentile1y": 21.4
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 1.6
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 0.10000000000000053,
+              "score": 0,
+              "riskPercentile1y": 36.5
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 0.28000000000000025,
+              "score": 25,
+              "riskPercentile1y": 76.6
+            }
+          },
+          "classification": "concurrent-confirmation"
+        },
+        {
+          "id": "dgs10_20d_move",
+          "name": "10Y 殖利率 20 日移動",
+          "category": "rates",
+          "available": true,
+          "firstAnomaly": "2024-12-19",
+          "leadTradingDays": 39,
+          "anomalyDaysBeforePeak": 8,
+          "recoveredBeforePeak": true,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 0.09999999999999964,
+              "score": 0,
+              "riskPercentile1y": 30.2
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 0.25,
+              "score": 25,
+              "riskPercentile1y": 74.6
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 0.009999999999999787,
+              "score": 0,
+              "riskPercentile1y": 5.2
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 0.14000000000000057,
+              "score": 0,
+              "riskPercentile1y": 46.8
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 0.05999999999999961,
+              "score": 0,
+              "riskPercentile1y": 17.5
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 0.010000000000000675,
+              "score": 0,
+              "riskPercentile1y": 6
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 0.009999999999999787,
+              "score": 0,
+              "riskPercentile1y": 6
+            }
+          },
+          "classification": "weak-leading"
+        },
+        {
+          "id": "unrate_3m_change",
+          "name": "失業率 3 個月變化",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2025-04-14",
+          "leadTradingDays": -38,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": -0.10000000000000053,
+              "score": 0,
+              "riskPercentile1y": 11.1
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 42.1
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 43.7
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 47.6
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 49.6
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": -0.09999999999999964,
+              "score": 0,
+              "riskPercentile1y": 17.9
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 0,
+              "score": 0,
+              "riskPercentile1y": 56.3
+            }
+          },
+          "classification": "late"
+        },
+        {
+          "id": "payems_3m_gain",
+          "name": "非農 3 個月平均增量",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2024-11-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 60,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.2,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 65.66666666666667,
+              "score": 75,
+              "riskPercentile1y": 91.3
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 107.33333333333333,
+              "score": 50,
+              "riskPercentile1y": 57.5
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 134.66666666666666,
+              "score": 50,
+              "riskPercentile1y": 42.1
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 134.66666666666666,
+              "score": 50,
+              "riskPercentile1y": 42.1
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 134.66666666666666,
+              "score": 50,
+              "riskPercentile1y": 42.1
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 107.66666666666667,
+              "score": 50,
+              "riskPercentile1y": 50.4
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 77,
+              "score": 75,
+              "riskPercentile1y": 57.5
+            }
+          },
+          "classification": "leading"
+        },
+        {
+          "id": "core_cpi_yoy",
+          "name": "核心 CPI 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": "2024-11-19",
+          "leadTradingDays": 60,
+          "anomalyDaysBeforePeak": 60,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 1,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 3.298689706765301,
+              "score": 50,
+              "riskPercentile1y": 34.5
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 3.298689706765301,
+              "score": 50,
+              "riskPercentile1y": 42.5
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 3.2133335461932644,
+              "score": 50,
+              "riskPercentile1y": 0.4
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 3.2133335461932644,
+              "score": 50,
+              "riskPercentile1y": 4.4
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 3.2133335461932644,
+              "score": 50,
+              "riskPercentile1y": 6.3
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 3.282970485398584,
+              "score": 50,
+              "riskPercentile1y": 32.9
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 3.13755688228059,
+              "score": 50,
+              "riskPercentile1y": 5.2
+            }
+          },
+          "classification": "high-false-positive"
+        },
+        {
+          "id": "core_pce_yoy",
+          "name": "核心 PCE 年增率",
+          "category": "macro",
+          "available": true,
+          "firstAnomaly": null,
+          "leadTradingDays": null,
+          "anomalyDaysBeforePeak": 0,
+          "recoveredBeforePeak": false,
+          "controlAnomalyRate": 0.8,
+          "checkpoints": {
+            "pre60": {
+              "date": "2024-11-19",
+              "value": 2.838627996468368,
+              "score": 25,
+              "riskPercentile1y": 30.2
+            },
+            "pre40": {
+              "date": "2024-12-18",
+              "value": 2.9865021082658982,
+              "score": 25,
+              "riskPercentile1y": 46.4
+            },
+            "pre20": {
+              "date": "2025-01-21",
+              "value": 2.980710120125618,
+              "score": 25,
+              "riskPercentile1y": 46.4
+            },
+            "pre10": {
+              "date": "2025-02-04",
+              "value": 2.9885896245190446,
+              "score": 25,
+              "riskPercentile1y": 58.3
+            },
+            "pre5": {
+              "date": "2025-02-11",
+              "value": 2.9885896245190446,
+              "score": 25,
+              "riskPercentile1y": 60.3
+            },
+            "peak": {
+              "date": "2025-02-19",
+              "value": 2.9885896245190446,
+              "score": 25,
+              "riskPercentile1y": 62.3
+            },
+            "trough": {
+              "date": "2025-04-08",
+              "value": 2.9686432938117457,
+              "score": 25,
+              "riskPercentile1y": 51.6
+            }
+          },
+          "classification": "quiet"
+        }
+      ]
+    }
+  ],
+  "rankings": [
+    {
+      "id": "payems_3m_gain",
+      "name": "非農 3 個月平均增量",
+      "category": "macro",
+      "leadingEvents": 2,
+      "weakLeadingEvents": 1,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": 41,
+      "averageControlAnomalyRate": 0.2
+    },
+    {
+      "id": "spy_drawdown",
+      "name": "SPY 近一年回撤",
+      "category": "trend",
+      "leadingEvents": 1,
+      "weakLeadingEvents": 1,
+      "concurrentEvents": 2,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": 60,
+      "averageControlAnomalyRate": 0
+    },
+    {
+      "id": "yield_curve",
+      "name": "10Y−2Y 殖利率曲線",
+      "category": "rates",
+      "leadingEvents": 1,
+      "weakLeadingEvents": 0,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": 29,
+      "averageControlAnomalyRate": 0.5
+    },
+    {
+      "id": "core_pce_yoy",
+      "name": "核心 PCE 年增率",
+      "category": "macro",
+      "leadingEvents": 1,
+      "weakLeadingEvents": 0,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": 60,
+      "averageControlAnomalyRate": 0.7
+    },
+    {
+      "id": "core_cpi_yoy",
+      "name": "核心 CPI 年增率",
+      "category": "macro",
+      "leadingEvents": 1,
+      "weakLeadingEvents": 0,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": 60,
+      "averageControlAnomalyRate": 0.75
+    },
+    {
+      "id": "vix_20d_change",
+      "name": "VIX 20 日變化",
+      "category": "volatility",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 4,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0
+    },
+    {
+      "id": "spy_60d_return",
+      "name": "SPY 60 日報酬",
+      "category": "trend",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 3,
+      "concurrentEvents": 1,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0
+    },
+    {
+      "id": "hy_oas_level",
+      "name": "高收益債利差",
+      "category": "credit",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 0,
+      "concurrentEvents": 1,
+      "insufficientEvents": 2,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0
+    },
+    {
+      "id": "hy_oas_20d_change",
+      "name": "高收益債利差 20 日變化",
+      "category": "credit",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 2,
+      "concurrentEvents": 0,
+      "insufficientEvents": 2,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0
+    },
+    {
+      "id": "dgs2_20d_move",
+      "name": "2Y 殖利率 20 日移動",
+      "category": "rates",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 2,
+      "concurrentEvents": 2,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0.05
+    },
+    {
+      "id": "dgs10_20d_move",
+      "name": "10Y 殖利率 20 日移動",
+      "category": "rates",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 4,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0.05
+    },
+    {
+      "id": "spy_20d_return",
+      "name": "SPY 20 日報酬",
+      "category": "trend",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 4,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0.1
+    },
+    {
+      "id": "qqq_relative_20d",
+      "name": "QQQ 相對 SPY 20 日",
+      "category": "trend",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 1,
+      "concurrentEvents": 1,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0.15
+    },
+    {
+      "id": "unrate_3m_change",
+      "name": "失業率 3 個月變化",
+      "category": "macro",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 1,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0.15
+    },
+    {
+      "id": "vix_level",
+      "name": "VIX 水位",
+      "category": "volatility",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 1,
+      "concurrentEvents": 2,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0.2
+    },
+    {
+      "id": "soxx_relative_20d",
+      "name": "SOXX 相對 SPY 20 日",
+      "category": "trend",
+      "leadingEvents": 0,
+      "weakLeadingEvents": 2,
+      "concurrentEvents": 0,
+      "insufficientEvents": 0,
+      "averageLeadTradingDays": null,
+      "averageControlAnomalyRate": 0.25
+    }
+  ],
+  "dataGaps": [
+    {
+      "id": "market_breadth",
+      "name": "市場廣度",
+      "purpose": "辨識指數創高但多數成分股已轉弱",
+      "relevantEvents": [
+        "2024-08",
+        "2025-04"
+      ],
+      "currentSource": null,
+      "priority": "high"
+    },
+    {
+      "id": "vix_term_structure",
+      "name": "VIX 期貨期限結構",
+      "purpose": "辨識短期避險需求與波動結構倒掛",
+      "relevantEvents": [
+        "2020-03",
+        "2024-08",
+        "2025-04"
+      ],
+      "currentSource": null,
+      "priority": "high"
+    },
+    {
+      "id": "skew",
+      "name": "CBOE SKEW",
+      "purpose": "衡量尾部風險避險定價",
+      "relevantEvents": [
+        "2020-03",
+        "2025-04"
+      ],
+      "currentSource": null,
+      "priority": "medium"
+    },
+    {
+      "id": "put_call",
+      "name": "Put/Call Ratio",
+      "purpose": "衡量選擇權避險與投機失衡",
+      "relevantEvents": [
+        "2020-03",
+        "2024-08"
+      ],
+      "currentSource": null,
+      "priority": "medium"
+    },
+    {
+      "id": "credit_etfs",
+      "name": "HYG／LQD 信用 ETF",
+      "purpose": "補足高收益債利差在 2023 年前的歷史缺口",
+      "relevantEvents": [
+        "2020-03",
+        "2022-10"
+      ],
+      "currentSource": null,
+      "priority": "high"
+    },
+    {
+      "id": "move",
+      "name": "MOVE 債券波動率",
+      "purpose": "辨識利率市場壓力與去槓桿",
+      "relevantEvents": [
+        "2022-10",
+        "2025-04"
+      ],
+      "currentSource": null,
+      "priority": "high"
+    },
+    {
+      "id": "dollar",
+      "name": "美元指數",
+      "purpose": "辨識全球美元流動性收緊",
+      "relevantEvents": [
+        "2020-03",
+        "2022-10"
+      ],
+      "currentSource": null,
+      "priority": "medium"
+    },
+    {
+      "id": "yen_carry",
+      "name": "日圓／套利交易代理",
+      "purpose": "辨識日圓套利平倉與跨資產去槓桿",
+      "relevantEvents": [
+        "2024-08"
+      ],
+      "currentSource": null,
+      "priority": "high"
+    },
+    {
+      "id": "financial_conditions",
+      "name": "金融條件／資金壓力",
+      "purpose": "辨識融資、流動性與市場壓力同步收緊",
+      "relevantEvents": [
+        "2020-03",
+        "2022-10",
+        "2025-04"
+      ],
+      "currentSource": null,
+      "priority": "high"
+    }
+  ]
+}

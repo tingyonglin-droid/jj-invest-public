@@ -1,0 +1,258 @@
+{
+  "briefDate": "2026-07-28",
+  "generatedAt": "2026-07-28T02:24:52.000Z",
+  "analystLabel": "high_alert",
+  "analystRationale": "FOMC 決策前的升息機率仍顯著，油價雖因美伊暫停攻擊而急跌，但荷莫茲海峽尚未恢復通行；同時，Nvidia、PHLX 半導體指數與亞洲記憶體股同步承壓，顯示 AI 基礎建設融資與中國競爭疑慮正跨市場傳導。本週大型科技財報與美國 GDP、PCE 又將集中公布，因此定性維持 High Alert，但不把尚未公布的數據方向先行寫入確認規則。",
+  "evidence": [
+    {
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "sourceName": "Federal Reserve Board",
+      "sourceTier": "primary",
+      "title": "2026 FOMC meeting calendar",
+      "summary": "The Federal Reserve's official calendar lists a two-day FOMC meeting on July 28-29, 2026.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://apnews.com/article/stocks-oil-rates-markets-cxmt-2b81f0e01bb318ae8d4281964f89f2f1",
+      "sourceName": "Associated Press",
+      "sourceTier": "reputable_media",
+      "title": "Stocks drift on Wall Street and crude oil prices drop as Mideast tensions cool",
+      "summary": "AP reported a mixed July 27 U.S. close, a nearly 36% perceived probability of a Fed rate increase, lower Treasury yields, sharply lower oil settlements, and weakness in Nvidia and Micron.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://apnews.com/article/iran-us-hormuz-strait-war-qatar-pakistan-d57e675a7be6dbdd34561909ced240d0",
+      "sourceName": "Associated Press",
+      "sourceTier": "reputable_media",
+      "title": "Mediators make progress in US-Iran negotiations to prevent Middle East war",
+      "summary": "AP reported progress by mediators and no U.S. or Iranian attacks for three days, while the Strait of Hormuz remained closed and regional drone threats persisted.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://www.investing.com/news/economy-news/wall-st-futures-rise-as-us-iran-pause-hostilities-4813225",
+      "sourceName": "Reuters via Investing.com",
+      "sourceTier": "reputable_media",
+      "title": "Wall Street ends mixed as investors focus on tech earnings",
+      "summary": "Reuters reported the S&P 500 nearly flat, Nasdaq down 0.18%, PHLX semiconductor index down 2.2%, Nvidia down about 5%, and Brent down about 8% on July 27.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://www.investing.com/news/stock-market-news/samsung-sk-hynix-slide-amid-nvidia-financing-worries-china-competition-4815353",
+      "sourceName": "Reuters via Investing.com",
+      "sourceTier": "reputable_media",
+      "title": "Korean chip stocks tumble with SK Hynix below US listing price amid China competition fears",
+      "summary": "Reuters reported that Samsung Electronics and SK Hynix fell as much as 9.5% and 11.1% in July 28 Asian trading amid concerns about AI infrastructure financing and intensifying Chinese competition.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://www.investing.com/news/stock-market-news/china-begins-making-homegrown-duv-chipmaking-tools-the-information-reports-4814529",
+      "sourceName": "Reuters via Investing.com",
+      "sourceTier": "reputable_media",
+      "title": "China begins making homegrown DUV chipmaking tools, The Information reports",
+      "summary": "Reuters relayed a report that China had begun limited production of domestic immersion DUV tools, while noting that performance, reliability, manufacturer identity, and mass-production readiness remained unresolved.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://apnews.com/article/cxmt-china-memory-chips-debut-shares-9cd8b79866cf4bd5ef7c1cb81215e796",
+      "sourceName": "Associated Press",
+      "sourceTier": "reputable_media",
+      "title": "China memory chipmaker CXMT's shares soar in a blockbuster share listing in Shanghai",
+      "summary": "AP reported that CXMT shares rose 466% in their July 27 Shanghai debut and that the company remained constrained by limited access to advanced chipmaking equipment.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://news.microsoft.com/source/2026/07/08/microsoft-announces-quarterly-earnings-release-date-68/",
+      "sourceName": "Microsoft",
+      "sourceTier": "primary",
+      "title": "Microsoft announces quarterly earnings release date",
+      "summary": "Microsoft said it will publish fiscal 2026 fourth-quarter results after the market close on July 29, 2026, followed by a conference call at 2:30 p.m. Pacific Time.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://investor.atmeta.com/investor-events/event-details/default.aspx",
+      "sourceName": "Meta Investor Relations",
+      "sourceTier": "primary",
+      "title": "Meta Q2 2026 earnings call",
+      "summary": "Meta's investor calendar schedules its second-quarter 2026 earnings call for July 29, 2026 at 1:30 p.m. Pacific Time.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-to-Webcast-Second-Quarter-2026-Financial-Results-Conference-Call/default.aspx",
+      "sourceName": "Amazon Investor Relations",
+      "sourceTier": "primary",
+      "title": "Amazon.com to webcast second-quarter 2026 financial results conference call",
+      "summary": "Amazon scheduled its second-quarter 2026 results conference call for July 30, 2026 at 2:00 p.m. Pacific Time.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://investor.apple.com/investor-relations/default.aspx",
+      "sourceName": "Apple Investor Relations",
+      "sourceTier": "primary",
+      "title": "Apple investor updates",
+      "summary": "Apple's investor page schedules its fiscal third-quarter results call for July 30, 2026 at 2:00 p.m. Pacific Time.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://www.conference-board.org/topics/consumer-confidence/index.cfm",
+      "sourceName": "The Conference Board",
+      "sourceTier": "primary",
+      "title": "U.S. Consumer Confidence Index release schedule",
+      "summary": "The Conference Board schedules the next U.S. Consumer Confidence Index release for July 28, 2026 at 10:00 a.m. Eastern Time.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://home.treasury.gov/system/files/221/TentativeAuctionScheduleQ22026.pdf",
+      "sourceName": "U.S. Department of the Treasury",
+      "sourceTier": "primary",
+      "title": "Tentative auction schedule of U.S. Treasury securities",
+      "summary": "The Treasury schedule lists a seven-year note auction for July 28, 2026, with settlement on July 31.",
+      "publishedAt": null
+    },
+    {
+      "url": "https://www.bea.gov/news/schedule",
+      "sourceName": "U.S. Bureau of Economic Analysis",
+      "sourceTier": "primary",
+      "title": "BEA 2026 release schedule",
+      "summary": "BEA schedules the advance estimate of second-quarter 2026 GDP and the June 2026 Personal Income and Outlays report for July 30 at 8:30 a.m. Eastern Time.",
+      "publishedAt": null
+    }
+  ],
+  "events": [
+    {
+      "rank": 1,
+      "headline": "FOMC 今日開會，市場仍保留顯著升息機率",
+      "summary": "Fed 官方日程確認 7 月 28–29 日召開 FOMC；AP 報導截至美股 7 月 27 日收盤，市場認為本次升息機率接近 36%，顯示政策結果仍非單一路徑。",
+      "topicIds": ["global_macro_fed", "inflation_rates"],
+      "evidenceUrls": [
+        "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+        "https://apnews.com/article/stocks-oil-rates-markets-cxmt-2b81f0e01bb318ae8d4281964f89f2f1"
+      ],
+      "transmissionPath": ["FOMC 政策結果與措辭", "美國短端利率重新定價", "美元與金融條件", "科技股折現率", "全球與台灣風險資產"],
+      "affectedAssets": ["U.S. 2-Year Treasury yield", "U.S. 10-Year Treasury yield", "QQQ", "SOXX", "0050"],
+      "dataToConfirm": ["YAHOO:2YY=F"],
+      "marketDate": "2026-07-28",
+      "confirmationRules": [
+        {
+          "seriesId": "YAHOO:2YY=F",
+          "expectedDirection": "up",
+          "changeType": "basis_points",
+          "threshold": 5
+        }
+      ],
+      "interpretation": "若兩年期殖利率代理指標上升至少 5 個基點，才視為鷹派政策風險進一步被市場確認；決議公布前不預判升息或維持利率。",
+      "confidence": 0.92,
+      "techEarnings": null
+    },
+    {
+      "rank": 2,
+      "headline": "美伊暫停攻擊推低 Brent 與 WTI，但荷莫茲仍未解封",
+      "summary": "AP 報導美伊已連續三天未互相攻擊，調停方稱談判取得進展；Brent 10 月期貨 7 月 27 日收跌 6.3% 至每桶 85.87 美元，WTI 9 月期貨收跌 7.5% 至 82.61 美元，但荷莫茲海峽仍關閉且區域無人機威脅持續。",
+      "topicIds": ["energy_geopolitics", "inflation_rates"],
+      "evidenceUrls": [
+        "https://apnews.com/article/iran-us-hormuz-strait-war-qatar-pakistan-d57e675a7be6dbdd34561909ced240d0",
+        "https://apnews.com/article/stocks-oil-rates-markets-cxmt-2b81f0e01bb318ae8d4281964f89f2f1"
+      ],
+      "transmissionPath": ["美伊暫停攻擊與調停", "原油戰爭溢價回吐", "近端通膨壓力下降", "利率壓力暫緩", "全球股票與台灣進口成本"],
+      "affectedAssets": ["Brent", "WTI", "U.S. Treasuries", "QQQ", "0050"],
+      "dataToConfirm": ["YAHOO:BZ=F", "YAHOO:CL=F"],
+      "marketDate": "2026-07-28",
+      "confirmationRules": [
+        {
+          "seriesId": "YAHOO:BZ=F",
+          "expectedDirection": "down",
+          "changeType": "percent",
+          "threshold": 2
+        },
+        {
+          "seriesId": "YAHOO:CL=F",
+          "expectedDirection": "down",
+          "changeType": "percent",
+          "threshold": 2
+        }
+      ],
+      "interpretation": "油價續跌才支持供應風險與通膨壓力持續降溫；海峽仍關閉代表目前只是戰爭溢價回吐，不能等同能源物流已正常化。",
+      "confidence": 0.9,
+      "techEarnings": null
+    },
+    {
+      "rank": 3,
+      "headline": "AI 與半導體賣壓擴散至亞洲，台灣科技供應鏈面臨風險偏好檢驗",
+      "summary": "Reuters 報導 Samsung Electronics 與 SK Hynix 在 7 月 28 日亞洲交易時段一度下跌 9.5% 與 11.1%；前一個美股交易日 Nvidia 跌約 5%、PHLX 半導體指數跌 2.2%。市場同時消化 AI 基礎建設融資疑慮、中國國產 DUV 設備報導，以及 CXMT 上市首日上漲 466% 所反映的競爭變化。",
+      "topicIds": ["ai_semiconductors", "data_centers", "taiwan_tech_supply_chain", "market_stress"],
+      "evidenceUrls": [
+        "https://www.investing.com/news/stock-market-news/samsung-sk-hynix-slide-amid-nvidia-financing-worries-china-competition-4815353",
+        "https://www.investing.com/news/stock-market-news/china-begins-making-homegrown-duv-chipmaking-tools-the-information-reports-4814529",
+        "https://apnews.com/article/cxmt-china-memory-chips-debut-shares-9cd8b79866cf4bd5ef7c1cb81215e796",
+        "https://www.investing.com/news/economy-news/wall-st-futures-rise-as-us-iran-pause-hostilities-4813225"
+      ],
+      "transmissionPath": ["AI 融資與中國競爭疑慮", "Nvidia、晶片設備與記憶體股估值下修", "亞洲半導體風險偏好下降", "台灣晶圓代工與供應鏈評價", "SOXX 與 0050"],
+      "affectedAssets": ["Nvidia", "Samsung Electronics", "SK Hynix", "SOXX", "TSMC", "0050"],
+      "dataToConfirm": ["YAHOO:SOXX", "YAHOO:0050.TW"],
+      "marketDate": "2026-07-28",
+      "confirmationRules": [
+        {
+          "seriesId": "YAHOO:SOXX",
+          "expectedDirection": "down",
+          "changeType": "percent",
+          "threshold": 1.5
+        },
+        {
+          "seriesId": "YAHOO:0050.TW",
+          "expectedDirection": "down",
+          "changeType": "percent",
+          "threshold": 1
+        }
+      ],
+      "interpretation": "若 SOXX 與 0050 同步達到下跌門檻，才視為半導體風險已從海外個股擴散至台灣大型權值股；中國 DUV 設備的性能、可靠度與量產時程尚未公開，不把技術突破本身當成已證實事實。",
+      "confidence": 0.88,
+      "techEarnings": null
+    },
+    {
+      "rank": 4,
+      "headline": "Microsoft、Meta、Amazon 與 Apple 財報將集中檢驗 AI CapEx 回報",
+      "summary": "公司投資人關係頁面顯示 Microsoft 與 Meta 將於 7 月 29 日公布或討論季度結果，Amazon 與 Apple 排定 7 月 30 日；Reuters 指出投資人正聚焦大型科技公司的 AI 支出與現金流指引。",
+      "topicIds": ["megacap_earnings", "ai_semiconductors", "data_centers"],
+      "evidenceUrls": [
+        "https://news.microsoft.com/source/2026/07/08/microsoft-announces-quarterly-earnings-release-date-68/",
+        "https://investor.atmeta.com/investor-events/event-details/default.aspx",
+        "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-to-Webcast-Second-Quarter-2026-Financial-Results-Conference-Call/default.aspx",
+        "https://investor.apple.com/investor-relations/default.aspx",
+        "https://www.investing.com/news/economy-news/wall-st-futures-rise-as-us-iran-pause-hostilities-4813225"
+      ],
+      "transmissionPath": ["大型科技公司營收與 AI 成長", "資料中心 CapEx 與自由現金流", "AI 基礎建設訂單", "Nasdaq 與半導體估值", "台灣伺服器與晶片供應鏈"],
+      "affectedAssets": ["Microsoft", "Meta", "Amazon", "Apple", "QQQ", "SOXX", "Taiwan AI supply chain"],
+      "dataToConfirm": [],
+      "marketDate": "2026-07-28",
+      "confirmationRules": [],
+      "interpretation": "財報公布前沒有可誠實設定的單一方向性市場代理；應直接檢查營收、雲端或 AI 成長、CapEx 與自由現金流，而不是預設 QQQ 或 SOXX 的方向。",
+      "confidence": 0.86,
+      "techEarnings": {
+        "company": "Microsoft, Meta, Amazon, Apple",
+        "revenueGrowthPct": null,
+        "aiCloudGrowthPct": null,
+        "capexGrowthPct": null,
+        "freeCashFlowGrowthPct": null,
+        "capexGrowingFasterThanFcf": null
+      }
+    },
+    {
+      "rank": 5,
+      "headline": "美國消費信心、公債標售、GDP 與 PCE 形成密集宏觀資料窗",
+      "summary": "The Conference Board 排定 7 月 28 日美東時間上午 10 時發布消費者信心指數；美國財政部排定同日標售七年期公債；BEA 將於 7 月 30 日美東時間上午 8 時 30 分同步發布第二季 GDP 初值與 6 月個人所得及支出報告。",
+      "topicIds": ["global_macro_fed", "inflation_rates", "credit_liquidity"],
+      "evidenceUrls": [
+        "https://www.conference-board.org/topics/consumer-confidence/index.cfm",
+        "https://home.treasury.gov/system/files/221/TentativeAuctionScheduleQ22026.pdf",
+        "https://www.bea.gov/news/schedule"
+      ],
+      "transmissionPath": ["消費信心、GDP 與 PCE 結果", "成長與通膨預期", "七年期公債需求與期限溢酬", "美國殖利率曲線", "全球股票估值"],
+      "affectedAssets": ["U.S. 7-Year Treasury", "U.S. 10-Year Treasury yield", "SPY", "QQQ", "SOXX"],
+      "dataToConfirm": [],
+      "marketDate": "2026-07-28",
+      "confirmationRules": [],
+      "interpretation": "這些結果可能同時改變成長、通膨與期限溢酬，但公布前無法指定誠實的共同方向，因此不設定市場確認規則，待實際數據與標售結果出爐後再判讀。",
+      "confidence": 0.82,
+      "techEarnings": null
+    }
+  ]
+}

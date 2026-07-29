@@ -89,7 +89,7 @@ p {
   min-width: 0;
 }
 
-.brandLockup p {
+.brandLockup :where(p, h1) {
   margin: 0;
   color: var(--text);
   font-size: 22px;
@@ -2455,7 +2455,7 @@ select {
     border-radius: 22px;
   }
 
-  .brandLockup p {
+  .brandLockup :where(p, h1) {
     font-size: 20px;
   }
 
@@ -2547,6 +2547,279 @@ select {
     max-height: min(76dvh, 720px);
     border-radius: 26px;
     padding: 22px;
+  }
+}
+
+.morningBrief,
+.morningBriefAdmin,
+.morningBriefHeader,
+.morningBriefEventCard,
+.morningBriefEvidenceList > li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.morningBrief {
+  display: grid;
+  gap: 18px;
+  overflow-wrap: anywhere;
+}
+
+.morningBriefHeader,
+.morningBriefEventCard,
+.morningBriefEvidenceList > li,
+.morningBriefAdminMetadata,
+.morningBriefAdminWarnings {
+  padding: 16px;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 14px;
+  background: var(--surface, #ffffff);
+}
+
+.morningBriefHeader h2,
+.morningBriefEventCard h3,
+.morningBriefEvidenceList h3 {
+  margin-top: 0;
+}
+
+.morningBriefDefinitionList {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.morningBriefDefinitionList dt {
+  font-weight: 700;
+}
+
+.morningBriefDefinitionList dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.morningBriefEvidenceList,
+.morningBriefEventList,
+.morningBriefEventSummaries {
+  display: grid;
+  gap: 14px;
+}
+
+.morningBriefEvidenceList,
+.morningBriefEventSummaries {
+  padding-left: 22px;
+}
+
+.morningBriefEventCard details {
+  min-width: 0;
+}
+
+.morningBriefEventCard summary {
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.morningBriefEventCard ul,
+.morningBriefEventCard ol,
+.morningBriefLinkList {
+  min-width: 0;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.morningBriefPath {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style-position: inside;
+}
+
+.morningBriefUrl,
+.morningBrief a,
+.morningBrief code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.morningBriefStatus {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.morningBriefConfirmationCounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.morningBriefConfirmationCounts > span {
+  white-space: nowrap;
+}
+
+.confirmationAdminSection,
+.confirmationAdminResult,
+.confirmationAdminEvents,
+.confirmationAdminEventBody {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.confirmationAdminFilters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.confirmationAdminEvent {
+  min-width: 0;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 14px;
+  padding: 0 14px;
+}
+
+.confirmationAdminEvent > summary {
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+  font-weight: 760;
+}
+
+.confirmationAdminEventBody {
+  padding: 0 0 14px;
+}
+
+.adminWideTableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.confirmationRuleTable {
+  display: table;
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.confirmationRuleTable caption,
+.marketDataDesktopTable caption {
+  padding: 0 0 8px;
+  color: var(--muted-strong);
+  font-weight: 760;
+  text-align: left;
+}
+
+.confirmationRuleTable th,
+.confirmationRuleTable td,
+.marketDataDesktopTable th,
+.marketDataDesktopTable td {
+  padding: 10px 12px;
+  color: var(--muted-strong);
+  background: #f8fafb;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+  vertical-align: top;
+}
+
+.confirmationRuleTable thead th,
+.marketDataDesktopTable thead th {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.confirmationRuleTable tbody th,
+.marketDataDesktopTable tbody th {
+  color: var(--text);
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .confirmationAdminFilters {
+    grid-template-columns: 1fr;
+  }
+}
+
+.morningBriefEventSummary {
+  min-width: 0;
+}
+
+.morningBriefEventSummary span {
+  display: block;
+  margin-top: 4px;
+}
+
+.morningBriefAdminMetadata,
+.morningBriefAdminWarnings {
+  margin-top: 16px;
+}
+
+.briefsAdminSection,
+.briefsAdminView,
+.briefsAdminPublishedPreview {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.briefsAdminView {
+  padding: 16px;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 16px;
+}
+
+.briefsAdminView h3,
+.briefsAdminPublishedPreview > p {
+  margin: 0;
+}
+
+.briefsAdminSelector {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.briefsAdminSelector select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.morningBriefAdminDetails {
+  margin-top: 16px;
+}
+
+.morningBriefAdminDetails > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .morningBriefHeader,
+  .morningBriefEventCard,
+  .morningBriefEvidenceList > li,
+  .morningBriefAdminMetadata,
+  .morningBriefAdminWarnings {
+    padding: 13px;
+  }
+
+  .morningBriefDefinitionList {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .morningBriefDefinitionList dd + dt {
+    margin-top: 8px;
   }
 }
 
@@ -2696,5 +2969,617 @@ select {
 
   .benchmarkRules {
     padding: 16px;
+  }
+}
+
+.dynamicBetaAdmin {
+  padding-bottom: 24px;
+  overflow-x: clip;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dynamicBetaAdmin .hint {
+  color: var(--muted-strong);
+  font-size: 16px;
+}
+
+.morningBriefLifecycleActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.morningBriefRejectButton {
+  color: #8f3d45;
+}
+
+.adminWorkspacePanel {
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+  gap: 16px;
+}
+
+.adminWorkspaceLoading {
+  display: grid;
+  min-height: 192px;
+  place-items: center;
+  color: var(--muted, #667085);
+}
+
+.adminWorkspaceLoading p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.dynamicBetaAdmin :where(button, input, select) {
+  min-height: 44px;
+}
+
+.dynamicBetaAdmin :where(a, code) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dynamicBetaAdmin :where(button, input, select, textarea, summary, [role="tabpanel"]):focus-visible {
+  outline: 3px solid var(--focus-ring, #1c6dd0);
+  outline-offset: 3px;
+}
+
+.adminWorkspaceDesktopNav {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.adminWorkspaceTabList {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 14px;
+  background: var(--surface-subtle, #f5f7f9);
+}
+
+.adminWorkspaceTab,
+.adminWorkspaceMobileItem {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--ink, #1d2939);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.adminWorkspaceTab {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+}
+
+.adminWorkspaceTab.isActive,
+.adminWorkspaceMobileItem.isActive {
+  border-color: var(--accent, #315ea8);
+  color: var(--accent-strong, #254a87);
+  background: var(--surface, #ffffff);
+}
+
+.adminWorkspaceTab:focus-visible,
+.adminWorkspaceMobileItem:focus-visible {
+  outline: 3px solid var(--focus-ring, #1c6dd0);
+  outline-offset: 2px;
+}
+
+.adminWorkspaceMobileNav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .dynamicBetaAdmin {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .adminWorkspaceDesktopNav {
+    display: none;
+  }
+
+  .adminWorkspaceMobileNav {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border, #d7dbe1);
+    background: var(--surface, #ffffff);
+    box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.12);
+  }
+
+  .adminWorkspaceMobileItem {
+    min-width: 0;
+    padding: 6px 4px;
+    font-size: 12px;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .adminWorkspacePanel .positionTitle {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 761px) {
+  .adminWorkspaceDesktopNav {
+    display: block;
+  }
+
+  .adminWorkspaceMobileNav {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .adminWorkspaceDesktopNav {
+    display: block;
+  }
+
+  .adminWorkspaceMobileNav {
+    display: none;
+  }
+}
+
+.marketDataAdminSection,
+.marketDataAlerts,
+.marketDataNormalContent {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.marketDataHeader h2 {
+  margin: 0 0 4px;
+}
+
+.marketDataControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.marketDataControls button {
+  min-height: 44px;
+}
+
+.marketDataSummary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.marketDataSummary > div {
+  min-width: 0;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--surface-subtle, #f8fafb);
+}
+
+.marketDataSummary dt {
+  color: var(--muted, #667085);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.marketDataSummary dd {
+  margin: 4px 0 0;
+  font-size: 1.65rem;
+  font-weight: 820;
+  line-height: 1;
+}
+
+.marketDataAlerts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.marketDataCard {
+  min-width: 0;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--surface, #ffffff);
+}
+
+.marketDataAlertCard {
+  border-left-width: 5px;
+}
+
+.marketDataCard > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.marketDataCard h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.marketDataCard code,
+.marketDataCard dd {
+  overflow-wrap: anywhere;
+}
+
+.marketDataCard > header > strong {
+  flex: 0 0 auto;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.8125rem;
+}
+
+.marketDataCard dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.marketDataCard dl > div {
+  min-width: 0;
+}
+
+.marketDataCard dt {
+  color: var(--muted, #667085);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.marketDataCard dd {
+  margin: 3px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.marketDataNormalDisclosure {
+  min-width: 0;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 16px;
+  padding: 0 16px;
+}
+
+.marketDataNormalDisclosure > summary {
+  min-height: 44px;
+  padding: 13px 0;
+  cursor: pointer;
+  font-weight: 780;
+}
+
+.marketDataNormalContent {
+  padding: 0 0 16px;
+}
+
+.marketDataDesktopTable {
+  display: table;
+  width: 100%;
+  min-width: 1020px;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.marketDataDesktopTable th:first-child {
+  width: 17.5%;
+}
+
+.marketDataMobileCards {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .marketDataHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .marketDataControls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketDataSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketDataAlerts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marketDataDesktopTable {
+    display: none;
+  }
+
+  .marketDataMobileCards {
+    display: grid;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .marketDataCard dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.advancedToolsSection,
+.advancedToolsFlags,
+.advancedToolsDisclosureContent,
+.advancedToolsScoreResult,
+.advancedToolsJsonResult {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.advancedToolsSection > header h2 {
+  margin: 0 0 4px;
+}
+
+.advancedToolsFlags {
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--surface-subtle, #f8fafb);
+}
+
+.advancedToolsFlags dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.advancedToolsFlags dl > div {
+  min-width: 0;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--surface, #ffffff);
+}
+
+.advancedToolsFlags dt {
+  color: var(--muted, #667085);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.advancedToolsFlags dd {
+  margin: 4px 0 0;
+  font-weight: 800;
+}
+
+.advancedToolsFlags dd[data-feature-enabled="true"] {
+  color: #176b45;
+}
+
+.advancedToolsFlags dd[data-feature-enabled="false"] {
+  color: #73510d;
+}
+
+.advancedToolsDisclosure {
+  min-width: 0;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 16px;
+  padding: 0 16px;
+  background: var(--surface, #ffffff);
+}
+
+.advancedToolsDisclosure > summary {
+  min-height: 44px;
+  padding: 14px 0;
+  cursor: pointer;
+  font-weight: 780;
+}
+
+.advancedToolsDisclosureContent {
+  padding: 0 0 16px;
+}
+
+.advancedToolsControls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.advancedToolsControls label {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.advancedToolsControls input,
+.advancedToolsControls button,
+.advancedToolsJsonHeader button {
+  min-height: 44px;
+}
+
+.advancedToolsScoreTable {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.advancedToolsScoreTable > div {
+  grid-template-columns: 1.4fr repeat(5, minmax(110px, 1fr));
+  min-width: 780px;
+}
+
+.advancedToolsJsonHeader {
+  align-items: start;
+}
+
+.advancedToolsJsonHeader .hint {
+  margin: 0;
+}
+
+.advancedToolsJsonInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 360px;
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 12px;
+  padding: 12px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .advancedToolsFlags dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .advancedToolsControls,
+  .advancedToolsJsonHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .advancedToolsControls button,
+  .advancedToolsJsonHeader button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .advancedToolsFlags dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.todayWorkspaceSection,
+.todayWorkspaceBlock,
+.todayWorkspaceAlerts,
+.todayWorkspacePublishedFallback {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.todayWorkspaceSection > header h2,
+.todayWorkspaceBlock h3,
+.todayWorkspaceAlertCard p {
+  margin: 0;
+}
+
+.todayWorkspaceNotice {
+  margin: 8px 0 0;
+  border: 1px solid #b88a2d;
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: #73510d;
+  background: #fff8e6;
+  font-weight: 780;
+}
+
+.todayWorkspaceBlock {
+  border: 1px solid var(--border, #d7dbe1);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--surface, #ffffff);
+}
+
+.todayWorkspaceBlock > .positionTitle {
+  align-items: flex-start;
+}
+
+.todayWorkspaceError {
+  margin: 0;
+}
+
+.todayWorkspaceHeaderActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.todayWorkspaceAlerts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.todayWorkspaceAlertCard {
+  min-width: 0;
+  border: 1px solid var(--border, #d7dbe1);
+  border-left: 5px solid #b54708;
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--surface-subtle, #f8fafb);
+  overflow-wrap: anywhere;
+}
+
+.todayWorkspaceAlertCard > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.todayWorkspaceAlertCard > div p {
+  flex: 0 0 auto;
+}
+
+.todayWorkspaceAlertCard .hint {
+  margin-top: 6px;
+}
+
+.todayWorkspacePublishedFallback {
+  border-top: 1px solid var(--border, #d7dbe1);
+  padding-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .todayWorkspaceAlerts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .todayWorkspaceBlock > .positionTitle {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .todayWorkspaceHeaderActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .todayWorkspaceHeaderActions > button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .todayWorkspaceBlock {
+    padding: 13px;
+  }
+
+  .todayWorkspaceAlertCard > div {
+    display: grid;
+  }
+
+  .todayWorkspaceHeaderActions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

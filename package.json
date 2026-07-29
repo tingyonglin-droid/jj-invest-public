@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test"
+    "test": "node --test",
+    "backtest:dynamic-beta-events": "node --env-file=.env.local scripts/dynamic-beta-event-backtest.js",
+    "forensics:dynamic-beta-events": "node --env-file=.env.local scripts/dynamic-beta-event-forensics.js"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
@@ -19,6 +21,8 @@
   },
   "devDependencies": {
     "eslint": "9.30.1",
-    "eslint-config-next": "16.2.10"
+    "eslint-config-next": "16.2.10",
+    "fengari": "0.1.5",
+    "react-test-renderer": "19.2.7"
   }
 }

@@ -141,9 +141,8 @@ function addUtcDays(dateText, days) {
   return date.toISOString().slice(0, 10);
 }
 
-export async function fetchYahooHistoricalQuotes(normalizedTicker, { from, to }) {
-  const dates = createDateRange(from, to);
-  if (!dates.length) {
+export async function fetchYahooHistoricalObservations(normalizedTicker, { from, to }) {
+  if (!createDateRange(from, to).length) {
     return [];
   }
 
@@ -167,7 +166,16 @@ export async function fetchYahooHistoricalQuotes(normalizedTicker, { from, to })
   }
 
   const payload = await response.json();
-  const prices = parseYahooHistoricalPrices(payload, normalizedTicker);
+  return parseYahooHistoricalPrices(payload, normalizedTicker);
+}
+
+export async function fetchYahooHistoricalQuotes(normalizedTicker, { from, to }) {
+  const dates = createDateRange(from, to);
+  if (!dates.length) {
+    return [];
+  }
+
+  const prices = await fetchYahooHistoricalObservations(normalizedTicker, { from, to });
   return alignHistoricalPricesToDates(prices, dates);
 }
 
