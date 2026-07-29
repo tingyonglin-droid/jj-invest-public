@@ -13,3 +13,4 @@ calculator.py
 price.py
 .vercel
 .env*
+.worktrees/
