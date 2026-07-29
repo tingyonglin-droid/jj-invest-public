@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 
@@ -19,6 +21,21 @@ import {
 } from "../app/api/dynamic-beta/_shared.js";
 import { DYNAMIC_BETA_SERIES } from "../src/lib/dynamic-beta/catalog.js";
 import { createDynamicBetaSyncService } from "../src/lib/dynamic-beta/sync.js";
+
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+describe("Dynamic Beta daily pipeline runtime schedule configuration", () => {
+  it("uses only the local daily pipeline entrypoint for scheduled market data work", () => {
+    const vercelConfig = JSON.parse(readFileSync(resolve(projectRoot, "vercel.json"), "utf8"));
+    const packageJson = JSON.parse(readFileSync(resolve(projectRoot, "package.json"), "utf8"));
+
+    assert.equal("crons" in vercelConfig, false);
+    assert.equal(
+      packageJson.scripts["market-data:daily-pipeline"],
+      "node --env-file=.env.local scripts/dynamic-beta-daily-pipeline.js",
+    );
+  });
+});
 
 describe("Dynamic Beta daily pipeline", () => {
   it("runs automatic sync, MacroMicro ingestion, and confirmation snapshots in order", async () => {

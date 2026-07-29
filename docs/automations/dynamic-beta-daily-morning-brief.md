@@ -17,6 +17,17 @@
 3. 不讀取、顯示或摘要 `.env.local`。CLI 會自行在 server side 載入需要的設定。
 4. 不修改 repository 內任何檔案，不 commit、不 push。每日暫存 JSON 應放在系統暫存目錄。
 
+## 每日執行順序
+
+依下列順序執行，不得因前一階段的結果略過後續草稿階段：
+
+1. 使用瀏覽器擷取 M 平方最新資料，並建立成功或失敗 JSON。
+2. 執行 combined daily pipeline，同步 FRED／Yahoo、寫入 M 平方資料並更新 D1／D3 confirmation snapshots。
+3. 繼續新聞研究、事件去重與 Market Attention Ranking，選出五大焦點。
+4. 產生符合 schema 的 JSON，並送出為 pending 晨報草稿。
+
+Daily pipeline 回傳 success、partial、fatal failure 或 lock skip，都不得核准或發布晨報，也不得阻止獨立的新聞研究與 pending 草稿送出階段。
+
 ### M 平方同步前置步驟
 
 1. 使用瀏覽器開啟 `https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin`。
@@ -26,7 +37,7 @@
    - 無法讀取頁面：`{"errorCode":"PAGE_UNAVAILABLE","sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
    - 找不到最新資料：`{"errorCode":"LATEST_DATA_MISSING","sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
    - 數值格式異常：`{"errorCode":"INVALID_PAGE_VALUE","sourceUrl":"https://www.macromicro.me/charts/53117/taiwan-taiex-maintenance-margin"}`。
-5. 找出 Codex workspace 提供的 Node.js runtime，執行 `node --env-file=.env.local scripts/dynamic-beta-macromicro-submit.js <json-file>`；不論結果成功或失敗，都繼續產生待核准晨報草稿。
+5. 找出 Codex workspace 提供的 Node.js runtime，執行 `node --env-file=.env.local scripts/dynamic-beta-daily-pipeline.js <json-file>`；不論 pipeline 回傳 success、partial、fatal failure 或 lock skip，都繼續新聞研究、排序並產生待核准晨報草稿。
 
 ## 研究範圍
 
