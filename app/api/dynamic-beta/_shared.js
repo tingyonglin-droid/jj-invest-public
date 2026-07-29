@@ -115,20 +115,29 @@ export function createConfiguredConfirmationSnapshotService({
   });
 }
 
-export function createConfiguredSyncService(repository) {
+export function createConfiguredSyncService(repository, { logger = console } = {}) {
+  let fredClient = null;
+  try {
+    fredClient = createFredClient({ apiKey: process.env.FRED_API_KEY });
+  } catch {
+    // The daily pipeline still synchronizes Yahoo while FRED series fail in isolation.
+  }
   return createDynamicBetaSyncService({
     repository,
-    fredClient: createFredClient({ apiKey: process.env.FRED_API_KEY }),
+    fredClient,
+    logger,
   });
 }
 
 export function createConfiguredMacroMicroIngestionService(
   repository = getDynamicBetaRepository(),
+  { logger = console } = {},
 ) {
   if (!repository) return null;
   return createMacroMicroIngestionService({
     repository,
     series: getDynamicBetaSeries(MACROMICRO_MARGIN_SERIES_ID),
+    logger,
   });
 }
 
