@@ -427,6 +427,30 @@ describe("MacroMicro submission CLI", () => {
     assert.equal(accessorReads, 1);
   });
 
+  it("maps a result proxy revoked during promise assimilation to INVALID_RESULT", async () => {
+    let revoke;
+    const revocable = Proxy.revocable({}, {
+      get(target, property, receiver) {
+        if (property === "then") {
+          revoke();
+          return undefined;
+        }
+        return Reflect.get(target, property, receiver);
+      },
+    });
+    revoke = revocable.revoke;
+
+    const output = await runWithServiceResult(revocable.proxy);
+
+    assert.equal(output.exitCode, 1);
+    assert.equal(output.stdout, "");
+    assert.deepEqual(JSON.parse(output.stderr), {
+      ok: false,
+      code: "INVALID_RESULT",
+      error: "M 平方同步結果無效，既有 observation 未受影響。",
+    });
+  });
+
   it("snapshots each successful result field once before validation and output", async () => {
     const reads = new Map();
     const expected = {

@@ -50,10 +50,10 @@ function sourceErrorCodeFromSummary(result) {
 }
 
 function snapshotSubmissionResult(result) {
-  if (!result || typeof result !== "object" || Array.isArray(result)) {
-    return null;
-  }
   try {
+    if (!result || typeof result !== "object" || Array.isArray(result)) {
+      return null;
+    }
     const hasOwnErrorCode = Object.hasOwn(result, "errorCode");
     return {
       seriesId: result.seriesId,
