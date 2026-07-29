@@ -335,6 +335,24 @@ describe("canonical confirmation snapshot content", () => {
     );
   });
 
+  // Mutation caught: recreating a missing required rollup counts object as if only its null leaves were omitted.
+  it("rejects a missing d1 or d3 rollup counts object while preserving the original ID", () => {
+    const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
+
+    for (const window of ["d1", "d3"]) {
+      const missingCounts = omitNullValuesAndReverseKeys(snapshot);
+      delete missingCounts.events[0][window].counts;
+      assert.equal(
+        parseStoredConfirmationSnapshot({
+          payload: JSON.stringify(missingCounts),
+          committed: "1",
+        }),
+        null,
+        window,
+      );
+    }
+  });
+
   // Mutation caught: narrowing validation to partial test fixtures instead of real evaluator output.
   it("accepts a reordered live-shaped evaluator snapshot", () => {
     const liveEvaluation = evaluation([rule()]);

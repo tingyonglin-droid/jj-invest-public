@@ -238,11 +238,11 @@ function isApprovedWindowInput(window) {
 }
 
 function isApprovedCountsInput(counts) {
-  return counts === undefined || hasAllowedKeys(counts, WINDOW_STATUSES);
+  return hasAllowedKeys(counts, WINDOW_STATUSES);
 }
 
 function isApprovedRollupInput(rollup) {
-  return hasAllowedKeys(rollup, ROLLUP_KEYS, ["status"])
+  return hasAllowedKeys(rollup, ROLLUP_KEYS, ["status", "counts"])
     && isApprovedCountsInput(rollup.counts);
 }
 
