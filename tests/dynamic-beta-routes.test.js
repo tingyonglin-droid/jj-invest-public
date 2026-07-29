@@ -15,7 +15,13 @@ import {
   POST as ingestDynamicBetaNews,
 } from "../app/api/dynamic-beta/news/route.js";
 import { GET as readNewsConfirmations } from "../app/api/dynamic-beta/news/confirmations/route.js";
+import {
+  createConfirmationSnapshotGet,
+} from "../app/api/dynamic-beta/news/confirmation-snapshots/route.js";
 import { POST as validateDynamicBetaNews } from "../app/api/dynamic-beta/news/validate/route.js";
+import {
+  createConfiguredConfirmationSnapshotService,
+} from "../app/api/dynamic-beta/_shared.js";
 
 const originalEnvironment = {
   DYNAMIC_BETA_DATA_ENABLED: process.env.DYNAMIC_BETA_DATA_ENABLED,
@@ -527,5 +533,275 @@ describe("dynamic beta news confirmation route", () => {
 
     assert.equal(response.status, 400);
     assert.match((await response.json()).error, /revisionId.*briefDate/);
+  });
+});
+
+function savedConfirmationSnapshot(overrides = {}) {
+  return {
+    snapshotId: "ncs_saved_snapshot",
+    snapshotRevisionNumber: 3,
+    briefDate: "2026-07-27",
+    revisionId: "revision-current",
+    revisionNumber: 2,
+    asOf: "2026-07-29",
+    evaluatedAt: "2026-07-29T22:00:00.000Z",
+    createdAt: "2026-07-29T22:01:00.000Z",
+    completion: { complete: false, pendingReasons: [{ eventRank: 1, seriesId: "YAHOO:QQQ", reason: "awaiting_observation" }] },
+    metadata: {
+      vintageMode: "latest_stored_revision_by_observation_date",
+      truePointInTime: false,
+    },
+    events: [{ rank: 1, headline: "Saved confirmation", rules: [] }],
+    ...overrides,
+  };
+}
+
+function snapshotRequest(query = "") {
+  return new Request(
+    `https://example.com/api/dynamic-beta/news/confirmation-snapshots?${query}`,
+  );
+}
+
+function enabledSnapshotGet(overrides = {}) {
+  return createConfirmationSnapshotGet({
+    authorize: () => null,
+    requireMarketData: () => null,
+    requireNewsData: () => null,
+    getSnapshotRepository: () => ({
+      readLatestSnapshot: async () => null,
+      readRecentLatestSnapshots: async () => [],
+    }),
+    getNewsRepository: () => ({ readMorningBrief: async () => null }),
+    ...overrides,
+  });
+}
+
+describe("dynamic beta saved confirmation snapshot route", () => {
+  it("authorizes, checks both data flags, then constructs repositories in order", async () => {
+    const order = [];
+    const get = createConfirmationSnapshotGet({
+      authorize: () => { order.push("authorize"); return null; },
+      requireMarketData: () => { order.push("market"); return null; },
+      requireNewsData: () => { order.push("news"); return null; },
+      getSnapshotRepository: () => {
+        order.push("snapshotRepository");
+        return { readRecentLatestSnapshots: async () => [] };
+      },
+      getNewsRepository: () => {
+        order.push("newsRepository");
+        return { readMorningBrief: async () => null };
+      },
+    });
+
+    const response = await get(snapshotRequest());
+
+    assert.equal(response.status, 404);
+    assert.deepEqual(order, [
+      "authorize",
+      "market",
+      "news",
+      "snapshotRepository",
+      "newsRepository",
+    ]);
+  });
+
+  it("does not read feature flags or repositories when authorization fails", async () => {
+    const order = [];
+    const get = createConfirmationSnapshotGet({
+      authorize: () => {
+        order.push("authorize");
+        return Response.json({ error: "unauthorized" }, { status: 401 });
+      },
+      requireMarketData: () => { order.push("market"); return null; },
+      requireNewsData: () => { order.push("news"); return null; },
+      getSnapshotRepository: () => { order.push("snapshotRepository"); return null; },
+      getNewsRepository: () => { order.push("newsRepository"); return null; },
+    });
+
+    const response = await get(snapshotRequest());
+
+    assert.equal(response.status, 401);
+    assert.deepEqual(order, ["authorize"]);
+  });
+
+  it("does not construct repositories when either data flag disables the route", async () => {
+    for (const disabled of ["market", "news"]) {
+      const order = [];
+      const get = createConfirmationSnapshotGet({
+        authorize: () => { order.push("authorize"); return null; },
+        requireMarketData: () => {
+          order.push("market");
+          return disabled === "market" ? Response.json({}, { status: 404 }) : null;
+        },
+        requireNewsData: () => {
+          order.push("news");
+          return disabled === "news" ? Response.json({}, { status: 404 }) : null;
+        },
+        getSnapshotRepository: () => { order.push("snapshotRepository"); return null; },
+        getNewsRepository: () => { order.push("newsRepository"); return null; },
+      });
+
+      const response = await get(snapshotRequest());
+
+      assert.equal(response.status, 404);
+      assert.deepEqual(order, disabled === "market"
+        ? ["authorize", "market"]
+        : ["authorize", "market", "news"]);
+    }
+  });
+
+  it("returns 503 when either Redis-backed repository is unavailable", async () => {
+    for (const unavailable of ["snapshot", "news"]) {
+      const response = await enabledSnapshotGet({
+        getSnapshotRepository: () => unavailable === "snapshot" ? null : {
+          readRecentLatestSnapshots: async () => [],
+        },
+        getNewsRepository: () => unavailable === "news" ? null : {
+          readMorningBrief: async () => null,
+        },
+      })(snapshotRequest());
+
+      assert.equal(response.status, 503);
+      assert.deepEqual(await response.json(), {
+        configured: false,
+        error: "缺少 Upstash Redis 設定。",
+      });
+    }
+  });
+
+  it("rejects invalid snapshot dates and unscoped revision IDs before reading repositories", async () => {
+    for (const query of ["briefDate=2026-02-30", "asOf=2026-99-99", "revisionId=revision-1"]) {
+      let repositoriesRead = false;
+      const response = await enabledSnapshotGet({
+        getSnapshotRepository: () => { repositoriesRead = true; return null; },
+        getNewsRepository: () => { repositoriesRead = true; return null; },
+      })(snapshotRequest(query));
+
+      assert.equal(response.status, 400);
+      assert.equal(repositoriesRead, false);
+    }
+  });
+
+  it("returns the latest saved snapshot without filters unchanged", async () => {
+    const snapshot = savedConfirmationSnapshot();
+    const calls = [];
+    const response = await enabledSnapshotGet({
+      getSnapshotRepository: () => ({
+        readRecentLatestSnapshots: async (query) => { calls.push(query); return [snapshot]; },
+      }),
+    })(snapshotRequest());
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(calls, [{ since: "1900-01-01", until: "9999-12-31", limit: 1 }]);
+    assert.deepEqual(await response.json(), snapshot);
+  });
+
+  it("resolves a date-only request through the current published brief revision", async () => {
+    const snapshot = savedConfirmationSnapshot();
+    const snapshotCalls = [];
+    const response = await enabledSnapshotGet({
+      getNewsRepository: () => ({
+        readMorningBrief: async (query) => {
+          assert.deepEqual(query, { briefDate: "2026-07-27" });
+          return { briefDate: "2026-07-27", revisionId: "revision-current" };
+        },
+      }),
+      getSnapshotRepository: () => ({
+        readLatestSnapshot: async (query) => { snapshotCalls.push(query); return snapshot; },
+      }),
+    })(snapshotRequest("briefDate=2026-07-27"));
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(snapshotCalls, [{
+      briefDate: "2026-07-27",
+      revisionId: "revision-current",
+      asOf: undefined,
+    }]);
+    assert.deepEqual(await response.json(), snapshot);
+  });
+
+  it("reads an exact revision and saved date without resolving the current brief", async () => {
+    const snapshot = savedConfirmationSnapshot({ revisionId: "revision-exact", asOf: "2026-07-28" });
+    let readMorningBrief = false;
+    const response = await enabledSnapshotGet({
+      getNewsRepository: () => ({ readMorningBrief: async () => { readMorningBrief = true; return null; } }),
+      getSnapshotRepository: () => ({
+        readLatestSnapshot: async (query) => {
+          assert.deepEqual(query, {
+            briefDate: "2026-07-27",
+            revisionId: "revision-exact",
+            asOf: "2026-07-28",
+          });
+          return snapshot;
+        },
+      }),
+    })(snapshotRequest("briefDate=2026-07-27&revisionId=revision-exact&asOf=2026-07-28"));
+
+    assert.equal(response.status, 200);
+    assert.equal(readMorningBrief, false);
+    assert.deepEqual(await response.json(), snapshot);
+  });
+
+  it("returns 404 when the requested brief or saved snapshot does not exist", async () => {
+    const missingBrief = await enabledSnapshotGet({
+      getNewsRepository: () => ({ readMorningBrief: async () => null }),
+    })(snapshotRequest("briefDate=2026-07-27"));
+    const missingSnapshot = await enabledSnapshotGet({
+      getNewsRepository: () => ({ readMorningBrief: async () => ({ revisionId: "revision-current" }) }),
+      getSnapshotRepository: () => ({ readLatestSnapshot: async () => null }),
+    })(snapshotRequest("briefDate=2026-07-27"));
+
+    assert.equal(missingBrief.status, 404);
+    assert.equal(missingSnapshot.status, 404);
+  });
+
+  it("sanitizes unexpected read failures", async () => {
+    const secret = "KV_REST_API_TOKEN=do-not-reflect";
+    const response = await enabledSnapshotGet({
+      getSnapshotRepository: () => ({
+        readRecentLatestSnapshots: async () => { throw new Error(secret); },
+      }),
+    })(snapshotRequest());
+    const body = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.deepEqual(body, { error: "Confirmation snapshot 讀取失敗。" });
+    assert.equal(JSON.stringify(body).includes(secret), false);
+  });
+});
+
+describe("configured confirmation snapshot service", () => {
+  it("returns null without every required repository and provides the saved-snapshot service when configured", async () => {
+    const newsRepository = { readRecentBriefs: async () => [] };
+    const snapshotRepository = { saveSnapshot: async () => null, readLatestSnapshot: async () => null };
+    const confirmationService = { evaluate: async () => null };
+
+    assert.equal(createConfiguredConfirmationSnapshotService({
+      newsRepository: null,
+      snapshotRepository,
+      confirmationService,
+    }), null);
+    assert.equal(createConfiguredConfirmationSnapshotService({
+      newsRepository,
+      snapshotRepository: null,
+      confirmationService,
+    }), null);
+
+    const service = createConfiguredConfirmationSnapshotService({
+      newsRepository,
+      snapshotRepository,
+      confirmationService,
+    });
+
+    assert.deepEqual(await service.run({ asOf: "2026-07-29", lookbackDays: 0 }), {
+      status: "success",
+      selected: 0,
+      skippedComplete: 0,
+      inserted: 0,
+      revised: 0,
+      unchanged: 0,
+      failed: 0,
+      results: [],
+    });
   });
 });

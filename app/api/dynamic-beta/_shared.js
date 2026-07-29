@@ -15,6 +15,8 @@ import { createDynamicBetaSyncService } from "../../../src/lib/dynamic-beta/sync
 import { createNewsRepository } from "../../../src/lib/dynamic-beta/news/repository.js";
 import { createNewsDraftRepository } from "../../../src/lib/dynamic-beta/news/draft-repository.js";
 import { createNewsMarketConfirmationService } from "../../../src/lib/dynamic-beta/news/confirmation-service.js";
+import { createConfirmationSnapshotRepository } from "../../../src/lib/dynamic-beta/news/confirmation-snapshot-repository.js";
+import { createConfirmationSnapshotService } from "../../../src/lib/dynamic-beta/news/confirmation-snapshot-service.js";
 import { createNewsEventService } from "../../../src/lib/dynamic-beta/news/service.js";
 import { createNewsDraftService } from "../../../src/lib/dynamic-beta/news/draft-service.js";
 
@@ -69,6 +71,11 @@ export function getDynamicBetaNewsDraftRepository() {
   return redis ? createNewsDraftRepository(redis) : null;
 }
 
+export function getDynamicBetaConfirmationSnapshotRepository() {
+  const redis = getRedis();
+  return redis ? createConfirmationSnapshotRepository(redis) : null;
+}
+
 export function createConfiguredNewsEventService(repository = null) {
   return createNewsEventService({ repository });
 }
@@ -90,6 +97,22 @@ export function createConfiguredNewsMarketConfirmationService({
 } = {}) {
   if (!newsRepository || !marketRepository) return null;
   return createNewsMarketConfirmationService({ newsRepository, marketRepository });
+}
+
+export function createConfiguredConfirmationSnapshotService({
+  newsRepository = getDynamicBetaNewsRepository(),
+  snapshotRepository = getDynamicBetaConfirmationSnapshotRepository(),
+  confirmationService = null,
+} = {}) {
+  if (!newsRepository || !snapshotRepository) return null;
+  const configuredConfirmationService = confirmationService
+    || createConfiguredNewsMarketConfirmationService({ newsRepository });
+  if (!configuredConfirmationService) return null;
+  return createConfirmationSnapshotService({
+    newsRepository,
+    confirmationService: configuredConfirmationService,
+    snapshotRepository,
+  });
 }
 
 export function createConfiguredSyncService(repository) {
