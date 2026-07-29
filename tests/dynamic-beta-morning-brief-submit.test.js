@@ -5,6 +5,9 @@ import {
   MorningBriefDraftSubmissionError,
   submitMorningBriefDraftFile,
 } from "../src/lib/dynamic-beta/news/draft-submission.js";
+import {
+  runMorningBriefDraftSubmit,
+} from "../scripts/dynamic-beta-morning-brief-submit.js";
 
 function successfulService(overrides = {}) {
   return {
@@ -186,5 +189,113 @@ describe("morning brief draft submission", () => {
 
     assert.equal(result.created, false);
     assert.equal(result.status, "pending");
+  });
+});
+
+function outputBuffer() {
+  let value = "";
+  return {
+    stream: {
+      write(chunk) {
+        value += String(chunk);
+      },
+    },
+    read() {
+      return value;
+    },
+  };
+}
+
+describe("morning brief draft submission CLI", () => {
+  it("requires exactly one JSON file path", async () => {
+    const stdout = outputBuffer();
+    const stderr = outputBuffer();
+    const exitCode = await runMorningBriefDraftSubmit({
+      argv: [],
+      environment: { DYNAMIC_BETA_NEWS_DATA_ENABLED: "true" },
+      stdout: stdout.stream,
+      stderr: stderr.stream,
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.read(), "");
+    assert.deepEqual(JSON.parse(stderr.read()), {
+      ok: false,
+      code: "INVALID_ARGUMENTS",
+      error: "請提供一個晨報草稿 JSON 檔案路徑。",
+    });
+  });
+
+  it("uses the strict server-side news data flag", async () => {
+    const stderr = outputBuffer();
+    let fileRead = false;
+    const exitCode = await runMorningBriefDraftSubmit({
+      argv: ["/private/tmp/brief.json"],
+      environment: { DYNAMIC_BETA_NEWS_DATA_ENABLED: "TRUE" },
+      readFile: async () => {
+        fileRead = true;
+        return "{}";
+      },
+      getService: () => successfulService(),
+      stdout: outputBuffer().stream,
+      stderr: stderr.stream,
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(fileRead, false);
+    assert.equal(JSON.parse(stderr.read()).code, "NEWS_DATA_DISABLED");
+  });
+
+  it("prints one safe JSON line after creating a pending draft", async () => {
+    const stdout = outputBuffer();
+    const stderr = outputBuffer();
+    const exitCode = await runMorningBriefDraftSubmit({
+      argv: ["/private/tmp/brief.json"],
+      environment: { DYNAMIC_BETA_NEWS_DATA_ENABLED: "true" },
+      readFile: async () => "{}",
+      getService: () => successfulService(),
+      stdout: stdout.stream,
+      stderr: stderr.stream,
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(stderr.read(), "");
+    assert.equal(stdout.read().split("\n").length, 2);
+    assert.deepEqual(JSON.parse(stdout.read()), {
+      ok: true,
+      saved: true,
+      valid: true,
+      created: true,
+      warningCount: 0,
+      briefDate: "2026-07-29",
+      draftRevisionId: "ndrv_example",
+      draftRevisionNumber: 1,
+      status: "pending",
+    });
+  });
+
+  it("does not expose unexpected service errors or their stack", async () => {
+    const stderr = outputBuffer();
+    const secret = "KV_REST_API_TOKEN=do-not-print";
+    const exitCode = await runMorningBriefDraftSubmit({
+      argv: ["/private/tmp/brief.json"],
+      environment: { DYNAMIC_BETA_NEWS_DATA_ENABLED: "true" },
+      readFile: async () => "{}",
+      getService: () => ({
+        async create() {
+          throw new Error(secret);
+        },
+      }),
+      stdout: outputBuffer().stream,
+      stderr: stderr.stream,
+    });
+
+    assert.equal(exitCode, 1);
+    assert.deepEqual(JSON.parse(stderr.read()), {
+      ok: false,
+      code: "SUBMISSION_FAILED",
+      error: "晨報草稿儲存失敗，既有正式資料未受影響。",
+    });
+    assert.doesNotMatch(stderr.read(), /do-not-print|stack/);
   });
 });
