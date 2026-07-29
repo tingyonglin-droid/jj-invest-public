@@ -37,6 +37,30 @@ function withContentHash(snapshot) {
   };
 }
 
+function mutateStoredSnapshot(snapshot, mutate) {
+  const changed = structuredClone(snapshot);
+  mutate(changed);
+  return withContentHash(changed);
+}
+
+function evaluatorRollup() {
+  return {
+    status: "confirmed",
+    reason: "majority_confirmed",
+    isFinal: true,
+    evaluable: 1,
+    requiredMajority: 1,
+    counts: {
+      confirmed: 1,
+      reverse: 0,
+      unconfirmed: 0,
+      observing: 0,
+      insufficient_data: 0,
+      not_configured: 0,
+    },
+  };
+}
+
 function d3Row() {
   return {
     observationDate: "2026-07-29",
@@ -238,6 +262,22 @@ describe("canonical confirmation snapshot content", () => {
     );
   });
 
+  // Mutation caught: narrowing validation to partial test fixtures instead of real evaluator output.
+  it("accepts a reordered live-shaped evaluator snapshot", () => {
+    const liveEvaluation = evaluation([rule()]);
+    liveEvaluation.events[0].d1 = evaluatorRollup();
+    liveEvaluation.events[0].d3 = evaluatorRollup();
+    const snapshot = buildConfirmationSnapshot({ evaluation: liveEvaluation, createdAt: CREATED_AT });
+
+    assert.deepEqual(
+      parseStoredConfirmationSnapshot({
+        payload: JSON.stringify(reverseObjectKeys(snapshot)),
+        committed: "1",
+      }),
+      snapshot,
+    );
+  });
+
   // Mutation caught: accepting normalized events or completion objects that carry unknown fields.
   it("rejects extra event and completion fields even when their content hash is recomputed", () => {
     const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
@@ -264,6 +304,85 @@ describe("canonical confirmation snapshot content", () => {
       }),
       null,
     );
+  });
+
+  // Mutation caught: allowing unknown snapshot fields that are excluded from the content hash.
+  it("rejects an unknown top-level field without changing legacy snapshot IDs", () => {
+    const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
+    const withExtraField = withContentHash({ ...snapshot, unexpected: "field" });
+
+    assert.equal(
+      parseStoredConfirmationSnapshot({
+        payload: JSON.stringify(reverseObjectKeys(withExtraField)),
+        committed: "1",
+      }),
+      null,
+    );
+  });
+
+  // Mutation caught: treating canonically shaped but impossible evaluator values as trusted history.
+  it("rejects invalid event, rule, window, observation, and rollup domains with recomputed IDs", () => {
+    const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
+    const invalidCases = [
+      ["event rank", (value) => { value.events[0].rank = "1"; }],
+      ["event headline", (value) => { value.events[0].headline = 42; }],
+      ["event market date", (value) => { value.events[0].marketDate = "2026-07-32"; }],
+      ["event persistence", (value) => { value.events[0].persistence = "permanent"; }],
+      ["rule series", (value) => { value.events[0].rules[0].seriesId = ""; }],
+      ["rule direction", (value) => { value.events[0].rules[0].expectedDirection = "sideways"; }],
+      ["rule change type", (value) => { value.events[0].rules[0].changeType = "ratio"; }],
+      ["rule threshold", (value) => { value.events[0].rules[0].threshold = 0; }],
+      ["rule persistence", (value) => { value.events[0].rules[0].persistence = "permanent"; }],
+      ["baseline date", (value) => { value.events[0].rules[0].baseline.observationDate = "bad-date"; }],
+      ["window status", (value) => { value.events[0].rules[0].d1.status = "panic"; }],
+      ["window move", (value) => { value.events[0].rules[0].d1.rawMove = "3"; }],
+      ["window reason", (value) => { value.events[0].rules[0].d1.reason = "unknown_reason"; }],
+      ["observation value", (value) => { value.events[0].rules[0].d1.observation.value = "103"; }],
+      ["observation timestamp", (value) => { value.events[0].rules[0].d1.observation.retrievedAt = "yesterday"; }],
+      ["observation realtime date", (value) => { value.events[0].rules[0].d1.observation.sourceRealtimeStart = "today"; }],
+      ["rollup status", (value) => { value.events[0].d1.status = "panic"; }],
+      ["rollup reason", (value) => { value.events[0].d1.reason = "unknown_reason"; }],
+      ["rollup finality", (value) => { value.events[0].d1.isFinal = "true"; }],
+      ["rollup evaluable count", (value) => { value.events[0].d1.evaluable = 1.5; }],
+      ["rollup majority", (value) => { value.events[0].d1.requiredMajority = -1; }],
+      ["rollup status count", (value) => { value.events[0].d1.counts.confirmed = "1"; }],
+    ];
+
+    for (const [label, mutate] of invalidCases) {
+      const invalid = mutateStoredSnapshot(snapshot, mutate);
+      assert.equal(
+        parseStoredConfirmationSnapshot({
+          payload: JSON.stringify(reverseObjectKeys(invalid)),
+          committed: "1",
+        }),
+        null,
+        label,
+      );
+    }
+  });
+
+  // Mutation caught: reading an untrusted payload accessor more than once or outside the safe boundary.
+  it("reads payload exactly once and contains hostile payload accessors", () => {
+    const snapshot = buildConfirmationSnapshot({ evaluation: evaluation([rule()]), createdAt: CREATED_AT });
+    const payload = JSON.stringify(snapshot);
+    let reads = 0;
+    const changingRecord = {
+      committed: "1",
+      get payload() {
+        reads += 1;
+        if (reads > 1) throw new Error("payload read twice");
+        return payload;
+      },
+    };
+
+    assert.deepEqual(parseStoredConfirmationSnapshot(changingRecord), snapshot);
+    assert.equal(reads, 1);
+    assert.doesNotThrow(() => {
+      assert.equal(parseStoredConfirmationSnapshot({
+        committed: "1",
+        get payload() { throw new Error("hostile payload"); },
+      }), null);
+    });
   });
 
   it("round-trips every built snapshot when an optional rule field is omitted", () => {

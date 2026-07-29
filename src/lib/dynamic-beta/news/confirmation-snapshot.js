@@ -8,6 +8,68 @@ const TERMINAL_MISSING_REASONS = new Set([
 ]);
 
 const WINDOW_STATUSES = ["confirmed", "reverse", "unconfirmed", "observing", "insufficient_data", "not_configured"];
+const CHANGE_TYPES = new Set(["percent", "absolute", "basis_points"]);
+const DIRECTIONS = new Set(["up", "down"]);
+const PERSISTENCE_STATUSES = new Set([
+  "sustained",
+  "faded",
+  "reversed",
+  "emerged_late",
+  "unchanged",
+  "not_configured",
+  "insufficient_data",
+  "observing",
+]);
+const WINDOW_REASONS = new Set([
+  "missing_baseline",
+  "awaiting_observation",
+  "missing_observation",
+  "invalid_baseline",
+  "unknown_series",
+  "unsupported_frequency",
+  "not_configured",
+]);
+const ROLLUP_REASONS = new Set([
+  "majority_confirmed",
+  "majority_reverse",
+  "split_signals",
+  "no_threshold_met",
+  "awaiting_observations",
+  "insufficient_data",
+  "not_configured",
+  "no_rules",
+]);
+const SNAPSHOT_KEYS = [
+  "snapshotId",
+  "snapshotRevisionNumber",
+  "briefDate",
+  "revisionId",
+  "revisionNumber",
+  "asOf",
+  "metadata",
+  "completion",
+  "events",
+  "evaluatedAt",
+  "createdAt",
+];
+const METADATA_KEYS = ["vintageMode", "truePointInTime"];
+const COMPLETION_KEYS = ["complete", "pendingReasons"];
+const PENDING_REASON_KEYS = ["eventRank", "seriesId", "reason"];
+const EVENT_KEYS = ["rank", "headline", "marketDate", "rules", "d1", "d3", "persistence"];
+const RULE_KEYS = ["seriesId", "expectedDirection", "changeType", "threshold", "baseline", "d1", "d3", "persistence"];
+const WINDOW_KEYS = ["status", "observation", "rawMove", "normalizedMove", "reason"];
+const OBSERVATION_KEYS = [
+  "revisionId",
+  "observationDate",
+  "value",
+  "releasedAt",
+  "retrievedAt",
+  "firstSeenAt",
+  "lastSeenAt",
+  "sourceRealtimeStart",
+  "sourceRealtimeEnd",
+];
+const ROLLUP_KEYS = ["status", "reason", "isFinal", "evaluable", "requiredMajority", "counts"];
 
 export class ConfirmationSnapshotError extends Error {
   constructor(code) {
@@ -29,6 +91,122 @@ function validDateKey(value) {
 
 function validTimestamp(value) {
   return typeof value === "string" && !Number.isNaN(new Date(value).getTime());
+}
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasExactKeys(value, expectedKeys) {
+  if (!isRecord(value)) return false;
+  const actualKeys = Reflect.ownKeys(value);
+  return actualKeys.length === expectedKeys.length
+    && expectedKeys.every((key) => Object.hasOwn(value, key));
+}
+
+function isNullableEnum(value, values) {
+  return value === null || values.has(value);
+}
+
+function isNullableFiniteNumber(value) {
+  return value === null || (typeof value === "number" && Number.isFinite(value));
+}
+
+function isNullableNonNegativeInteger(value) {
+  return value === null || (Number.isInteger(value) && value >= 0);
+}
+
+function isNullableTimestamp(value) {
+  return value === null || validTimestamp(value);
+}
+
+function isNullableDateKey(value) {
+  return value === null || validDateKey(value);
+}
+
+function isNullableNonEmptyString(value) {
+  return value === null || (typeof value === "string" && value.trim().length > 0);
+}
+
+function isValidObservation(observation) {
+  if (observation === null) return true;
+  return hasExactKeys(observation, OBSERVATION_KEYS)
+    && isNullableNonEmptyString(observation.revisionId)
+    && validDateKey(observation.observationDate)
+    && typeof observation.value === "number"
+    && Number.isFinite(observation.value)
+    && isNullableTimestamp(observation.releasedAt)
+    && isNullableTimestamp(observation.retrievedAt)
+    && isNullableTimestamp(observation.firstSeenAt)
+    && isNullableTimestamp(observation.lastSeenAt)
+    && isNullableDateKey(observation.sourceRealtimeStart)
+    && isNullableDateKey(observation.sourceRealtimeEnd);
+}
+
+function isValidWindow(window) {
+  return hasExactKeys(window, WINDOW_KEYS)
+    && (window.status === null || WINDOW_STATUSES.includes(window.status))
+    && isValidObservation(window.observation)
+    && isNullableFiniteNumber(window.rawMove)
+    && isNullableFiniteNumber(window.normalizedMove)
+    && isNullableEnum(window.reason, WINDOW_REASONS);
+}
+
+function isValidCounts(counts) {
+  return hasExactKeys(counts, WINDOW_STATUSES)
+    && WINDOW_STATUSES.every((status) => isNullableNonNegativeInteger(counts[status]));
+}
+
+function isValidRollup(rollup) {
+  return hasExactKeys(rollup, ROLLUP_KEYS)
+    && WINDOW_STATUSES.includes(rollup.status)
+    && isNullableEnum(rollup.reason, ROLLUP_REASONS)
+    && (rollup.isFinal === null || typeof rollup.isFinal === "boolean")
+    && isNullableNonNegativeInteger(rollup.evaluable)
+    && isNullableNonNegativeInteger(rollup.requiredMajority)
+    && isValidCounts(rollup.counts);
+}
+
+function isValidRule(rule) {
+  return hasExactKeys(rule, RULE_KEYS)
+    && typeof rule.seriesId === "string"
+    && rule.seriesId.trim().length > 0
+    && isNullableEnum(rule.expectedDirection, DIRECTIONS)
+    && isNullableEnum(rule.changeType, CHANGE_TYPES)
+    && (rule.threshold === null
+      || (typeof rule.threshold === "number" && Number.isFinite(rule.threshold) && rule.threshold > 0))
+    && isValidObservation(rule.baseline)
+    && isValidWindow(rule.d1)
+    && isValidWindow(rule.d3)
+    && PERSISTENCE_STATUSES.has(rule.persistence);
+}
+
+function isValidEvent(event) {
+  return hasExactKeys(event, EVENT_KEYS)
+    && Number.isInteger(event.rank)
+    && event.rank > 0
+    && typeof event.headline === "string"
+    && event.headline.trim().length > 0
+    && validDateKey(event.marketDate)
+    && Array.isArray(event.rules)
+    && event.rules.every(isValidRule)
+    && isValidRollup(event.d1)
+    && isValidRollup(event.d3)
+    && PERSISTENCE_STATUSES.has(event.persistence);
+}
+
+function isValidCompletion(completion) {
+  return hasExactKeys(completion, COMPLETION_KEYS)
+    && typeof completion.complete === "boolean"
+    && Array.isArray(completion.pendingReasons)
+    && completion.pendingReasons.every((pending) => (
+      hasExactKeys(pending, PENDING_REASON_KEYS)
+      && Number.isInteger(pending.eventRank)
+      && pending.eventRank > 0
+      && typeof pending.seriesId === "string"
+      && pending.seriesId.trim().length > 0
+      && WINDOW_REASONS.has(pending.reason)
+    ));
 }
 
 function hasExactBriefIdentity(value) {
@@ -163,9 +341,11 @@ export function isConfirmationSnapshotComplete(snapshot) {
 }
 
 export function parseStoredConfirmationSnapshot(record) {
-  if (record?.committed !== "1" || typeof record?.payload !== "string") return null;
   try {
-    const snapshot = JSON.parse(record.payload);
+    const committed = record?.committed;
+    const payload = record?.payload;
+    if (committed !== "1" || typeof payload !== "string") return null;
+    const snapshot = JSON.parse(payload);
     if (!isStoredSnapshot(snapshot)) return null;
     return snapshot;
   } catch {
@@ -174,7 +354,7 @@ export function parseStoredConfirmationSnapshot(record) {
 }
 
 function isStoredSnapshot(snapshot) {
-  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
+  if (!hasExactKeys(snapshot, SNAPSHOT_KEYS)) return false;
   if (!hasExactBriefIdentity(snapshot) || !validDateKey(snapshot.asOf)) return false;
   if (!validTimestamp(snapshot.createdAt)) return false;
   if (snapshot.evaluatedAt !== null && !validTimestamp(snapshot.evaluatedAt)) return false;
@@ -182,12 +362,14 @@ function isStoredSnapshot(snapshot) {
     && (!Number.isInteger(snapshot.snapshotRevisionNumber) || snapshot.snapshotRevisionNumber < 1)) {
     return false;
   }
-  if (snapshot.metadata?.vintageMode !== "latest_stored_revision_by_observation_date"
+  if (!hasExactKeys(snapshot.metadata, METADATA_KEYS)
+    || snapshot.metadata.vintageMode !== "latest_stored_revision_by_observation_date"
     || snapshot.metadata?.truePointInTime !== false) {
     return false;
   }
-  if (!Array.isArray(snapshot.events) || typeof snapshot.completion?.complete !== "boolean"
-    || !Array.isArray(snapshot.completion.pendingReasons)) {
+  if (!Array.isArray(snapshot.events)
+    || !snapshot.events.every(isValidEvent)
+    || !isValidCompletion(snapshot.completion)) {
     return false;
   }
 
