@@ -76,10 +76,19 @@ function briefFixture() {
 
 function confirmationFixture() {
   return {
+    snapshotId: "ncs_today_saved",
+    snapshotRevisionNumber: 2,
     briefDate: "2026-07-28",
     revisionId: "nbr_published_exact",
     revisionNumber: 9,
     asOf: "2026-07-29",
+    evaluatedAt: "2026-07-29T22:00:00.000Z",
+    createdAt: "2026-07-29T22:01:00.000Z",
+    completion: { complete: false, pendingReasons: [] },
+    metadata: {
+      vintageMode: "latest_stored_revision_by_observation_date",
+      truePointInTime: false,
+    },
     events: [
       {
         rank: 1,
@@ -369,7 +378,7 @@ describe("TodayWorkspaceSection", () => {
     };
     globalThis.fetch = async (url) => {
       if (String(url).includes("/drafts?")) return Response.json({ drafts: [] });
-      if (String(url).includes("/confirmations?")) return pending.confirmation.promise;
+      if (String(url).includes("/confirmation-snapshots?")) return pending.confirmation.promise;
       if (String(url).includes("/admin?")) return pending.market.promise;
       if (String(url).includes("/news?")) return pending.briefs.promise;
       throw new Error(`Unexpected request: ${url}`);
@@ -410,7 +419,7 @@ describe("TodayWorkspaceSection", () => {
 
       const loadingSnapshots = [
         ["today-brief-title", "已發布晨報讀取中"],
-        ["today-confirmation-title", "市場確認讀取中"],
+        ["today-confirmation-title", "已保存快照讀取中"],
         ["today-market-title", "市場資料讀取中"],
       ].map(([titleId, statusText]) => {
         const block = renderer.root.findByProps({ "aria-labelledby": titleId });
@@ -441,7 +450,7 @@ describe("TodayWorkspaceSection", () => {
       }
       assert.doesNotMatch(
         loadingText,
-        /目前沒有草稿或已發布晨報|目前沒有市場確認結果|目前沒有市場資料|目前沒有異常市場資料/,
+        /目前沒有草稿或已發布晨報|目前沒有已保存的 D1／D3 快照|目前沒有市場資料|目前沒有異常市場資料/,
       );
     } finally {
       if (renderer) await TestRenderer.act(async () => renderer.unmount());
@@ -486,7 +495,7 @@ describe("TodayWorkspaceSection", () => {
       if (String(url) === "/api/dynamic-beta/admin?token=admin-token") {
         return Response.json({ series: [fresh, delayed] });
       }
-      if (String(url).startsWith("/api/dynamic-beta/news/confirmations?")) {
+      if (String(url).startsWith("/api/dynamic-beta/news/confirmation-snapshots?")) {
         return Response.json({ error: "Confirmation unavailable." }, { status: 503 });
       }
       throw new Error(`Unexpected request: ${url}`);
@@ -534,7 +543,7 @@ describe("TodayWorkspaceSection", () => {
           "/api/dynamic-beta/admin?token=admin-token",
           "/api/dynamic-beta/news/drafts?token=admin-token",
           "/api/dynamic-beta/news?token=admin-token",
-          `/api/dynamic-beta/news/confirmations?token=admin-token&asOf=${new Date().toISOString().slice(0, 10)}`,
+          "/api/dynamic-beta/news/confirmation-snapshots?token=admin-token",
         ].sort(),
       );
       assert.ok(calls.every(([, options]) => options.method === undefined));
@@ -546,7 +555,8 @@ describe("TodayWorkspaceSection", () => {
         await nextTurn();
       });
       assert.equal(calls.length, beforeRetry + 1);
-      assert.match(calls.at(-1)[0], /\/news\/confirmations\?/);
+      assert.match(calls.at(-1)[0], /\/news\/confirmation-snapshots\?/);
+      assert.equal(calls.some(([url]) => url.includes("/news/confirmations?")), false);
     } finally {
       if (renderer) await TestRenderer.act(async () => renderer.unmount());
       console.error = originalConsoleError;
@@ -581,7 +591,7 @@ describe("TodayWorkspaceSection", () => {
       }
       if (String(url).includes("/news?")) return Response.json({ briefs: [briefFixture()] });
       if (String(url).includes("/admin?")) return Response.json({ series: [] });
-      if (String(url).includes("/confirmations?")) {
+      if (String(url).includes("/confirmation-snapshots?")) {
         return confirmationFails
           ? Response.json({ error: "Confirmation refresh failed." }, { status: 503 })
           : Response.json(confirmationFixture());
@@ -612,7 +622,7 @@ describe("TodayWorkspaceSection", () => {
 
       confirmationFails = true;
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "更新市場確認").props.onClick();
+        buttonByText(renderer, "更新已保存快照").props.onClick();
         await nextTurn();
       });
       assert.match(renderedText(renderer), /Confirmation refresh failed/);
@@ -655,7 +665,7 @@ describe("TodayWorkspaceSection", () => {
     globalThis.fetch = async (url) => {
       const requestUrl = String(url);
       if (requestUrl.includes("/drafts?")) return Response.json({ drafts: [] });
-      if (requestUrl.includes("/confirmations?")) {
+      if (requestUrl.includes("/confirmation-snapshots?")) {
         if (modes.confirmation === "gate") {
           return Response.json({ enabled: false, error: "確認功能未啟用。" }, { status: 404 });
         }
@@ -761,7 +771,7 @@ describe("TodayWorkspaceSection", () => {
 
       modes.confirmation = "gate";
       await TestRenderer.act(async () => {
-        await buttonByText(renderer, "更新市場確認").props.onClick();
+        await buttonByText(renderer, "更新已保存快照").props.onClick();
         await nextTurn();
       });
       const confirmationBlock = renderer.root.findByProps({
@@ -808,7 +818,7 @@ describe("TodayWorkspaceSection", () => {
       if (requestUrl.includes("/drafts?")) {
         return Response.json({ drafts: draftMode === "pending" ? [draftFixture()] : [] });
       }
-      if (requestUrl.includes("/confirmations?")) return Response.json(confirmationFixture());
+      if (requestUrl.includes("/confirmation-snapshots?")) return Response.json(confirmationFixture());
       if (requestUrl.includes("/admin?")) {
         if (marketMode === "deferred") return delayedMarket.promise;
         return Response.json({ series: [seriesFixture("DELAYED", "delayed")] });
@@ -872,7 +882,7 @@ describe("TodayWorkspaceSection", () => {
       for (const id of ["today-brief-title", "today-confirmation-title", "today-market-title"]) {
         assert.equal(renderer.root.findByProps({ "aria-labelledby": id }).props["aria-busy"], false);
       }
-      for (const label of ["更新已發布晨報", "更新市場確認", "更新市場資料"]) {
+      for (const label of ["更新已發布晨報", "更新已保存快照", "更新市場資料"]) {
         assert.equal(buttonByText(renderer, label).props.disabled, false);
       }
 

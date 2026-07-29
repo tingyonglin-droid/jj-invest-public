@@ -10,7 +10,8 @@ import {
 } from "../../../src/components/morning-brief/MorningBriefContent.js";
 import {
   confirmationAdminReducer,
-  createConfirmationAdminController,
+  createConfirmationPreviewAdminController,
+  createConfirmationSnapshotAdminController,
   INITIAL_CONFIRMATION_ADMIN_STATE,
   summarizeConfirmationResult,
 } from "../../../src/lib/dynamic-beta/news/confirmation-admin-state.js";
@@ -28,8 +29,15 @@ function getAdminToken() {
   return new URL(window.location.href).searchParams.get("token") || "";
 }
 
-function todayDateKey() {
-  return new Date().toISOString().slice(0, 10);
+function taipeiTodayDateKey() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
 }
 
 function beginAccessRequest(adminAccess) {
@@ -127,67 +135,191 @@ function EventConfirmationDetails({ event }) {
   );
 }
 
+function ConfirmationLoadError({ state, retryLabel, onRetry }) {
+  if (!state.error) return null;
+  return (
+    <div className="usageWarning" role="alert">
+      <p>{state.error}</p>
+      {state.stale && <p>顯示上次成功讀取結果。</p>}
+      <button
+        type="button"
+        className="secondaryButton compact"
+        onClick={() => { void onRetry().catch(() => {}); }}
+        disabled={state.status === "loading"}
+      >
+        {retryLabel}
+      </button>
+    </div>
+  );
+}
+
+function ConfirmationResult({ result, label, saved = false }) {
+  const aggregateSummary = summarizeConfirmationResult(result);
+  return (
+    <section className="confirmationAdminResult" aria-label={label}>
+      <h3>{label}</h3>
+      <p>
+        <strong>
+          {result.briefDate} · Revision #{result.revisionNumber ?? "版本號未提供"}
+        </strong>{" "}
+        · As of {result.asOf}
+      </p>
+      {saved && (
+        <>
+          <p>{`Snapshot revision #${result.snapshotRevisionNumber} · ${
+            result.completion.complete ? "追蹤完成" : "追蹤中"
+          }`}</p>
+          <p className="hint">
+            建立時間 {result.createdAt} · 評估時間 {result.evaluatedAt || "未提供"}
+          </p>
+          {!result.completion.complete && result.completion.pendingReasons.length > 0 && (
+            <details>
+              <summary>待完成原因 {result.completion.pendingReasons.length} 項</summary>
+              <ul>
+                {result.completion.pendingReasons.map((reason, index) => (
+                  <li key={`${reason.eventRank ?? "event"}:${reason.seriesId ?? "series"}:${index}`}>
+                    事件 #{reason.eventRank ?? "?"} · {reason.seriesId || "Series 未提供"}
+                    {" · "}{reason.reason || "原因未提供"}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </>
+      )}
+      <p className="hint">
+        資料採各 observation date 最新儲存 revision，並非完整 point-in-time vintage。
+      </p>
+      <ConfirmationSummary summary={aggregateSummary} headingLevel={4} />
+      <div className="confirmationAdminEvents">
+        {(result.events || []).map((event, index) => (
+          <EventConfirmationDetails
+            key={`${event.rank ?? index}:${event.headline || "event"}`}
+            event={event}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function ConfirmationAdminSection({
   adminAccess = null,
   onAuthorizationLoss = null,
 }) {
-  const [state, dispatch] = useReducer(
+  const [snapshotState, dispatchSnapshot] = useReducer(
+    confirmationAdminReducer,
+    INITIAL_CONFIRMATION_ADMIN_STATE,
+  );
+  const [previewState, dispatchPreview] = useReducer(
     confirmationAdminReducer,
     INITIAL_CONFIRMATION_ADMIN_STATE,
   );
   const [briefDate, setBriefDate] = useState("");
   const [revisionId, setRevisionId] = useState("");
-  const [asOf, setAsOf] = useState(todayDateKey);
-  const controller = useMemo(() => createConfirmationAdminController({
+  const [asOf, setAsOf] = useState("");
+  const snapshotController = useMemo(() => createConfirmationSnapshotAdminController({
+    fetchImpl: (...args) => fetch(...args),
+  }), []);
+  const previewController = useMemo(() => createConfirmationPreviewAdminController({
     fetchImpl: (...args) => fetch(...args),
   }), []);
 
   useAdminAccessLifecycle(adminAccess, {
     onAccessDenied(snapshot) {
-      dispatch({
+      const failure = {
         type: "load-failed",
         error: snapshot.error || "管理權限已失效。",
         accessDenied: true,
-      });
+      };
+      dispatchSnapshot(failure);
+      dispatchPreview(failure);
     },
   });
 
-  const loadConfirmations = useCallback(async () => {
+  const handleLoadError = useCallback(({
+    error,
+    requestAccessEpoch,
+    dispatch,
+    fallbackMessage,
+  }) => {
+    if (error?.kind === "authorization") {
+      const accepted = reportAuthorizationLoss({
+        adminAccess,
+        onAuthorizationLoss,
+        error,
+        requestAccessEpoch,
+      });
+      if (!accepted) return false;
+    } else if (!isAccessRequestCurrent(adminAccess, requestAccessEpoch)) {
+      return false;
+    }
+    const accessDenied = isAdminAccessDenied(error);
+    const failure = {
+      type: "load-failed",
+      error: error instanceof Error ? error.message : fallbackMessage,
+      accessDenied,
+    };
+    if (accessDenied) {
+      dispatchSnapshot(failure);
+      dispatchPreview(failure);
+    } else {
+      dispatch(failure);
+    }
+    return true;
+  }, [adminAccess, onAuthorizationLoss]);
+
+  const loadSavedSnapshot = useCallback(async () => {
     const requestAccessEpoch = beginAccessRequest(adminAccess);
-    dispatch({ type: "load-started" });
+    dispatchSnapshot({ type: "load-started" });
     try {
-      const result = await controller.load({
+      const result = await snapshotController.load({
         token: getAdminToken(),
         briefDate,
         revisionId,
         asOf,
       });
       if (!completeValidatedAccess(adminAccess, requestAccessEpoch)) return null;
-      dispatch({ type: "load-succeeded", result });
+      dispatchSnapshot({ type: "load-succeeded", result });
       return result;
     } catch (loadError) {
-      if (loadError?.kind === "authorization") {
-        const accepted = reportAuthorizationLoss({
-          adminAccess,
-          onAuthorizationLoss,
-          error: loadError,
-          requestAccessEpoch,
-        });
-        if (!accepted) return null;
-      } else if (!isAccessRequestCurrent(adminAccess, requestAccessEpoch)) {
-        return null;
-      }
-      dispatch({
-        type: "load-failed",
-        error: loadError instanceof Error
-          ? loadError.message
-          : "Confirmation data 讀取失敗。",
-        accessDenied: isAdminAccessDenied(loadError),
+      handleLoadError({
+        error: loadError,
+        requestAccessEpoch,
+        dispatch: dispatchSnapshot,
+        fallbackMessage: "Confirmation snapshot 讀取失敗。",
       });
       throw loadError;
     }
-  }, [adminAccess, asOf, briefDate, controller, onAuthorizationLoss, revisionId]);
-  const initialLoad = useRef(loadConfirmations);
+  }, [adminAccess, asOf, briefDate, handleLoadError, revisionId, snapshotController]);
+
+  const loadPreview = useCallback(async () => {
+    const requestAccessEpoch = beginAccessRequest(adminAccess);
+    dispatchPreview({ type: "load-started" });
+    const previewAsOf = asOf || taipeiTodayDateKey();
+    if (!asOf) setAsOf(previewAsOf);
+    try {
+      const result = await previewController.load({
+        token: getAdminToken(),
+        briefDate,
+        revisionId,
+        asOf: previewAsOf,
+      });
+      if (!completeValidatedAccess(adminAccess, requestAccessEpoch)) return null;
+      dispatchPreview({ type: "load-succeeded", result });
+      return result;
+    } catch (loadError) {
+      handleLoadError({
+        error: loadError,
+        requestAccessEpoch,
+        dispatch: dispatchPreview,
+        fallbackMessage: "Confirmation Preview 讀取失敗。",
+      });
+      throw loadError;
+    }
+  }, [adminAccess, asOf, briefDate, handleLoadError, previewController, revisionId]);
+
+  const initialLoad = useRef(loadSavedSnapshot);
 
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {
@@ -196,28 +328,33 @@ export default function ConfirmationAdminSection({
     return () => window.clearTimeout(loadTimer);
   }, []);
 
-  const aggregateSummary = useMemo(
-    () => summarizeConfirmationResult(state.result),
-    [state.result],
-  );
-
   return (
     <section className="confirmationAdminSection" aria-labelledby="confirmation-admin-title">
       <header className="positionTitle">
         <div>
           <h2 id="confirmation-admin-title">News Market Confirmation</h2>
           <p className="hint">
-            手動讀取市場確認結果；Brief date 留空時使用最新已發布晨報。
+            預設顯示每日 07:00 保存結果；即時 Preview 只供人工檢查且不會保存。
           </p>
         </div>
-        <button
-          type="button"
-          className="secondaryButton compact"
-          onClick={() => { void loadConfirmations().catch(() => {}); }}
-          disabled={state.status === "loading"}
-        >
-          {state.status === "loading" ? "讀取中…" : "讀取確認結果"}
-        </button>
+        <div className="todayWorkspaceHeaderActions">
+          <button
+            type="button"
+            className="secondaryButton compact"
+            onClick={() => { void loadSavedSnapshot().catch(() => {}); }}
+            disabled={snapshotState.status === "loading"}
+          >
+            {snapshotState.status === "loading" ? "讀取中…" : "讀取已保存快照"}
+          </button>
+          <button
+            type="button"
+            className="secondaryButton compact"
+            onClick={() => { void loadPreview().catch(() => {}); }}
+            disabled={previewState.status === "loading"}
+          >
+            {previewState.status === "loading" ? "計算中…" : "計算即時 Preview"}
+          </button>
+        </div>
       </header>
 
       <div className="confirmationAdminFilters">
@@ -248,42 +385,29 @@ export default function ConfirmationAdminSection({
         </label>
       </div>
 
-      {state.error && (
-        <div className="usageWarning" role="alert">
-          <p>{state.error}</p>
-          {state.stale && <p>顯示上次成功讀取結果。</p>}
-          <button
-            type="button"
-            className="secondaryButton compact"
-            onClick={() => { void loadConfirmations().catch(() => {}); }}
-            disabled={state.status === "loading"}
-          >
-            重試讀取
-          </button>
-        </div>
+      <ConfirmationLoadError
+        state={snapshotState}
+        retryLabel="重試已保存快照"
+        onRetry={loadSavedSnapshot}
+      />
+      {snapshotState.result && (
+        <ConfirmationResult
+          result={snapshotState.result}
+          label="07:00 已保存快照"
+          saved
+        />
       )}
 
-      {state.result && (
-        <section className="confirmationAdminResult" aria-label="確認結果">
-          <p>
-            <strong>
-              {state.result.briefDate} · Revision #{state.result.revisionNumber ?? "版本號未提供"}
-            </strong>{" "}
-            · As of {state.result.asOf}
-          </p>
-          <p className="hint">
-            市場資料採各 observation date 最新儲存 revision，並非完整 point-in-time vintage。
-          </p>
-          <ConfirmationSummary summary={aggregateSummary} headingLevel={3} />
-          <div className="confirmationAdminEvents">
-            {(state.result.events || []).map((event, index) => (
-              <EventConfirmationDetails
-                key={`${event.rank ?? index}:${event.headline || "event"}`}
-                event={event}
-              />
-            ))}
-          </div>
-        </section>
+      <ConfirmationLoadError
+        state={previewState}
+        retryLabel="重試 Preview"
+        onRetry={loadPreview}
+      />
+      {previewState.result && (
+        <ConfirmationResult
+          result={previewState.result}
+          label="即時 Preview（不會保存）"
+        />
       )}
     </section>
   );

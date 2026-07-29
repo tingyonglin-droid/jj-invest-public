@@ -82,17 +82,31 @@ export function summarizeConfirmationResult(result) {
   };
 }
 
-export function confirmationQuery({ token, briefDate, revisionId, asOf }) {
+function confirmationQueryForEndpoint(endpoint, {
+  token,
+  briefDate,
+  revisionId,
+  asOf,
+}) {
   if (!token) {
     throw new AdminResponseError("缺少管理 token。", { kind: "authorization" });
   }
   if (revisionId && !briefDate) {
     throw new Error("Revision ID 必須搭配 Brief date。");
   }
-  const params = new URLSearchParams({ token, asOf: asOf || "" });
+  const params = new URLSearchParams({ token });
+  if (asOf) params.set("asOf", asOf);
   if (briefDate) params.set("briefDate", briefDate);
   if (revisionId) params.set("revisionId", revisionId);
-  return `/api/dynamic-beta/news/confirmations?${params.toString()}`;
+  return `/api/dynamic-beta/news/${endpoint}?${params.toString()}`;
+}
+
+export function confirmationSnapshotQuery(filters) {
+  return confirmationQueryForEndpoint("confirmation-snapshots", filters);
+}
+
+export function confirmationPreviewQuery(filters) {
+  return confirmationQueryForEndpoint("confirmations", filters);
 }
 
 export function confirmationAdminReducer(state, event) {
@@ -128,27 +142,70 @@ export function confirmationAdminReducer(state, event) {
   }
 }
 
-export function createConfirmationAdminController({ fetchImpl }) {
+function isLiveConfirmationResult(payload) {
+  return payload !== null
+    && typeof payload === "object"
+    && !Array.isArray(payload)
+    && typeof payload.briefDate === "string"
+    && typeof payload.revisionId === "string"
+    && typeof payload.asOf === "string"
+    && Array.isArray(payload.events);
+}
+
+function isConfirmationSnapshot(payload) {
+  return isLiveConfirmationResult(payload)
+    && typeof payload.snapshotId === "string"
+    && payload.snapshotId.length > 0
+    && Number.isInteger(payload.snapshotRevisionNumber)
+    && payload.snapshotRevisionNumber > 0
+    && Number.isInteger(payload.revisionNumber)
+    && payload.revisionNumber > 0
+    && typeof payload.createdAt === "string"
+    && (payload.evaluatedAt === null || typeof payload.evaluatedAt === "string")
+    && payload.completion !== null
+    && typeof payload.completion === "object"
+    && typeof payload.completion.complete === "boolean"
+    && Array.isArray(payload.completion.pendingReasons)
+    && payload.metadata?.vintageMode === "latest_stored_revision_by_observation_date"
+    && payload.metadata?.truePointInTime === false;
+}
+
+function createConfirmationController({
+  fetchImpl,
+  query,
+  validate,
+  fallbackMessage,
+}) {
   if (typeof fetchImpl !== "function") {
     throw new Error("Confirmation admin controller 需要 fetchImpl。");
   }
   return {
     async load(filters) {
-      const response = await fetchImpl(confirmationQuery(filters), {
+      const response = await fetchImpl(query(filters), {
         cache: "no-store",
       });
       return readAdminJson(response, {
-        fallbackMessage: "Confirmation data 讀取失敗",
-        validate: (payload) => (
-          payload !== null
-          && typeof payload === "object"
-          && !Array.isArray(payload)
-          && typeof payload.briefDate === "string"
-          && typeof payload.revisionId === "string"
-          && typeof payload.asOf === "string"
-          && Array.isArray(payload.events)
-        ),
+        fallbackMessage,
+        validate,
       });
     },
   };
+}
+
+export function createConfirmationSnapshotAdminController({ fetchImpl }) {
+  return createConfirmationController({
+    fetchImpl,
+    query: confirmationSnapshotQuery,
+    validate: isConfirmationSnapshot,
+    fallbackMessage: "Confirmation snapshot 讀取失敗",
+  });
+}
+
+export function createConfirmationPreviewAdminController({ fetchImpl }) {
+  return createConfirmationController({
+    fetchImpl,
+    query: confirmationPreviewQuery,
+    validate: isLiveConfirmationResult,
+    fallbackMessage: "Confirmation Preview 讀取失敗",
+  });
 }

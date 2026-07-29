@@ -7,8 +7,10 @@ import { transformSync } from "next/dist/build/swc/index.js";
 
 import {
   confirmationAdminReducer,
-  confirmationQuery,
-  createConfirmationAdminController,
+  confirmationPreviewQuery,
+  confirmationSnapshotQuery,
+  createConfirmationPreviewAdminController,
+  createConfirmationSnapshotAdminController,
   INITIAL_CONFIRMATION_ADMIN_STATE,
   summarizeConfirmationResult,
 } from "../src/lib/dynamic-beta/news/confirmation-admin-state.js";
@@ -76,6 +78,29 @@ function confirmationFixture() {
       persistence: persistence[index],
       rules: [ruleFixture(status, index + 1)],
     })),
+  };
+}
+
+function confirmationSnapshotFixture(overrides = {}) {
+  return {
+    ...confirmationFixture(),
+    snapshotId: "ncs_saved_exact",
+    snapshotRevisionNumber: 2,
+    evaluatedAt: "2026-07-30T22:00:00.000Z",
+    createdAt: "2026-07-30T22:01:00.000Z",
+    completion: {
+      complete: false,
+      pendingReasons: [{
+        eventRank: 2,
+        seriesId: "SERIES:2",
+        reason: "awaiting_observation",
+      }],
+    },
+    metadata: {
+      vintageMode: "latest_stored_revision_by_observation_date",
+      truePointInTime: false,
+    },
+    ...overrides,
   };
 }
 
@@ -188,26 +213,30 @@ function deferred() {
 describe("confirmation admin state", () => {
   // Mutations caught: dropping/reordering filters, accepting an unscoped revision, collapsing a
   // status into another meaning, deriving persistence, or clearing the last successful result.
-  it("builds the existing exact authenticated confirmation query", () => {
+  it("builds exact saved-snapshot and live Preview queries without widening revision scope", () => {
     assert.equal(
-      confirmationQuery({
-        token: "admin token",
-        briefDate: "2026-07-27",
-        revisionId: "nbr 20260727/r7",
-        asOf: "2026-07-30",
-      }),
-      "/api/dynamic-beta/news/confirmations?token=admin+token&asOf=2026-07-30&briefDate=2026-07-27&revisionId=nbr+20260727%2Fr7",
+      confirmationSnapshotQuery({ token: "admin token" }),
+      "/api/dynamic-beta/news/confirmation-snapshots?token=admin+token",
     );
     assert.equal(
-      confirmationQuery({
+      confirmationPreviewQuery({
+        token: "admin token",
+        briefDate: "2026-07-29",
+        revisionId: "nbr exact",
+        asOf: "2026-07-30",
+      }),
+      "/api/dynamic-beta/news/confirmations?token=admin+token&asOf=2026-07-30&briefDate=2026-07-29&revisionId=nbr+exact",
+    );
+    assert.equal(
+      confirmationSnapshotQuery({
         token: "admin token",
         briefDate: "2026-07-27",
         asOf: "2026-07-30",
       }),
-      "/api/dynamic-beta/news/confirmations?token=admin+token&asOf=2026-07-30&briefDate=2026-07-27",
+      "/api/dynamic-beta/news/confirmation-snapshots?token=admin+token&asOf=2026-07-30&briefDate=2026-07-27",
     );
     assert.throws(
-      () => confirmationQuery({
+      () => confirmationSnapshotQuery({
         token: "admin token",
         revisionId: "nbr_20260727_r7",
         asOf: "2026-07-30",
@@ -283,13 +312,37 @@ describe("confirmation admin state", () => {
     assert.equal(state.status, "error");
   });
 
-  it("rejects shape-invalid 2xx confirmation responses and classifies access loss", async () => {
+  it("validates saved snapshot identity, completion, metadata, and events", async () => {
+    const fixture = confirmationSnapshotFixture();
+    for (const invalid of [
+      { ...fixture, snapshotId: "" },
+      { ...fixture, snapshotRevisionNumber: 2.5 },
+      { ...fixture, completion: { pendingReasons: [] } },
+      { ...fixture, metadata: null },
+      { ...fixture, events: null },
+    ]) {
+      const controller = createConfirmationSnapshotAdminController({
+        async fetchImpl() { return Response.json(invalid); },
+      });
+      await assert.rejects(
+        controller.load({ token: "token" }),
+        (error) => error?.kind === "malformed",
+      );
+    }
+
+    const controller = createConfirmationSnapshotAdminController({
+      async fetchImpl() { return Response.json(fixture); },
+    });
+    assert.deepEqual(await controller.load({ token: "token" }), fixture);
+  });
+
+  it("keeps live Preview validation and classifies access loss", async () => {
     for (const [response, expectedKind] of [
       [Response.json({ configured: true }), "malformed"],
       [Response.json({ error: "unauthorized" }, { status: 403 }), "authorization"],
       [Response.json({ enabled: false, error: "disabled" }, { status: 404 }), "gate"],
     ]) {
-      const controller = createConfirmationAdminController({
+      const controller = createConfirmationPreviewAdminController({
         async fetchImpl() { return response; },
       });
       await assert.rejects(
@@ -298,7 +351,7 @@ describe("confirmation admin state", () => {
       );
     }
 
-    const missingTokenController = createConfirmationAdminController({
+    const missingTokenController = createConfirmationPreviewAdminController({
       async fetchImpl() { throw new Error("fetch must not run"); },
     });
     await assert.rejects(
@@ -309,13 +362,19 @@ describe("confirmation admin state", () => {
 });
 
 describe("ConfirmationAdminSection", () => {
-  it("loads only after mount, sends exact filters, and retains collapsed prior content on retryable failure", async () => {
+  it("loads the saved snapshot on mount and runs live Preview only after an explicit click", async () => {
     const ConfirmationAdminSection = await loadConfirmationAdminSection();
-    const fixture = confirmationFixture();
+    const fixture = confirmationSnapshotFixture();
+    const previewFixture = {
+      ...confirmationFixture(),
+      events: confirmationFixture().events.map((event) => ({
+        ...event,
+        headline: `Preview ${event.headline}`,
+      })),
+    };
     const calls = [];
     const scheduled = [];
     let responseMode = "success";
-    const expectedDefaultAsOf = new Date().toISOString().slice(0, 10);
     const originalWindow = globalThis.window;
     const originalFetch = globalThis.fetch;
     const originalActEnvironment = globalThis.IS_REACT_ACT_ENVIRONMENT;
@@ -330,7 +389,8 @@ describe("ConfirmationAdminSection", () => {
       clearTimeout() {},
     };
     globalThis.fetch = async (url, options = {}) => {
-      calls.push([String(url), options]);
+      const requestUrl = String(url);
+      calls.push([requestUrl, options]);
       if (responseMode === "http-error") {
         return Response.json({ error: "Redis unavailable." }, { status: 500 });
       }
@@ -349,7 +409,9 @@ describe("ConfirmationAdminSection", () => {
       if (responseMode === "gate") {
         return Response.json({ enabled: false, error: "確認功能未啟用。" }, { status: 404 });
       }
-      return Response.json(fixture);
+      return Response.json(requestUrl.includes("/confirmation-snapshots?")
+        ? fixture
+        : previewFixture);
     };
     console.error = (...args) => {
       if (String(args[0]).includes("react-test-renderer is deprecated")) return;
@@ -372,9 +434,21 @@ describe("ConfirmationAdminSection", () => {
         await nextTurn();
       });
       assert.deepEqual(calls[0], [
-        `/api/dynamic-beta/news/confirmations?token=admin-token&asOf=${expectedDefaultAsOf}`,
+        "/api/dynamic-beta/news/confirmation-snapshots?token=admin-token",
         { cache: "no-store" },
       ]);
+      assert.equal(
+        calls.filter(([url]) => url.includes("/confirmations?")).length,
+        0,
+      );
+      const savedText = renderedText(renderer);
+      assert.match(savedText, /07:00 已保存快照/);
+      assert.match(savedText, /Snapshot revision #2/);
+      assert.match(savedText, /追蹤中/);
+      assert.match(
+        savedText,
+        /資料採各 observation date 最新儲存 revision，並非完整 point-in-time vintage/,
+      );
 
       await TestRenderer.act(async () => {
         inputByLabel(renderer, "Brief date").props.onChange({
@@ -389,7 +463,7 @@ describe("ConfirmationAdminSection", () => {
       });
       assert.equal(scheduled.length, 0, "filter edits must remain manual after initial mount");
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "讀取確認結果").props.onClick();
+        buttonByText(renderer, "計算即時 Preview").props.onClick();
         await nextTurn();
       });
       assert.deepEqual(calls[1], [
@@ -398,16 +472,19 @@ describe("ConfirmationAdminSection", () => {
       ]);
 
       const sectionText = renderedText(renderer);
+      assert.match(sectionText, /即時 Preview（不會保存）/);
       assert.match(sectionText, /市場確認摘要/);
       assert.match(sectionText, /尚未設定確認規則/);
       assert.match(sectionText, /Event 1.*D1 主要確認：\s*已確認\s*（最終）.*D3 持續性：\s*未改變/);
       assert.match(sectionText, /Event 2.*D1 主要確認：\s*反向\s*（暫定）.*D3 持續性：\s*持續/);
-      const eventDetails = renderer.root.findAllByType("details");
-      assert.equal(eventDetails.length, 6);
+      const eventDetails = renderer.root.findAllByProps({
+        className: "confirmationAdminEvent",
+      });
+      assert.equal(eventDetails.length, 12);
       assert.ok(eventDetails.every((detail) => detail.props.open === undefined));
-      assert.equal(renderer.root.findAllByProps({ className: "adminWideTableScroll" }).length, 6);
+      assert.equal(renderer.root.findAllByProps({ className: "adminWideTableScroll" }).length, 12);
       const ruleTables = renderer.root.findAllByType("table");
-      assert.equal(ruleTables.length, 6);
+      assert.equal(ruleTables.length, 12);
       for (const table of ruleTables) {
         assert.match(renderedText(table.findByType("caption")), /市場確認規則明細/);
         assert.equal(table.findAllByType("thead").length, 1);
@@ -417,39 +494,43 @@ describe("ConfirmationAdminSection", () => {
         assert.ok(columnHeaders.every((header) => header.props.scope === "col"));
         const rowHeaders = table.findByType("tbody").findAllByType("th");
         assert.ok(rowHeaders.length > 0);
-        assert.ok(rowHeaders.every((header) => header.props.scope === "row"));
+      assert.ok(rowHeaders.every((header) => header.props.scope === "row"));
       }
+      assert.ok(calls.every(([, options]) => (
+        options.method === undefined || options.method === "GET"
+      )));
 
       responseMode = "http-error";
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "讀取確認結果").props.onClick();
+        buttonByText(renderer, "計算即時 Preview").props.onClick();
         await nextTurn();
       });
       const staleText = renderedText(renderer);
       assert.match(staleText, /Redis unavailable/);
       assert.match(staleText, /顯示上次成功讀取結果/);
       assert.match(staleText, /Event 6/);
-      assert.ok(buttonByText(renderer, "重試讀取"));
+      assert.match(staleText, /Preview Event 6/);
+      assert.ok(buttonByText(renderer, "重試 Preview"));
 
       responseMode = "parse-error";
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "重試讀取").props.onClick();
+        buttonByText(renderer, "重試 Preview").props.onClick();
         await nextTurn();
       });
       const malformedText = renderedText(renderer);
-      assert.match(malformedText, /Confirmation data 讀取失敗/);
+      assert.match(malformedText, /Confirmation Preview 讀取失敗/);
       assert.match(malformedText, /顯示上次成功讀取結果/);
       assert.match(malformedText, /Event 6/);
-      assert.ok(buttonByText(renderer, "重試讀取"));
+      assert.ok(buttonByText(renderer, "重試 Preview"));
       assert.doesNotMatch(malformedText, /gateway response|Unexpected token/);
 
       responseMode = "shape-error";
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "重試讀取").props.onClick();
+        buttonByText(renderer, "重試 Preview").props.onClick();
         await nextTurn();
       });
       const invalidShapeText = renderedText(renderer);
-      assert.match(invalidShapeText, /Confirmation data.*回應格式無效/);
+      assert.match(invalidShapeText, /Confirmation Preview.*回應格式無效/);
       assert.match(invalidShapeText, /顯示上次成功讀取結果/);
       assert.match(invalidShapeText, /Event 6/);
 
@@ -458,7 +539,7 @@ describe("ConfirmationAdminSection", () => {
         inputByLabel(renderer, "Brief date").props.onChange({ target: { value: "" } });
       });
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "讀取確認結果").props.onClick();
+        buttonByText(renderer, "計算即時 Preview").props.onClick();
         await nextTurn();
       });
       assert.equal(calls.length, callsBeforeInvalidRevision);
@@ -470,7 +551,7 @@ describe("ConfirmationAdminSection", () => {
         inputByLabel(renderer, "Revision ID").props.onChange({ target: { value: "" } });
       });
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "讀取確認結果").props.onClick();
+        buttonByText(renderer, "計算即時 Preview").props.onClick();
         await nextTurn();
       });
       const deniedText = renderedText(renderer);
@@ -481,7 +562,7 @@ describe("ConfirmationAdminSection", () => {
 
       responseMode = "gate";
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "重試讀取").props.onClick();
+        buttonByText(renderer, "重試 Preview").props.onClick();
         await nextTurn();
       });
       assert.match(renderedText(renderer), /確認功能未啟用/);
@@ -491,6 +572,69 @@ describe("ConfirmationAdminSection", () => {
       console.error = originalConsoleError;
       globalThis.fetch = originalFetch;
       globalThis.window = originalWindow;
+      globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnvironment;
+    }
+  });
+
+  it("fills a blank Preview as-of filter with the Asia/Taipei date at click time", async () => {
+    const ConfirmationAdminSection = await loadConfirmationAdminSection();
+    const calls = [];
+    const scheduled = [];
+    const OriginalDate = globalThis.Date;
+    const originalWindow = globalThis.window;
+    const originalFetch = globalThis.fetch;
+    const originalActEnvironment = globalThis.IS_REACT_ACT_ENVIRONMENT;
+    const originalConsoleError = console.error;
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    globalThis.Date = class FixedDate extends OriginalDate {
+      constructor(...args) {
+        super(...(args.length ? args : ["2026-07-29T16:30:00.000Z"]));
+      }
+      static now() { return new OriginalDate("2026-07-29T16:30:00.000Z").getTime(); }
+    };
+    globalThis.window = {
+      location: { href: "https://example.test/admin/dynamic-beta?token=admin-token" },
+      setTimeout(callback) { scheduled.push(callback); return scheduled.length; },
+      clearTimeout() {},
+    };
+    globalThis.fetch = async (url, options = {}) => {
+      calls.push([String(url), options]);
+      return Response.json(String(url).includes("/confirmation-snapshots?")
+        ? confirmationSnapshotFixture()
+        : confirmationFixture());
+    };
+    console.error = (...args) => {
+      if (String(args[0]).includes("react-test-renderer is deprecated")) return;
+      originalConsoleError(...args);
+    };
+
+    let renderer;
+    try {
+      await TestRenderer.act(async () => {
+        renderer = TestRenderer.create(React.createElement(ConfirmationAdminSection));
+      });
+      await TestRenderer.act(async () => {
+        scheduled.shift()();
+        await nextTurn();
+      });
+      assert.equal(inputByLabel(renderer, "As of").props.value, "");
+
+      await TestRenderer.act(async () => {
+        buttonByText(renderer, "計算即時 Preview").props.onClick();
+        await nextTurn();
+      });
+
+      assert.deepEqual(calls.at(-1), [
+        "/api/dynamic-beta/news/confirmations?token=admin-token&asOf=2026-07-30",
+        { cache: "no-store" },
+      ]);
+      assert.equal(inputByLabel(renderer, "As of").props.value, "2026-07-30");
+    } finally {
+      if (renderer) await TestRenderer.act(async () => renderer.unmount());
+      console.error = originalConsoleError;
+      globalThis.fetch = originalFetch;
+      globalThis.window = originalWindow;
+      globalThis.Date = OriginalDate;
       globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnvironment;
     }
   });
@@ -513,7 +657,7 @@ describe("ConfirmationAdminSection", () => {
     globalThis.fetch = async () => (
       confirmationMode === "deferred"
         ? delayedConfirmation.promise
-        : Response.json(confirmationFixture())
+        : Response.json(confirmationSnapshotFixture())
     );
     console.error = (...args) => {
       if (String(args[0]).includes("react-test-renderer is deprecated")) return;
@@ -551,7 +695,7 @@ describe("ConfirmationAdminSection", () => {
 
       confirmationMode = "deferred";
       await TestRenderer.act(async () => {
-        buttonByText(renderer, "讀取確認結果").props.onClick();
+        buttonByText(renderer, "讀取已保存快照").props.onClick();
         await nextTurn();
       });
       await TestRenderer.act(async () => {
@@ -560,8 +704,8 @@ describe("ConfirmationAdminSection", () => {
       });
 
       assert.doesNotMatch(renderedText(renderer), /Event 1|Event 6|顯示上次成功讀取結果/);
-      assert.equal(buttonByText(renderer, "重試讀取").props.disabled, false);
-      delayedConfirmation.resolve(Response.json(confirmationFixture()));
+      assert.equal(buttonByText(renderer, "重試已保存快照").props.disabled, false);
+      delayedConfirmation.resolve(Response.json(confirmationSnapshotFixture()));
       await TestRenderer.act(async () => { await nextTurn(); });
       assert.doesNotMatch(renderedText(renderer), /Event 1|Event 6/);
     } finally {

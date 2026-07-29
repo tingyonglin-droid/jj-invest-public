@@ -12,7 +12,7 @@ import {
   getDynamicBetaFreshnessLabel,
 } from "../../../src/lib/dynamic-beta/admin-view.js";
 import { buildTodayWorkspaceModel } from "../../../src/lib/dynamic-beta/today-workspace.js";
-import { confirmationQuery } from "../../../src/lib/dynamic-beta/news/confirmation-admin-state.js";
+import { confirmationSnapshotQuery } from "../../../src/lib/dynamic-beta/news/confirmation-admin-state.js";
 import {
   AdminResponseError,
   isAdminAccessDenied,
@@ -97,17 +97,21 @@ function getAdminToken() {
   return new URL(window.location.href).searchParams.get("token") || "";
 }
 
-function todayDateKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function validTodayPayload(block, payload) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return false;
   if (block === "briefs") return Array.isArray(payload.briefs);
   if (block === "market") return Array.isArray(payload.series);
-  return typeof payload.briefDate === "string"
+  return typeof payload.snapshotId === "string"
+    && payload.snapshotId.length > 0
+    && Number.isInteger(payload.snapshotRevisionNumber)
+    && payload.snapshotRevisionNumber > 0
+    && typeof payload.briefDate === "string"
     && typeof payload.revisionId === "string"
     && typeof payload.asOf === "string"
+    && typeof payload.completion?.complete === "boolean"
+    && Array.isArray(payload.completion?.pendingReasons)
+    && payload.metadata?.vintageMode === "latest_stored_revision_by_observation_date"
+    && payload.metadata?.truePointInTime === false
     && Array.isArray(payload.events);
 }
 
@@ -222,8 +226,8 @@ export default function TodayWorkspaceSection({
         url = `/api/dynamic-beta/admin?token=${encodeURIComponent(token)}`;
         fallbackMessage = "市場資料讀取失敗。";
       } else {
-        url = confirmationQuery({ token, asOf: todayDateKey() });
-        fallbackMessage = "市場確認讀取失敗。";
+        url = confirmationSnapshotQuery({ token });
+        fallbackMessage = "已保存市場確認讀取失敗。";
       }
       const response = await fetch(url, { cache: "no-store" });
       const payload = await readAdminJson(response, {
@@ -387,8 +391,8 @@ export default function TodayWorkspaceSection({
               disabled={resources.confirmation.status === "loading"}
             >
               {resources.confirmation.status === "loading"
-                ? "市場確認讀取中…"
-                : "更新市場確認"}
+                ? "已保存快照讀取中…"
+                : "更新已保存快照"}
             </button>
             <button
               type="button"
@@ -405,14 +409,14 @@ export default function TodayWorkspaceSection({
           onRetry={() => loadBlock("confirmation")}
         />
         {resources.confirmation.status === "loading" && (
-          <p className="hint" role="status" aria-live="polite">市場確認讀取中…</p>
+          <p className="hint" role="status" aria-live="polite">已保存快照讀取中…</p>
         )}
         {resources.confirmation.value
           ? <ConfirmationSummary summary={model.confirmation} headingLevel={4} />
           : resources.confirmation.hasLoaded
             && !resources.confirmation.error
             && resources.confirmation.status !== "loading"
-            && <p className="hint">{model.confirmation.emptyState}</p>}
+            && <p className="hint">目前沒有已保存的 D1／D3 快照。</p>}
       </section>
 
       <section
