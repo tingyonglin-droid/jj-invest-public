@@ -24,7 +24,7 @@ function isIsoDate(value) {
 }
 
 function isStoredObservationSummary(result) {
-  if (!result || typeof result !== "object") return false;
+  if (!result) return false;
   const counts = [result.inserted, result.revised, result.unchanged];
   return (
     result.seriesId === MACROMICRO_MARGIN_SERIES_ID &&
@@ -35,17 +35,39 @@ function isStoredObservationSummary(result) {
   );
 }
 
-function isSourceErrorSummary(result) {
-  return (
+function sourceErrorCodeFromSummary(result) {
+  if (
     result &&
-    typeof result === "object" &&
-    !Array.isArray(result) &&
     result.seriesId === MACROMICRO_MARGIN_SERIES_ID &&
     result.status === "error" &&
-    Object.hasOwn(result, "errorCode") &&
+    result.hasOwnErrorCode &&
     typeof result.errorCode === "string" &&
     Object.hasOwn(MACROMICRO_SOURCE_ERROR_MESSAGES, result.errorCode)
-  );
+  ) {
+    return result.errorCode;
+  }
+  return null;
+}
+
+function snapshotSubmissionResult(result) {
+  if (!result || typeof result !== "object" || Array.isArray(result)) {
+    return null;
+  }
+  try {
+    const hasOwnErrorCode = Object.hasOwn(result, "errorCode");
+    return {
+      seriesId: result.seriesId,
+      status: result.status,
+      inserted: result.inserted,
+      revised: result.revised,
+      unchanged: result.unchanged,
+      latestObservationDate: result.latestObservationDate,
+      hasOwnErrorCode,
+      errorCode: hasOwnErrorCode ? result.errorCode : undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function submitMacroMicroFile({
@@ -80,10 +102,11 @@ export async function submitMacroMicroFile({
     throw submissionError("SERVICE_UNCONFIGURED", "M 平方同步服務尚未設定。");
   }
 
-  const result = await service.ingest(payload);
-  if (isSourceErrorSummary(result)) {
+  const result = snapshotSubmissionResult(await service.ingest(payload));
+  const sourceErrorCode = sourceErrorCodeFromSummary(result);
+  if (sourceErrorCode) {
     throw new MacroMicroSubmissionError(
-      result.errorCode,
+      sourceErrorCode,
       "M 平方來源同步失敗，已保留既有 observation。",
     );
   }

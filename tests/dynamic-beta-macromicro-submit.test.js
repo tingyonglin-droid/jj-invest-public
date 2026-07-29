@@ -180,6 +180,20 @@ function outputBuffer() {
   };
 }
 
+async function runWithServiceResult(result) {
+  const stdout = outputBuffer();
+  const stderr = outputBuffer();
+  const exitCode = await runMacroMicroSubmit({
+    argv: ["/private/tmp/macromicro.json"],
+    environment: { DYNAMIC_BETA_DATA_ENABLED: "true" },
+    readFile: async () => "{}",
+    getService: () => ({ async ingest() { return result; } }),
+    stdout: stdout.stream,
+    stderr: stderr.stream,
+  });
+  return { exitCode, stdout: stdout.read(), stderr: stderr.read() };
+}
+
 describe("MacroMicro submission CLI", () => {
   it("requires exactly one JSON file path", async () => {
     const stdout = outputBuffer();
@@ -350,6 +364,105 @@ describe("MacroMicro submission CLI", () => {
       });
       if (untrusted) assert.equal(stderr.read().includes(untrusted), false);
     }
+  });
+
+  it("uses one captured allowlisted code from a changing source-error getter", async () => {
+    let reads = 0;
+    const result = {
+      seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+      status: "error",
+      get errorCode() {
+        reads += 1;
+        return reads < 3
+          ? "PAGE_UNAVAILABLE"
+          : "UPSTASH_REDIS_REST_TOKEN=leak-me";
+      },
+    };
+
+    const output = await runWithServiceResult(result);
+
+    assert.equal(output.exitCode, 1);
+    assert.equal(output.stdout, "");
+    assert.deepEqual(JSON.parse(output.stderr), {
+      ok: false,
+      code: "PAGE_UNAVAILABLE",
+      error: "M 平方來源同步失敗，已保留既有 observation。",
+    });
+    assert.equal(reads, 1);
+    assert.equal(output.stderr.includes("leak-me"), false);
+  });
+
+  it("maps throwing source-error accessors and proxies to fixed INVALID_RESULT", async () => {
+    let accessorReads = 0;
+    const throwingAccessor = {
+      seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+      status: "error",
+      get errorCode() {
+        accessorReads += 1;
+        throw new Error("ACCESSOR_SECRET");
+      },
+    };
+    const throwingProxy = new Proxy({
+      seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+      status: "error",
+      errorCode: "PAGE_UNAVAILABLE",
+    }, {
+      getOwnPropertyDescriptor() {
+        throw new Error("PROXY_SECRET");
+      },
+    });
+
+    for (const result of [throwingAccessor, throwingProxy]) {
+      const output = await runWithServiceResult(result);
+
+      assert.equal(output.exitCode, 1);
+      assert.equal(output.stdout, "");
+      assert.deepEqual(JSON.parse(output.stderr), {
+        ok: false,
+        code: "INVALID_RESULT",
+        error: "M 平方同步結果無效，既有 observation 未受影響。",
+      });
+      assert.doesNotMatch(output.stderr, /ACCESSOR_SECRET|PROXY_SECRET/);
+    }
+    assert.equal(accessorReads, 1);
+  });
+
+  it("snapshots each successful result field once before validation and output", async () => {
+    const reads = new Map();
+    const expected = {
+      seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+      status: "success",
+      inserted: 1,
+      revised: 0,
+      unchanged: 0,
+      latestObservationDate: "2026-07-28",
+    };
+    const result = {};
+    for (const [key, value] of Object.entries(expected)) {
+      Object.defineProperty(result, key, {
+        enumerable: true,
+        get() {
+          const count = (reads.get(key) || 0) + 1;
+          reads.set(key, count);
+          return count === 1 ? value : `${key.toUpperCase()}_SECRET`;
+        },
+      });
+    }
+
+    const output = await runWithServiceResult(result);
+
+    assert.equal(output.exitCode, 0);
+    assert.equal(output.stderr, "");
+    assert.deepEqual(JSON.parse(output.stdout), { ok: true, ...expected });
+    assert.deepEqual(Object.fromEntries(reads), {
+      seriesId: 1,
+      status: 1,
+      inserted: 1,
+      revised: 1,
+      unchanged: 1,
+      latestObservationDate: 1,
+    });
+    assert.equal(output.stdout.includes("_SECRET"), false);
   });
 
   it("does not expose unexpected errors or their stack", async () => {
