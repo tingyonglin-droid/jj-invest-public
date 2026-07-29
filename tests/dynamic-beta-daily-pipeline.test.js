@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 
 import {
@@ -15,6 +17,8 @@ import {
   createConfiguredMacroMicroIngestionService,
   createConfiguredSyncService,
 } from "../app/api/dynamic-beta/_shared.js";
+import { DYNAMIC_BETA_SERIES } from "../src/lib/dynamic-beta/catalog.js";
+import { createDynamicBetaSyncService } from "../src/lib/dynamic-beta/sync.js";
 
 describe("Dynamic Beta daily pipeline", () => {
   it("runs automatic sync, MacroMicro ingestion, and confirmation snapshots in order", async () => {
@@ -137,7 +141,13 @@ describe("Dynamic Beta daily pipeline", () => {
       macroMicroService: {
         async ingest() {
           calls.push("macromicro-ingest");
-          return { status: "success", inserted: 0, revised: 0, unchanged: 1 };
+          return {
+            seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+            status: "success",
+            inserted: 0,
+            revised: 0,
+            unchanged: 1,
+          };
         },
       },
       snapshotService: {
@@ -184,7 +194,13 @@ describe("Dynamic Beta daily pipeline", () => {
       macroMicroService: {
         async ingest() {
           calls.push("macromicro-ingest");
-          return { status: "success", inserted: 1, revised: 0, unchanged: 0 };
+          return {
+            seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+            status: "success",
+            inserted: 1,
+            revised: 0,
+            unchanged: 0,
+          };
         },
       },
       snapshotService: {
@@ -308,7 +324,13 @@ describe("Dynamic Beta daily pipeline", () => {
       },
       macroMicroService: {
         async ingest() {
-          return { status: "success", inserted: 0, revised: 1, unchanged: 0 };
+          return {
+            seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+            status: "success",
+            inserted: 0,
+            revised: 1,
+            unchanged: 0,
+          };
         },
       },
       snapshotService: {
@@ -354,7 +376,13 @@ describe("Dynamic Beta daily pipeline", () => {
       },
       macroMicroService: {
         async ingest() {
-          return { status: "success", inserted: -1, revised: 1.5, unchanged: "2" };
+          return {
+            seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+            status: "success",
+            inserted: -1,
+            revised: 1.5,
+            unchanged: "2",
+          };
         },
       },
       snapshotService: {
@@ -381,22 +409,23 @@ describe("Dynamic Beta daily pipeline", () => {
     const serialized = JSON.stringify({ result, logged });
 
     assert.doesNotMatch(serialized, /fred-secret|redis-secret|source-secret|source html/);
-    assert.deepEqual(result.stages[1].counts, {
-      inserted: 0,
-      revised: 0,
-      unchanged: 0,
+    assert.deepEqual(result.stages[1], {
+      name: "macromicro-ingest",
+      status: "error",
+      code: "MACROMICRO_INVALID_RESULT",
+      counts: { inserted: 0, revised: 0, unchanged: 0 },
     });
     assert.deepEqual(result.stages[2], {
       name: "confirmation-snapshots",
-      status: "partial",
-      code: "SNAPSHOT_RUN_PARTIAL",
+      status: "error",
+      code: "SNAPSHOT_INVALID_RESULT",
       counts: {
         selected: 0,
-        skippedComplete: 2,
+        skippedComplete: 0,
         inserted: 0,
         revised: 0,
         unchanged: 0,
-        failed: 1,
+        failed: 0,
       },
     });
     for (const stage of result.stages) {
@@ -404,6 +433,370 @@ describe("Dynamic Beta daily pipeline", () => {
       assert.ok(Object.values(stage.counts).every(
         (count) => Number.isInteger(count) && count >= 0,
       ));
+    }
+  });
+});
+
+function pipelineWithResults({ automaticResult, macroMicroResult, snapshotResult, logger = null }) {
+  return createDynamicBetaDailyPipeline({
+    syncService: { async sync() { return automaticResult; } },
+    macroMicroService: { async ingest() { return macroMicroResult; } },
+    snapshotService: { async run() { return snapshotResult; } },
+    logger,
+  });
+}
+
+const coherentAutomaticSuccess = Object.freeze({
+  status: "success",
+  results: Object.freeze([{ seriesId: "VIXCLS", status: "success" }]),
+});
+const coherentMacroMicroSuccess = Object.freeze({
+  seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+  status: "success",
+  inserted: 1,
+  revised: 0,
+  unchanged: 0,
+});
+const coherentSnapshotSuccess = Object.freeze({
+  status: "success",
+  selected: 1,
+  skippedComplete: 0,
+  inserted: 1,
+  revised: 0,
+  unchanged: 0,
+  failed: 0,
+});
+
+describe("Dynamic Beta daily pipeline hostile results", () => {
+  it("captures every used service-result accessor once before validation", async () => {
+    const secret = "FRED_API_KEY=accessor-secret <html>payload-secret</html>";
+    const reads = {};
+    function accessorResult(values, prefix) {
+      const result = {};
+      for (const [name, value] of Object.entries(values)) {
+        Object.defineProperty(result, name, {
+          enumerable: true,
+          get() {
+            const key = `${prefix}.${name}`;
+            reads[key] = (reads[key] || 0) + 1;
+            return reads[key] === 1 ? value : secret;
+          },
+        });
+      }
+      return result;
+    }
+    const result = await pipelineWithResults({
+      automaticResult: accessorResult({
+        status: "success",
+        results: [{ seriesId: "VIXCLS", status: "success" }],
+      }, "automatic"),
+      macroMicroResult: accessorResult({
+        seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+        status: "success",
+        inserted: 1,
+        revised: 0,
+        unchanged: 0,
+      }, "macromicro"),
+      snapshotResult: accessorResult({
+        status: "success",
+        selected: 1,
+        skippedComplete: 0,
+        inserted: 1,
+        revised: 0,
+        unchanged: 0,
+        failed: 0,
+      }, "snapshot"),
+    }).run({ macroMicroPayload: {}, asOf: "2026-07-29" });
+
+    assert.equal(result.status, "success");
+    assert.deepEqual(result.stages.map((stage) => stage.status), [
+      "success",
+      "success",
+      "success",
+    ]);
+    assert.doesNotMatch(JSON.stringify(result), /accessor-secret|payload-secret/);
+    assert.ok(Object.values(reads).every((count) => count === 1));
+  });
+
+  it("sanitizes hostile thenables and revoked proxies without interrupting later stages", async () => {
+    const secret = "UPSTASH_REDIS_REST_TOKEN=thenable-secret payload=<html>proxy-secret</html>";
+    const logged = [];
+    let macroMicroRan = false;
+    let snapshotsRan = false;
+    const pipeline = createDynamicBetaDailyPipeline({
+      syncService: {
+        sync() {
+          return {
+            then(_resolve, reject) {
+              reject(new Proxy({}, {
+                get(_target, property) {
+                  if (property === "message") return secret;
+                  throw new Error(secret);
+                },
+              }));
+            },
+          };
+        },
+      },
+      macroMicroService: {
+        ingest() {
+          macroMicroRan = true;
+          const revocable = Proxy.revocable(coherentMacroMicroSuccess, {});
+          return {
+            then(resolve) {
+              resolve(revocable.proxy);
+              revocable.revoke();
+            },
+          };
+        },
+      },
+      snapshotService: {
+        async run() {
+          snapshotsRan = true;
+          return coherentSnapshotSuccess;
+        },
+      },
+      logger: { error(...args) { logged.push(args); } },
+    });
+
+    const result = await pipeline.run({ macroMicroPayload: {}, asOf: "2026-07-29" });
+    const serialized = JSON.stringify({ result, logged });
+
+    assert.equal(macroMicroRan, true);
+    assert.equal(snapshotsRan, true);
+    assert.equal(result.status, "partial");
+    assert.deepEqual(result.stages[0], {
+      name: "automatic-sync",
+      status: "error",
+      code: "AUTOMATIC_SYNC_FAILED",
+      counts: { total: 0, succeeded: 0, failed: 0 },
+    });
+    assert.deepEqual(result.stages[1], {
+      name: "macromicro-ingest",
+      status: "error",
+      code: "MACROMICRO_INVALID_RESULT",
+      counts: { inserted: 0, revised: 0, unchanged: 0 },
+    });
+    assert.doesNotMatch(serialized, /thenable-secret|proxy-secret/);
+  });
+});
+
+describe("Dynamic Beta daily pipeline evidence coherence", () => {
+  it("rejects automatic-sync statuses that contradict per-series outcomes", async () => {
+    const cases = [
+      {
+        automaticResult: {
+          status: "success",
+          results: [{ seriesId: "VIXCLS", status: "error" }],
+        },
+        expected: {
+          name: "automatic-sync",
+          status: "error",
+          code: "AUTOMATIC_SYNC_INVALID_RESULT",
+          counts: { total: 1, succeeded: 0, failed: 1 },
+        },
+      },
+      {
+        automaticResult: {
+          status: "partial",
+          results: [{ seriesId: "VIXCLS", status: "success" }],
+        },
+        expected: {
+          name: "automatic-sync",
+          status: "error",
+          code: "AUTOMATIC_SYNC_INVALID_RESULT",
+          counts: { total: 1, succeeded: 1, failed: 0 },
+        },
+      },
+      {
+        automaticResult: {
+          status: "error",
+          results: [{ seriesId: "VIXCLS", status: "error" }],
+        },
+        expected: {
+          name: "automatic-sync",
+          status: "error",
+          code: "AUTOMATIC_SYNC_FAILED",
+          counts: { total: 1, succeeded: 0, failed: 1 },
+        },
+      },
+      {
+        automaticResult: {
+          status: "partial",
+          results: [
+            { seriesId: "VIXCLS", status: "error" },
+            { seriesId: "YAHOO:SPY", status: "success" },
+          ],
+        },
+        expected: {
+          name: "automatic-sync",
+          status: "partial",
+          code: "AUTOMATIC_SYNC_PARTIAL",
+          counts: { total: 2, succeeded: 1, failed: 1 },
+        },
+      },
+    ];
+
+    for (const testCase of cases) {
+      const result = await pipelineWithResults({
+        automaticResult: testCase.automaticResult,
+        macroMicroResult: coherentMacroMicroSuccess,
+        snapshotResult: coherentSnapshotSuccess,
+      }).run({ macroMicroPayload: {}, asOf: "2026-07-29" });
+      assert.deepEqual(result.stages[0], testCase.expected);
+      assert.equal(result.status, "partial");
+    }
+  });
+
+  it("requires coherent MacroMicro identity, status, and observation counts", async () => {
+    const cases = [
+      { status: "success", inserted: 0, revised: 0, unchanged: 0 },
+      { status: "success", inserted: 2, revised: 0, unchanged: 0 },
+      { status: "partial", inserted: 1, revised: 0, unchanged: 0 },
+      { status: "error" },
+    ].map((value) => ({
+      seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+      ...value,
+    }));
+
+    for (const macroMicroResult of cases) {
+      const result = await pipelineWithResults({
+        automaticResult: coherentAutomaticSuccess,
+        macroMicroResult,
+        snapshotResult: coherentSnapshotSuccess,
+      }).run({ macroMicroPayload: {}, asOf: "2026-07-29" });
+      assert.deepEqual(result.stages[1], {
+        name: "macromicro-ingest",
+        status: "error",
+        code: "MACROMICRO_INVALID_RESULT",
+        counts: { inserted: 0, revised: 0, unchanged: 0 },
+      });
+      assert.equal(result.status, "partial");
+    }
+
+    const sourceFailure = await pipelineWithResults({
+      automaticResult: coherentAutomaticSuccess,
+      macroMicroResult: {
+        seriesId: "MACROMICRO:TAIEX_MARGIN_MAINTENANCE",
+        status: "error",
+        errorCode: "PAGE_UNAVAILABLE",
+      },
+      snapshotResult: coherentSnapshotSuccess,
+    }).run({ macroMicroPayload: {}, asOf: "2026-07-29" });
+    assert.deepEqual(sourceFailure.stages[1], {
+      name: "macromicro-ingest",
+      status: "error",
+      code: "MACROMICRO_SOURCE_FAILED",
+      counts: { inserted: 0, revised: 0, unchanged: 0 },
+    });
+  });
+
+  it("requires snapshot status and classifications to match selected and failed counts", async () => {
+    const cases = [
+      {
+        snapshotResult: {
+          status: "success",
+          selected: 1,
+          skippedComplete: 0,
+          inserted: 0,
+          revised: 0,
+          unchanged: 0,
+          failed: 1,
+        },
+        counts: {
+          selected: 1,
+          skippedComplete: 0,
+          inserted: 0,
+          revised: 0,
+          unchanged: 0,
+          failed: 1,
+        },
+      },
+      {
+        snapshotResult: {
+          status: "success",
+          selected: 1,
+          skippedComplete: 0,
+          inserted: 0,
+          revised: 0,
+          unchanged: 0,
+          failed: 0,
+        },
+        counts: {
+          selected: 1,
+          skippedComplete: 0,
+          inserted: 0,
+          revised: 0,
+          unchanged: 0,
+          failed: 0,
+        },
+      },
+      {
+        snapshotResult: {
+          status: "partial",
+          selected: 1,
+          skippedComplete: 0,
+          inserted: 1,
+          revised: 0,
+          unchanged: 0,
+          failed: 0,
+        },
+        counts: {
+          selected: 1,
+          skippedComplete: 0,
+          inserted: 1,
+          revised: 0,
+          unchanged: 0,
+          failed: 0,
+        },
+      },
+    ];
+
+    for (const testCase of cases) {
+      const result = await pipelineWithResults({
+        automaticResult: coherentAutomaticSuccess,
+        macroMicroResult: coherentMacroMicroSuccess,
+        snapshotResult: testCase.snapshotResult,
+      }).run({ macroMicroPayload: {}, asOf: "2026-07-29" });
+      assert.deepEqual(result.stages[2], {
+        name: "confirmation-snapshots",
+        status: "error",
+        code: "SNAPSHOT_INVALID_RESULT",
+        counts: testCase.counts,
+      });
+      assert.equal(result.status, "partial");
+    }
+
+    for (const snapshotResult of [
+      {
+        status: "partial",
+        selected: 2,
+        skippedComplete: 0,
+        inserted: 1,
+        revised: 0,
+        unchanged: 0,
+        failed: 1,
+      },
+      {
+        status: "error",
+        selected: 1,
+        skippedComplete: 0,
+        inserted: 0,
+        revised: 0,
+        unchanged: 0,
+        failed: 1,
+      },
+    ]) {
+      const result = await pipelineWithResults({
+        automaticResult: coherentAutomaticSuccess,
+        macroMicroResult: coherentMacroMicroSuccess,
+        snapshotResult,
+      }).run({ macroMicroPayload: {}, asOf: "2026-07-29" });
+      assert.equal(result.stages[2].status, snapshotResult.status);
+      assert.equal(
+        result.stages[2].code,
+        snapshotResult.status === "partial" ? "SNAPSHOT_RUN_PARTIAL" : "SNAPSHOT_RUN_FAILED",
+      );
     }
   });
 });
@@ -444,6 +837,35 @@ function safePipelineResult(status = "success") {
       },
     ],
   };
+}
+
+function accessorPipelineResult(secret, reads) {
+  const safe = safePipelineResult();
+  const stages = safe.stages.map((sourceStage, index) => {
+    const stage = {};
+    for (const name of ["name", "status", "code", "counts"]) {
+      Object.defineProperty(stage, name, {
+        enumerable: true,
+        get() {
+          const key = `stage${index}.${name}`;
+          reads[key] = (reads[key] || 0) + 1;
+          return reads[key] === 1 ? sourceStage[name] : secret;
+        },
+      });
+    }
+    return stage;
+  });
+  const result = {};
+  for (const [name, value] of Object.entries({ status: "success", stages })) {
+    Object.defineProperty(result, name, {
+      enumerable: true,
+      get() {
+        reads[name] = (reads[name] || 0) + 1;
+        return reads[name] === 1 ? value : secret;
+      },
+    });
+  }
+  return result;
 }
 
 async function captureSubmissionError(task) {
@@ -601,6 +1023,31 @@ describe("Dynamic Beta daily pipeline file submission", () => {
       assert.doesNotMatch(error.message, /constructor-secret/);
     }
   });
+
+  it("captures the configured pipeline run method exactly once", async () => {
+    const secret = "FRED_API_KEY=run-accessor-secret";
+    let runReads = 0;
+    const pipeline = {};
+    Object.defineProperty(pipeline, "run", {
+      get() {
+        runReads += 1;
+        if (runReads === 1) return async () => safePipelineResult();
+        return async () => { throw new Error(secret); };
+      },
+    });
+
+    const result = await submitDynamicBetaDailyPipelineFile({
+      inputPath: "/private/tmp/macromicro.json",
+      readFile: async () => "{}",
+      environment: enabledEnvironment,
+      getPipeline: () => pipeline,
+      now: () => new Date("2026-07-29T00:00:00.000Z"),
+    });
+
+    assert.equal(runReads, 1);
+    assert.deepEqual(result, safePipelineResult());
+    assert.doesNotMatch(JSON.stringify(result), /run-accessor-secret/);
+  });
 });
 
 function outputBuffer() {
@@ -656,6 +1103,34 @@ describe("Dynamic Beta daily pipeline CLI", () => {
       });
       assert.equal(result.stderr.split("\n").length, 2);
     }
+  });
+
+  it("does not execute when imported and executes exactly once when spawned directly", () => {
+    const scriptUrl = new URL("../scripts/dynamic-beta-daily-pipeline.js", import.meta.url);
+    const imported = spawnSync(process.execPath, [
+      "--input-type=module",
+      "--eval",
+      `await import(${JSON.stringify(scriptUrl.href)})`,
+    ], {
+      encoding: "utf8",
+      env: process.env,
+    });
+    const direct = spawnSync(process.execPath, [fileURLToPath(scriptUrl)], {
+      encoding: "utf8",
+      env: process.env,
+    });
+
+    assert.equal(imported.status, 0);
+    assert.equal(imported.stdout, "");
+    assert.equal(imported.stderr, "");
+    assert.equal(direct.status, 1);
+    assert.equal(direct.stdout, "");
+    assert.equal(direct.stderr.split("\n").length, 2);
+    assert.deepEqual(JSON.parse(direct.stderr), {
+      ok: false,
+      code: "INPUT_REQUIRED",
+      error: "請提供一個 Daily pipeline JSON 檔案路徑。",
+    });
   });
 
   it("writes one success or partial JSON line only to stdout and exits zero", async () => {
@@ -745,6 +1220,90 @@ describe("Dynamic Beta daily pipeline CLI", () => {
     assert.doesNotMatch(`${result.exitCode}${result.stdout}${result.stderr}`, /fred-secret|source-secret/);
   });
 
+  it("captures pipeline-result accessors once before writing stdout", async () => {
+    const secret = "FRED_API_KEY=stdout-accessor-secret <html>source-payload-secret</html>";
+    const reads = {};
+    const result = await runCli({
+      getPipeline: () => ({
+        async run() {
+          return accessorPipelineResult(secret, reads);
+        },
+      }),
+    });
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), { ok: true, ...safePipelineResult() });
+    assert.doesNotMatch(result.stdout, /stdout-accessor-secret|source-payload-secret/);
+    assert.ok(Object.values(reads).every((count) => count === 1));
+  });
+
+  it("never writes follow-up status or code accessor values to stdout", async () => {
+    const secret = "FRED_API_KEY=follow-up-secret payload=<html>stdout-html</html>";
+    const safe = safePipelineResult();
+    const stages = safe.stages.map((sourceStage) => {
+      const stage = { name: sourceStage.name, counts: sourceStage.counts };
+      for (const name of ["status", "code"]) {
+        let reads = 0;
+        Object.defineProperty(stage, name, {
+          get() {
+            reads += 1;
+            return reads === 1 ? sourceStage[name] : secret;
+          },
+        });
+      }
+      return stage;
+    });
+    let statusReads = 0;
+    const pipelineResult = { stages };
+    Object.defineProperty(pipelineResult, "status", {
+      get() {
+        statusReads += 1;
+        return statusReads === 1 ? "success" : secret;
+      },
+    });
+
+    const result = await runCli({
+      getPipeline: () => ({ run: async () => pipelineResult }),
+    });
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(JSON.parse(result.stdout), { ok: true, ...safe });
+    assert.doesNotMatch(result.stdout, /follow-up-secret|stdout-html/);
+  });
+
+  it("maps a thenable-resolved revoked pipeline proxy to fixed PIPELINE_FAILED", async () => {
+    const secret = "UPSTASH_REDIS_REST_TOKEN=revoked-secret payload=<html>thenable-html</html>";
+    const result = await runCli({
+      getPipeline: () => ({
+        run() {
+          const revocable = Proxy.revocable(safePipelineResult(), {
+            get(target, property, receiver) {
+              if (property === "secret") return secret;
+              return Reflect.get(target, property, receiver);
+            },
+          });
+          return {
+            then(resolve) {
+              resolve(revocable.proxy);
+              revocable.revoke();
+            },
+          };
+        },
+      }),
+    });
+
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.stdout, "");
+    assert.deepEqual(JSON.parse(result.stderr), {
+      ok: false,
+      code: "PIPELINE_FAILED",
+      error: "Daily pipeline 執行失敗。",
+    });
+    assert.doesNotMatch(result.stderr, /revoked-secret|thenable-html/);
+  });
+
   it("constructs automatic sync without a FRED key and suppresses per-series service logs", async () => {
     const secret = "UPSTASH_REDIS_REST_TOKEN=service-log-secret";
     const consoleOutput = [];
@@ -827,5 +1386,97 @@ describe("Dynamic Beta daily pipeline CLI", () => {
     } finally {
       console.error = originalError;
     }
+  });
+});
+
+function syncTestRepository() {
+  return {
+    async acquireSyncLock() { return true; },
+    async releaseSyncLock() {},
+    async writeSeriesStatus() {},
+    async readSeriesStatus() { return null; },
+    async upsertSeriesMetadata() {},
+    async saveObservations(_seriesId, observations) {
+      return { inserted: observations.length, revised: 0, unchanged: 0 };
+    },
+  };
+}
+
+describe("Dynamic Beta automatic-sync regression gates", () => {
+  it("runs a Yahoo series after a missing-FRED series fails in the same default sync", async () => {
+    const service = createDynamicBetaSyncService({
+      repository: syncTestRepository(),
+      fredClient: null,
+      equityFetcher: async (series) => [{
+        seriesId: series.seriesId,
+        observationDate: "2026-07-29",
+        value: 100,
+        releasedAt: null,
+        retrievedAt: "2026-07-29T00:00:00.000Z",
+        sourceRealtimeStart: null,
+        sourceRealtimeEnd: null,
+      }],
+      seriesCatalog: [
+        {
+          seriesId: "VIXCLS",
+          name: "VIX",
+          source: "FRED",
+          enabled: true,
+        },
+        {
+          seriesId: "YAHOO:SPY",
+          symbol: "SPY",
+          name: "SPY",
+          source: "Yahoo Finance",
+          enabled: true,
+        },
+      ],
+      now: () => new Date("2026-07-29T00:00:00.000Z"),
+      logger: { info() {}, error() {} },
+    });
+
+    const result = await service.sync();
+
+    assert.equal(result.status, "partial");
+    assert.deepEqual(result.results.map(({ seriesId, status }) => ({ seriesId, status })), [
+      { seriesId: "VIXCLS", status: "error" },
+      { seriesId: "YAHOO:SPY", status: "success" },
+    ]);
+  });
+
+  it("uses the real catalog without fetching the external MacroMicro series", async () => {
+    const fredFetched = [];
+    const equityFetched = [];
+    const service = createDynamicBetaSyncService({
+      repository: syncTestRepository(),
+      fredClient: {
+        async fetchSeriesMetadata(seriesId) {
+          fredFetched.push(seriesId);
+          return {};
+        },
+        async fetchObservations() { return []; },
+      },
+      equityFetcher: async (series) => {
+        equityFetched.push(series.seriesId);
+        return [];
+      },
+      seriesCatalog: DYNAMIC_BETA_SERIES,
+      now: () => new Date("2026-07-29T00:00:00.000Z"),
+      logger: { info() {}, error() {} },
+    });
+
+    const result = await service.sync();
+    const externalId = "MACROMICRO:TAIEX_MARGIN_MAINTENANCE";
+
+    assert.equal(result.status, "success");
+    assert.equal(result.results.some(({ seriesId }) => seriesId === externalId), false);
+    assert.equal(fredFetched.includes(externalId), false);
+    assert.equal(equityFetched.includes(externalId), false);
+    assert.deepEqual(
+      result.results.map(({ seriesId }) => seriesId),
+      DYNAMIC_BETA_SERIES
+        .filter((series) => series.enabled && series.syncMode !== "external")
+        .map((series) => series.seriesId),
+    );
   });
 });

@@ -9,26 +9,6 @@ const STAGE_NAMES = Object.freeze([
   "macromicro-ingest",
   "confirmation-snapshots",
 ]);
-const STAGE_STATUSES = new Set([
-  "success",
-  "partial",
-  "error",
-  "skipped_locked",
-]);
-const STAGE_CODES = new Set([
-  null,
-  "AUTOMATIC_SYNC_PARTIAL",
-  "AUTOMATIC_SYNC_FAILED",
-  "AUTOMATIC_SYNC_INVALID_RESULT",
-  "MACROMICRO_INGEST_PARTIAL",
-  "MACROMICRO_SOURCE_FAILED",
-  "MACROMICRO_INVALID_RESULT",
-  "MACROMICRO_INGEST_FAILED",
-  "SNAPSHOT_RUN_PARTIAL",
-  "SNAPSHOT_RUN_FAILED",
-  "SNAPSHOT_INVALID_RESULT",
-  "SYNC_LOCKED",
-]);
 const COUNT_NAMES = Object.freeze({
   "automatic-sync": Object.freeze(["total", "succeeded", "failed"]),
   "macromicro-ingest": Object.freeze(["inserted", "revised", "unchanged"]),
@@ -80,39 +60,142 @@ function formatTaipeiDate(value) {
   return date;
 }
 
-function safePipelineSummary(result) {
+function captureProperties(value, names) {
+  if ((typeof value !== "object" && typeof value !== "function") || value === null) {
+    return null;
+  }
+  const captured = {};
   try {
-    if (
-      !result
-      || !["success", "partial"].includes(result.status)
-      || !Array.isArray(result.stages)
-      || result.stages.length !== STAGE_NAMES.length
-    ) {
-      throw new Error("invalid pipeline result");
-    }
-    const stages = result.stages.map((stage, index) => {
-      const name = STAGE_NAMES[index];
-      if (
-        stage?.name !== name
-        || !STAGE_STATUSES.has(stage.status)
-        || !STAGE_CODES.has(stage.code)
-      ) {
-        throw new Error("invalid pipeline stage");
-      }
-      const counts = {};
-      for (const countName of COUNT_NAMES[name]) {
-        const count = stage.counts?.[countName];
-        if (!Number.isInteger(count) || count < 0) {
-          throw new Error("invalid pipeline counts");
-        }
-        counts[countName] = count;
-      }
-      return { name, status: stage.status, code: stage.code, counts };
-    });
-    return { status: result.status, stages };
+    for (const name of names) captured[name] = value[name];
   } catch {
+    return null;
+  }
+  return captured;
+}
+
+function captureArray(value) {
+  if (!Array.isArray(value)) return null;
+  try {
+    const length = value.length;
+    if (!Number.isSafeInteger(length) || length < 0) return null;
+    const captured = [];
+    for (let index = 0; index < length; index += 1) captured.push(value[index]);
+    return captured;
+  } catch {
+    return null;
+  }
+}
+
+function captureCounts(value, names) {
+  const captured = captureProperties(value, names);
+  if (!captured) return null;
+  return names.every((name) => Number.isInteger(captured[name]) && captured[name] >= 0)
+    ? captured
+    : null;
+}
+
+function allZero(counts) {
+  return Object.values(counts).every((count) => count === 0);
+}
+
+function validAutomaticStage({ status, code, counts }) {
+  if (counts.succeeded + counts.failed !== counts.total) return false;
+  if (status === "success") return code === null && counts.failed === 0;
+  if (status === "partial") {
+    return code === "AUTOMATIC_SYNC_PARTIAL"
+      && counts.succeeded > 0
+      && counts.failed > 0;
+  }
+  if (status === "error") {
+    if (code === "AUTOMATIC_SYNC_INVALID_RESULT") return true;
+    return code === "AUTOMATIC_SYNC_FAILED"
+      && (allZero(counts) || (counts.total > 0 && counts.failed === counts.total));
+  }
+  return status === "skipped_locked" && code === "SYNC_LOCKED" && allZero(counts);
+}
+
+function validMacroMicroStage({ status, code, counts }) {
+  const total = counts.inserted + counts.revised + counts.unchanged;
+  if (status === "success") return code === null && total === 1;
+  if (status === "error") {
+    return [
+      "MACROMICRO_SOURCE_FAILED",
+      "MACROMICRO_INVALID_RESULT",
+      "MACROMICRO_INGEST_FAILED",
+    ].includes(code) && allZero(counts);
+  }
+  return status === "skipped_locked" && code === "SYNC_LOCKED" && allZero(counts);
+}
+
+function snapshotClassified(counts) {
+  return counts.skippedComplete
+    + counts.inserted
+    + counts.revised
+    + counts.unchanged
+    + counts.failed;
+}
+
+function validSnapshotStage({ status, code, counts }) {
+  const classified = snapshotClassified(counts);
+  if (status === "success") {
+    return code === null && counts.failed === 0 && classified === counts.selected;
+  }
+  if (status === "partial") {
+    return code === "SNAPSHOT_RUN_PARTIAL"
+      && counts.failed > 0
+      && counts.failed < counts.selected
+      && classified === counts.selected;
+  }
+  if (status === "error") {
+    if (code === "SNAPSHOT_INVALID_RESULT") return true;
+    return code === "SNAPSHOT_RUN_FAILED" && (
+      allZero(counts)
+      || (
+        counts.selected > 0
+        && counts.failed === counts.selected
+        && classified === counts.selected
+      )
+    );
+  }
+  return status === "skipped_locked" && code === "SYNC_LOCKED" && allZero(counts);
+}
+
+function captureStage(value, expectedName) {
+  const captured = captureProperties(value, ["name", "status", "code", "counts"]);
+  if (!captured || captured.name !== expectedName) return null;
+  const counts = captureCounts(captured.counts, COUNT_NAMES[expectedName]);
+  if (!counts) return null;
+  const stage = {
+    name: captured.name,
+    status: captured.status,
+    code: captured.code,
+    counts,
+  };
+  const valid = expectedName === "automatic-sync"
+    ? validAutomaticStage(stage)
+    : expectedName === "macromicro-ingest"
+      ? validMacroMicroStage(stage)
+      : validSnapshotStage(stage);
+  return valid ? stage : null;
+}
+
+function safePipelineSummary(result) {
+  const captured = captureProperties(result, ["status", "stages"]);
+  const sourceStages = captureArray(captured?.stages);
+  if (!captured || !sourceStages || sourceStages.length !== STAGE_NAMES.length) {
     throw new Error("invalid pipeline result");
   }
+  const stages = [];
+  for (let index = 0; index < STAGE_NAMES.length; index += 1) {
+    const stage = captureStage(sourceStages[index], STAGE_NAMES[index]);
+    if (!stage) throw new Error("invalid pipeline result");
+    stages.push(stage);
+  }
+  const derivedStatus = stages.every((stage) => stage.status === "success")
+    ? "success"
+    : "partial";
+  if (captured.status !== derivedStatus) throw new Error("invalid pipeline result");
+  return { status: derivedStatus, stages };
 }
 
 export async function submitDynamicBetaDailyPipelineFile({
@@ -168,10 +251,16 @@ export async function submitDynamicBetaDailyPipelineFile({
   } catch {
     throw submissionError("SERVICE_UNCONFIGURED", "Daily pipeline 服務尚未設定。");
   }
-  if (!pipeline || typeof pipeline.run !== "function") {
+  let runPipeline;
+  try {
+    runPipeline = pipeline?.run;
+  } catch {
+    throw submissionError("SERVICE_UNCONFIGURED", "Daily pipeline 服務尚未設定。");
+  }
+  if (typeof runPipeline !== "function") {
     throw submissionError("SERVICE_UNCONFIGURED", "Daily pipeline 服務尚未設定。");
   }
 
-  const result = await pipeline.run({ macroMicroPayload, asOf });
+  const result = await runPipeline.call(pipeline, { macroMicroPayload, asOf });
   return safePipelineSummary(result);
 }

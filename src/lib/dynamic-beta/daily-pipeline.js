@@ -1,5 +1,9 @@
+import {
+  MACROMICRO_MARGIN_SERIES_ID,
+  MACROMICRO_SOURCE_ERROR_MESSAGES,
+} from "./macromicro.js";
+
 const LOCK_CONTENTION_MESSAGE = "Dynamic Beta 資料同步已在執行中。";
-const STAGE_STATUSES = new Set(["success", "partial", "error"]);
 
 const EMPTY_AUTOMATIC_COUNTS = Object.freeze({
   total: 0,
@@ -20,109 +24,199 @@ const EMPTY_SNAPSHOT_COUNTS = Object.freeze({
   failed: 0,
 });
 
-function safeCount(value) {
-  return Number.isInteger(value) && value >= 0 ? value : 0;
+function captureProperties(value, names) {
+  if ((typeof value !== "object" && typeof value !== "function") || value === null) {
+    return null;
+  }
+  const captured = {};
+  try {
+    for (const name of names) captured[name] = value[name];
+  } catch {
+    return null;
+  }
+  return captured;
 }
 
-function safeResultStatus(result) {
+function captureArray(value) {
+  if (!Array.isArray(value)) return null;
   try {
-    return STAGE_STATUSES.has(result?.status) ? result.status : null;
+    const length = value.length;
+    if (!Number.isSafeInteger(length) || length < 0) return null;
+    const captured = [];
+    for (let index = 0; index < length; index += 1) captured.push(value[index]);
+    return captured;
   } catch {
     return null;
   }
 }
 
-function automaticSyncSummary(result) {
-  let results = [];
-  try {
-    results = Array.isArray(result?.results) ? result.results : [];
-  } catch {
-    results = [];
-  }
-  const total = results.length;
-  const succeeded = results.reduce((count, item) => {
-    try {
-      return count + (item?.status === "success" ? 1 : 0);
-    } catch {
-      return count;
-    }
-  }, 0);
-  const status = safeResultStatus(result);
+function validCount(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+function automaticInvalid(counts = EMPTY_AUTOMATIC_COUNTS) {
   return {
     name: "automatic-sync",
-    status: status || "error",
-    code: status === "success"
-      ? null
-      : status === "partial"
-        ? "AUTOMATIC_SYNC_PARTIAL"
-        : status === "error"
-          ? "AUTOMATIC_SYNC_FAILED"
-          : "AUTOMATIC_SYNC_INVALID_RESULT",
-    counts: {
-      total,
-      succeeded,
-      failed: total - succeeded,
-    },
+    status: "error",
+    code: "AUTOMATIC_SYNC_INVALID_RESULT",
+    counts: { ...counts },
   };
 }
 
-function macroMicroSummary(result) {
-  const status = safeResultStatus(result);
-  let inserted = 0;
-  let revised = 0;
-  let unchanged = 0;
+function automaticSyncSummary(result) {
+  const captured = captureProperties(result, ["status", "results"]);
+  const items = captureArray(captured?.results);
+  if (!captured || !items) return automaticInvalid();
+
+  let succeeded = 0;
+  let failed = 0;
+  for (const item of items) {
+    const itemSnapshot = captureProperties(item, ["status"]);
+    if (itemSnapshot?.status === "success") succeeded += 1;
+    else if (itemSnapshot?.status === "error") failed += 1;
+    else return automaticInvalid();
+  }
+  const counts = { total: items.length, succeeded, failed };
+  const derivedStatus = failed === 0
+    ? "success"
+    : failed === items.length
+      ? "error"
+      : "partial";
+  if (captured.status !== derivedStatus) return automaticInvalid(counts);
+  return {
+    name: "automatic-sync",
+    status: derivedStatus,
+    code: derivedStatus === "success"
+      ? null
+      : derivedStatus === "partial"
+        ? "AUTOMATIC_SYNC_PARTIAL"
+        : "AUTOMATIC_SYNC_FAILED",
+    counts,
+  };
+}
+
+function macroMicroInvalid() {
+  return {
+    name: "macromicro-ingest",
+    status: "error",
+    code: "MACROMICRO_INVALID_RESULT",
+    counts: { ...EMPTY_MACROMICRO_COUNTS },
+  };
+}
+
+function ownDataProperty(value, name) {
   try {
-    inserted = safeCount(result?.inserted);
-    revised = safeCount(result?.revised);
-    unchanged = safeCount(result?.unchanged);
+    const descriptor = Reflect.getOwnPropertyDescriptor(value, name);
+    return descriptor && Object.hasOwn(descriptor, "value")
+      ? { found: true, value: descriptor.value }
+      : { found: false, value: undefined };
   } catch {
-    // Keep fixed zero counts for hostile or malformed service results.
+    return { found: false, value: undefined };
+  }
+}
+
+function macroMicroSummary(result) {
+  const captured = captureProperties(result, ["seriesId", "status"]);
+  if (!captured || captured.seriesId !== MACROMICRO_MARGIN_SERIES_ID) {
+    return macroMicroInvalid();
+  }
+  if (captured.status === "error") {
+    const errorCode = ownDataProperty(result, "errorCode");
+    if (
+      !errorCode.found
+      || typeof errorCode.value !== "string"
+      || !Object.hasOwn(MACROMICRO_SOURCE_ERROR_MESSAGES, errorCode.value)
+    ) {
+      return macroMicroInvalid();
+    }
+    return {
+      name: "macromicro-ingest",
+      status: "error",
+      code: "MACROMICRO_SOURCE_FAILED",
+      counts: { ...EMPTY_MACROMICRO_COUNTS },
+    };
+  }
+  if (captured.status !== "success") return macroMicroInvalid();
+
+  const counts = captureProperties(result, ["inserted", "revised", "unchanged"]);
+  if (
+    !counts
+    || !validCount(counts.inserted)
+    || !validCount(counts.revised)
+    || !validCount(counts.unchanged)
+    || counts.inserted + counts.revised + counts.unchanged !== 1
+  ) {
+    return macroMicroInvalid();
   }
   return {
     name: "macromicro-ingest",
-    status: status || "error",
-    code: status === "success"
-      ? null
-      : status === "partial"
-        ? "MACROMICRO_INGEST_PARTIAL"
-        : status === "error"
-          ? "MACROMICRO_SOURCE_FAILED"
-          : "MACROMICRO_INVALID_RESULT",
-    counts: { inserted, revised, unchanged },
+    status: "success",
+    code: null,
+    counts,
+  };
+}
+
+function snapshotInvalid(counts = EMPTY_SNAPSHOT_COUNTS) {
+  return {
+    name: "confirmation-snapshots",
+    status: "error",
+    code: "SNAPSHOT_INVALID_RESULT",
+    counts: { ...counts },
   };
 }
 
 function confirmationSnapshotSummary(result) {
-  const status = safeResultStatus(result);
-  const counts = { ...EMPTY_SNAPSHOT_COUNTS };
-  try {
-    for (const name of Object.keys(counts)) {
-      counts[name] = safeCount(result?.[name]);
-    }
-  } catch {
-    Object.assign(counts, EMPTY_SNAPSHOT_COUNTS);
-  }
+  const captured = captureProperties(result, [
+    "status",
+    "selected",
+    "skippedComplete",
+    "inserted",
+    "revised",
+    "unchanged",
+    "failed",
+  ]);
+  if (!captured) return snapshotInvalid();
+  const counts = {
+    selected: captured.selected,
+    skippedComplete: captured.skippedComplete,
+    inserted: captured.inserted,
+    revised: captured.revised,
+    unchanged: captured.unchanged,
+    failed: captured.failed,
+  };
+  if (!Object.values(counts).every(validCount)) return snapshotInvalid();
+  const classified = counts.skippedComplete
+    + counts.inserted
+    + counts.revised
+    + counts.unchanged
+    + counts.failed;
+  if (classified !== counts.selected) return snapshotInvalid(counts);
+  const derivedStatus = counts.failed === 0
+    ? "success"
+    : counts.failed === counts.selected
+      ? "error"
+      : "partial";
+  if (captured.status !== derivedStatus) return snapshotInvalid(counts);
   return {
     name: "confirmation-snapshots",
-    status: status || "error",
-    code: status === "success"
+    status: derivedStatus,
+    code: derivedStatus === "success"
       ? null
-      : status === "partial"
+      : derivedStatus === "partial"
         ? "SNAPSHOT_RUN_PARTIAL"
-        : status === "error"
-          ? "SNAPSHOT_RUN_FAILED"
-          : "SNAPSHOT_INVALID_RESULT",
+        : "SNAPSHOT_RUN_FAILED",
     counts,
   };
 }
 
 function isLockContention(error) {
+  let message;
   try {
-    return typeof error?.message === "string"
-      && error.message.includes(LOCK_CONTENTION_MESSAGE);
+    message = error?.message;
   } catch {
     return false;
   }
+  return typeof message === "string" && message.includes(LOCK_CONTENTION_MESSAGE);
 }
 
 function failedSummary({ name, counts, errorCode, error }) {
@@ -138,10 +232,13 @@ function failedSummary({ name, counts, errorCode, error }) {
 function logStageFailure(logger, stage) {
   if (stage.status === "success") return;
   try {
-    logger?.error?.("dynamic_beta_daily_pipeline_stage_failed", {
-      stage: stage.name,
-      code: stage.code,
-    });
+    const logError = logger?.error;
+    if (typeof logError === "function") {
+      logError.call(logger, "dynamic_beta_daily_pipeline_stage_failed", {
+        stage: stage.name,
+        code: stage.code,
+      });
+    }
   } catch {
     // Logging must never interrupt later pipeline stages.
   }
