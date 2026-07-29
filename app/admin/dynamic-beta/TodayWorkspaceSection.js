@@ -12,7 +12,7 @@ import {
   getDynamicBetaFreshnessLabel,
 } from "../../../src/lib/dynamic-beta/admin-view.js";
 import { buildTodayWorkspaceModel } from "../../../src/lib/dynamic-beta/today-workspace.js";
-import { confirmationSnapshotQuery } from "../../../src/lib/dynamic-beta/news/confirmation-admin-state.js";
+import { createConfirmationSnapshotAdminController } from "../../../src/lib/dynamic-beta/news/confirmation-admin-state.js";
 import {
   AdminResponseError,
   isAdminAccessDenied,
@@ -199,6 +199,9 @@ export default function TodayWorkspaceSection({
     status: "idle",
     error: "",
   });
+  const confirmationController = useMemo(() => createConfirmationSnapshotAdminController({
+    fetchImpl: (...args) => fetch(...args),
+  }), []);
 
   useAdminAccessLifecycle(adminAccess, {
     onAccessDenied(snapshot) {
@@ -217,23 +220,22 @@ export default function TodayWorkspaceSection({
       if (!token) {
         throw new AdminResponseError("缺少管理 token。", { kind: "authorization" });
       }
-      let url;
-      let fallbackMessage;
-      if (block === "briefs") {
-        url = `/api/dynamic-beta/news?token=${encodeURIComponent(token)}`;
-        fallbackMessage = "已發布晨報讀取失敗。";
-      } else if (block === "market") {
-        url = `/api/dynamic-beta/admin?token=${encodeURIComponent(token)}`;
-        fallbackMessage = "市場資料讀取失敗。";
+      let payload;
+      if (block === "confirmation") {
+        payload = await confirmationController.load({ token });
       } else {
-        url = confirmationSnapshotQuery({ token });
-        fallbackMessage = "已保存市場確認讀取失敗。";
+        const url = block === "briefs"
+          ? `/api/dynamic-beta/news?token=${encodeURIComponent(token)}`
+          : `/api/dynamic-beta/admin?token=${encodeURIComponent(token)}`;
+        const fallbackMessage = block === "briefs"
+          ? "已發布晨報讀取失敗。"
+          : "市場資料讀取失敗。";
+        const response = await fetch(url, { cache: "no-store" });
+        payload = await readAdminJson(response, {
+          fallbackMessage,
+          validate: (value) => validTodayPayload(block, value),
+        });
       }
-      const response = await fetch(url, { cache: "no-store" });
-      const payload = await readAdminJson(response, {
-        fallbackMessage,
-        validate: (value) => validTodayPayload(block, value),
-      });
       if (!completeValidatedAccess(adminAccess, requestAccessEpoch)) return null;
       const value = block === "briefs"
         ? payload.briefs
@@ -268,7 +270,7 @@ export default function TodayWorkspaceSection({
       });
       throw error;
     }
-  }, [adminAccess, onAuthorizationLoss]);
+  }, [adminAccess, confirmationController, onAuthorizationLoss]);
 
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {

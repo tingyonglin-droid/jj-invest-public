@@ -397,6 +397,9 @@ export default function ConfirmationAdminSection({
           saved
         />
       )}
+      {snapshotState.status === "ready" && snapshotState.result === null && (
+        <p className="hint">目前沒有已保存的 D1／D3 快照。</p>
+      )}
 
       <ConfirmationLoadError
         state={previewState}

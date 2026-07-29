@@ -336,6 +336,32 @@ describe("confirmation admin state", () => {
     assert.deepEqual(await controller.load({ token: "token" }), fixture);
   });
 
+  it("maps only an ordinary saved-snapshot 404 to an empty result", async () => {
+    const missingController = createConfirmationSnapshotAdminController({
+      async fetchImpl() {
+        return Response.json(
+          { error: "找不到指定的 Confirmation snapshot。" },
+          { status: 404 },
+        );
+      },
+    });
+    assert.equal(await missingController.load({ token: "token" }), null);
+
+    for (const [response, expectedKind] of [
+      [Response.json({ enabled: false, error: "disabled" }, { status: 404 }), "gate"],
+      [Response.json({ error: "unauthorized" }, { status: 403 }), "authorization"],
+      [Response.json({ error: "storage failed" }, { status: 500 }), "transient"],
+    ]) {
+      const controller = createConfirmationSnapshotAdminController({
+        async fetchImpl() { return response; },
+      });
+      await assert.rejects(
+        controller.load({ token: "token" }),
+        (error) => error?.kind === expectedKind,
+      );
+    }
+  });
+
   it("keeps live Preview validation and classifies access loss", async () => {
     for (const [response, expectedKind] of [
       [Response.json({ configured: true }), "malformed"],
@@ -635,6 +661,51 @@ describe("ConfirmationAdminSection", () => {
       globalThis.fetch = originalFetch;
       globalThis.window = originalWindow;
       globalThis.Date = OriginalDate;
+      globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnvironment;
+    }
+  });
+
+  it("renders an ordinary saved-snapshot 404 as an empty detail state", async () => {
+    const ConfirmationAdminSection = await loadConfirmationAdminSection();
+    const scheduled = [];
+    const originalWindow = globalThis.window;
+    const originalFetch = globalThis.fetch;
+    const originalActEnvironment = globalThis.IS_REACT_ACT_ENVIRONMENT;
+    const originalConsoleError = console.error;
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    globalThis.window = {
+      location: { href: "https://example.test/admin/dynamic-beta?token=admin-token" },
+      setTimeout(callback) { scheduled.push(callback); return scheduled.length; },
+      clearTimeout() {},
+    };
+    globalThis.fetch = async () => Response.json(
+      { error: "找不到指定的 Confirmation snapshot。" },
+      { status: 404 },
+    );
+    console.error = (...args) => {
+      if (String(args[0]).includes("react-test-renderer is deprecated")) return;
+      originalConsoleError(...args);
+    };
+
+    let renderer;
+    try {
+      await TestRenderer.act(async () => {
+        renderer = TestRenderer.create(React.createElement(ConfirmationAdminSection));
+      });
+      await TestRenderer.act(async () => {
+        scheduled.shift()();
+        await nextTurn();
+      });
+
+      const text = renderedText(renderer);
+      assert.match(text, /目前沒有已保存的 D1／D3 快照/);
+      assert.equal(renderer.root.findAllByProps({ role: "alert" }).length, 0);
+      assert.doesNotMatch(text, /重試已保存快照|即時 Preview（不會保存）/);
+    } finally {
+      if (renderer) await TestRenderer.act(async () => renderer.unmount());
+      console.error = originalConsoleError;
+      globalThis.fetch = originalFetch;
+      globalThis.window = originalWindow;
       globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnvironment;
     }
   });

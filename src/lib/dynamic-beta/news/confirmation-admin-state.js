@@ -175,6 +175,7 @@ function createConfirmationController({
   query,
   validate,
   fallbackMessage,
+  emptyOnNotFound = false,
 }) {
   if (typeof fetchImpl !== "function") {
     throw new Error("Confirmation admin controller 需要 fetchImpl。");
@@ -184,6 +185,16 @@ function createConfirmationController({
       const response = await fetchImpl(query(filters), {
         cache: "no-store",
       });
+      if (emptyOnNotFound && response.status === 404) {
+        try {
+          const payload = await response.clone().json();
+          if (payload && typeof payload === "object" && payload.enabled !== false) {
+            return null;
+          }
+        } catch {
+          // Let readAdminJson preserve malformed-response error handling.
+        }
+      }
       return readAdminJson(response, {
         fallbackMessage,
         validate,
@@ -198,6 +209,7 @@ export function createConfirmationSnapshotAdminController({ fetchImpl }) {
     query: confirmationSnapshotQuery,
     validate: isConfirmationSnapshot,
     fallbackMessage: "Confirmation snapshot 讀取失敗",
+    emptyOnNotFound: true,
   });
 }
 

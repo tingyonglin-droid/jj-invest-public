@@ -461,6 +461,68 @@ describe("TodayWorkspaceSection", () => {
     }
   });
 
+  it("renders a missing saved snapshot as an empty Today state instead of an error", async () => {
+    const TodayWorkspaceSection = await loadTodayWorkspaceSection();
+    const scheduled = [];
+    const originalWindow = globalThis.window;
+    const originalFetch = globalThis.fetch;
+    const originalActEnvironment = globalThis.IS_REACT_ACT_ENVIRONMENT;
+    const originalConsoleError = console.error;
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    globalThis.window = {
+      location: { href: "https://example.test/admin/dynamic-beta?token=admin-token" },
+      confirm: () => true,
+      prompt: () => "",
+      setTimeout(callback) { scheduled.push(callback); return scheduled.length; },
+      clearTimeout() {},
+    };
+    globalThis.fetch = async (url) => {
+      const requestUrl = String(url);
+      if (requestUrl.includes("/drafts?")) return Response.json({ drafts: [] });
+      if (requestUrl.includes("/confirmation-snapshots?")) {
+        return Response.json(
+          { error: "找不到指定的 Confirmation snapshot。" },
+          { status: 404 },
+        );
+      }
+      if (requestUrl.includes("/admin?")) return Response.json({ series: [] });
+      if (requestUrl.includes("/news?")) return Response.json({ briefs: [] });
+      throw new Error(`Unexpected request: ${url}`);
+    };
+    console.error = (...args) => {
+      if (String(args[0]).includes("react-test-renderer is deprecated")) return;
+      originalConsoleError(...args);
+    };
+
+    let renderer;
+    try {
+      await TestRenderer.act(async () => {
+        renderer = TestRenderer.create(React.createElement(TodayWorkspaceSection, {
+          onOpenSection() {},
+        }));
+      });
+      await TestRenderer.act(async () => {
+        while (scheduled.length) scheduled.shift()();
+        await nextTurn();
+        await nextTurn();
+      });
+
+      const block = renderer.root.findByProps({
+        "aria-labelledby": "today-confirmation-title",
+      });
+      assert.equal(block.props["aria-busy"], false);
+      assert.match(renderedText(block), /目前沒有已保存的 D1／D3 快照/);
+      assert.equal(block.findAllByProps({ role: "alert" }).length, 0);
+      assert.equal(Boolean(buttonByText(renderer, "重試市場確認")), false);
+    } finally {
+      if (renderer) await TestRenderer.act(async () => renderer.unmount());
+      console.error = originalConsoleError;
+      globalThis.fetch = originalFetch;
+      globalThis.window = originalWindow;
+      globalThis.IS_REACT_ACT_ENVIRONMENT = originalActEnvironment;
+    }
+  });
+
   it("keeps draft and abnormal data useful when confirmations fail and routes local shortcuts", async () => {
     const TodayWorkspaceSection = await loadTodayWorkspaceSection();
     const calls = [];
