@@ -5,6 +5,7 @@ import { createNewsDraftRepository } from "../src/lib/dynamic-beta/news/draft-re
 import { createNewsRepository } from "../src/lib/dynamic-beta/news/repository.js";
 import {
   runRedisScript,
+  SAVE_CONFIRMATION_SNAPSHOT_SCRIPT,
   SAVE_NEWS_BRIEF_SCRIPT,
   SAVE_NEWS_DRAFT_SCRIPT,
 } from "../src/lib/dynamic-beta/news/redis-atomic.js";
@@ -104,6 +105,34 @@ function draftScriptInput(label) {
   };
 }
 
+function confirmationSnapshotScriptInput(label) {
+  const snapshotId = `ncs_${label}`;
+  const asOf = "2026-07-29";
+  const asOfScore = Date.parse(`${asOf}T00:00:00.000Z`);
+  const scope = `snapshot:${label}`;
+  return {
+    snapshotId,
+    asOf,
+    asOfScore,
+    timelineMember: `${BRIEF_DATE}:nbr_current:${asOf}`,
+    keys: [
+      `${scope}:revision:${snapshotId}`,
+      `${scope}:revisions`,
+      `${scope}:latest`,
+      `${scope}:revision-count`,
+      `${scope}:dates`,
+      "snapshot:timeline",
+    ],
+    args: [
+      snapshotId,
+      String(asOfScore),
+      asOf,
+      JSON.stringify({ snapshotId, snapshotRevisionNumber: null }),
+      `${BRIEF_DATE}:nbr_current:${asOf}`,
+    ],
+  };
+}
+
 async function seedTwoMembers(redis, key) {
   await redis.zadd(key, { score: 1, member: "first" });
   await redis.zadd(key, { score: 2, member: "second" });
@@ -145,6 +174,46 @@ describe("dynamic beta production Redis Lua boundary", () => {
       /HSET|wrong number of arguments/i,
     );
     assert.equal(await redis.get(input.keys[0]), null);
+  });
+
+  // Mutation caught: omitting any commit, index, latest-pointer, counter, date, or timeline write.
+  it("executes the production confirmation snapshot Lua across all six key families", async () => {
+    const redis = new FakeRedis();
+    const input = confirmationSnapshotScriptInput("all-keys");
+
+    assert.deepEqual(
+      await runRedisScript(redis, SAVE_CONFIRMATION_SNAPSHOT_SCRIPT, input.keys, input.args),
+      ["inserted", input.snapshotId, "1"],
+    );
+    assert.deepEqual(await redis.hgetall(input.keys[0]), {
+      payload: JSON.stringify({ snapshotId: input.snapshotId, snapshotRevisionNumber: 1 }),
+      snapshotRevisionNumber: "1",
+      committed: "1",
+    });
+    assert.deepEqual(await redis.zrange(input.keys[1], 0, -1), [input.snapshotId]);
+    assert.deepEqual(await redis.hgetall(input.keys[2]), {
+      snapshotId: input.snapshotId,
+      snapshotRevisionNumber: "1",
+    });
+    assert.equal(await redis.get(input.keys[3]), "1");
+    assert.deepEqual(await redis.zrange(input.keys[4], 0, -1), [input.asOf]);
+    assert.deepEqual(await redis.zrange(input.keys[5], 0, -1), [input.timelineMember]);
+  });
+
+  // Mutation caught: allowing a malformed production HSET field/value list to execute partially.
+  it("rejects a confirmation snapshot Lua mutation with an unmatched HSET field", async () => {
+    const redis = new FakeRedis();
+    const input = confirmationSnapshotScriptInput("invalid-hset-pair");
+    const mutatedScript = SAVE_CONFIRMATION_SNAPSHOT_SCRIPT.replace(
+      '"committed", "0")',
+      '"committed")',
+    );
+    assert.notEqual(mutatedScript, SAVE_CONFIRMATION_SNAPSHOT_SCRIPT);
+
+    await assert.rejects(
+      runRedisScript(redis, mutatedScript, input.keys, input.args),
+      /HSET|wrong number of arguments/i,
+    );
   });
 
   // Mutation caught: rolling back commands before a runtime error or continuing after the failed call.

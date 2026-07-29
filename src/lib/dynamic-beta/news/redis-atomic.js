@@ -36,6 +36,38 @@ if current then
 end
 return {status, ARGV[1], tostring(revisionNumber)}`;
 
+export const SAVE_CONFIRMATION_SNAPSHOT_SCRIPT = `-- jj-news-confirmation-snapshot-save-v1
+local payload = redis.call("HGET", KEYS[1], "payload")
+local revisionNumber
+if payload then
+  revisionNumber = tonumber(redis.call("HGET", KEYS[1], "snapshotRevisionNumber"))
+else
+  local count = tonumber(redis.call("GET", KEYS[4]))
+  if not count then count = redis.call("ZCARD", KEYS[2]) end
+  revisionNumber = count + 1
+  local snapshot = cjson.decode(ARGV[4])
+  snapshot["snapshotRevisionNumber"] = revisionNumber
+  redis.call("HSET", KEYS[1],
+    "payload", cjson.encode(snapshot),
+    "snapshotRevisionNumber", tostring(revisionNumber),
+    "committed", "0")
+  redis.call("SET", KEYS[4], tostring(revisionNumber))
+end
+redis.call("ZADD", KEYS[2], revisionNumber, ARGV[1])
+redis.call("ZADD", KEYS[5], ARGV[2], ARGV[3])
+redis.call("HSET", KEYS[1], "committed", "1")
+local latestNumber = tonumber(redis.call("HGET", KEYS[3], "snapshotRevisionNumber")) or 0
+if revisionNumber >= latestNumber then
+  redis.call("HSET", KEYS[3],
+    "snapshotId", ARGV[1],
+    "snapshotRevisionNumber", tostring(revisionNumber))
+end
+redis.call("ZADD", KEYS[6], ARGV[2], ARGV[5])
+local status = "inserted"
+if payload then status = "unchanged"
+elseif revisionNumber > 1 then status = "revised" end
+return {status, ARGV[1], tostring(revisionNumber)}`;
+
 export const INITIALIZE_DRAFT_INDEX_SCRIPT = `-- jj-news-draft-index-init-v1
 if redis.call("GET", KEYS[4]) then
   return 0
