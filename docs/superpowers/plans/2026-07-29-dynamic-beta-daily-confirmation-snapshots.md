@@ -770,20 +770,17 @@ node --env-file=.env.local scripts/dynamic-beta-daily-pipeline.js <macromicro-js
 
 - The automation continues news research and pending-draft submission after any pipeline exit status.
 
-- [ ] **Step 1: Write failing schedule-contract tests**
+- [ ] **Step 1: Write failing runtime schedule-configuration tests**
 
-Read `vercel.json`, `package.json`, and the automation contract. Assert:
+Read `vercel.json` and `package.json` as runtime configuration. Assert:
 
 ```js
 assert.equal("crons" in vercelConfig, false);
 assert.equal(packageJson.scripts["market-data:daily-pipeline"],
   "node --env-file=.env.local scripts/dynamic-beta-daily-pipeline.js");
-assert.match(contract, /dynamic-beta-daily-pipeline\.js/);
-assert.doesNotMatch(contract, /dynamic-beta-macromicro-submit\.js/);
-assert.match(contract, /不論.*pipeline.*繼續.*待核准晨報草稿/s);
 ```
 
-Add a static import-boundary assertion that these production modules do not import `daily-pipeline`, `confirmation-snapshot-service`, or the snapshot repository:
+Do not add tests that grep human documentation or production source text. The automation document is reviewed manually in Step 4, and import isolation is verified by the behavioral regressions and final code review in Task 9 for these production modules:
 
 ```text
 src/lib/portfolio.js
@@ -799,7 +796,7 @@ src/lib/beta-rail.js
 
 Run `node --test tests/dynamic-beta-daily-pipeline.test.js`.
 
-Expected: FAIL because Vercel still contains the 13:00 schedule and the contract still runs the standalone MacroMicro CLI.
+Expected: FAIL because Vercel still contains the 13:00 schedule.
 
 - [ ] **Step 3: Remove only the competing Vercel schedule**
 
@@ -825,6 +822,8 @@ MacroMicro browser extraction
 ```
 
 State that pipeline success, partial, fatal failure, or lock skip never authorizes approval/publication and must not stop the draft stage.
+
+Review the rendered diff manually against this exact order instead of adding a source-text assertion.
 
 - [ ] **Step 5: Run the contract test and verify GREEN**
 
@@ -918,6 +917,8 @@ node --test tests/beta-summary.test.js tests/cash.test.js tests/portfolio.test.j
 ```
 
 Expected: PASS, proving the new pipeline is not imported into existing beta, cash, portfolio, rebalancing, advice, or scoring paths.
+
+Also run the daily pipeline CLI once with an intentionally invalid temporary JSON file, confirm it returns a sanitized fatal result, then run the existing morning-brief draft CLI with a valid test fixture and confirm draft creation still succeeds. This executable flow check proves a pipeline failure does not make the independent pending-draft command unusable; it does not approve or publish the draft. During final code review, inspect the seven formal behavior modules listed in Task 8 and confirm none imports the pipeline or snapshot services.
 
 - [ ] **Step 8: Inspect final scope**
 
