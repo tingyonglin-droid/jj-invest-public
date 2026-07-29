@@ -121,6 +121,34 @@ test("rejects invalid MacroMicro payloads with a stable error code", () => {
   }
 });
 
+test("rejects a MacroMicro payload with a non-enumerable extra own key", () => {
+  const payload = {
+    observationDate: "2026-07-28",
+    value: 140.38,
+    sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+  };
+  Object.defineProperty(payload, "hidden", { value: "extra" });
+
+  assert.throws(
+    () => normalizeMacroMicroPayload(payload, context),
+    MacroMicroPayloadError,
+  );
+});
+
+test("rejects a MacroMicro payload with a Symbol extra own key", () => {
+  const payload = {
+    observationDate: "2026-07-28",
+    value: 140.38,
+    sourceUrl: MACROMICRO_MARGIN_SOURCE_URL,
+    [Symbol("extra")]: "extra",
+  };
+
+  assert.throws(
+    () => normalizeMacroMicroPayload(payload, context),
+    MacroMicroPayloadError,
+  );
+});
+
 function createRepositorySpy({ saveObservations } = {}) {
   const calls = {
     acquireSyncLock: [],

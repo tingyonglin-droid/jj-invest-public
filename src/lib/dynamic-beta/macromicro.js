@@ -17,7 +17,7 @@ export class MacroMicroPayloadError extends Error {
 }
 
 function hasExactKeys(payload, expectedKeys) {
-  const keys = Object.keys(payload);
+  const keys = Reflect.ownKeys(payload);
   return (
     keys.length === expectedKeys.length &&
     expectedKeys.every((key) => Object.hasOwn(payload, key))
