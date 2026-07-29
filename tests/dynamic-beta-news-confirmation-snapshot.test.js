@@ -8,6 +8,7 @@ import {
   isConfirmationSnapshotComplete,
   parseStoredConfirmationSnapshot,
 } from "../src/lib/dynamic-beta/news/confirmation-snapshot.js";
+import { createConfirmationSnapshotService } from "../src/lib/dynamic-beta/news/confirmation-snapshot-service.js";
 
 const CREATED_AT = "2026-07-29T23:00:10.000Z";
 
@@ -56,6 +57,31 @@ function evaluation(rules) {
       persistence: "sustained",
     }],
   };
+}
+
+function brief({ briefDate, revisionId, revisionNumber }) {
+  return { briefDate, revisionId, revisionNumber, events: [] };
+}
+
+function serviceEvaluation({ briefDate, revisionId, revisionNumber, asOf, complete = true }) {
+  return {
+    ...evaluation([rule({
+      d3: complete
+        ? { status: "confirmed", observation: d3Row(), rawMove: 3, normalizedMove: 3, reason: null }
+        : { status: "observing", observation: null, rawMove: null, normalizedMove: null, reason: "awaiting_observation" },
+    })]),
+    briefDate,
+    revisionId,
+    revisionNumber,
+    asOf,
+  };
+}
+
+function storedSnapshot({ briefDate, revisionId, revisionNumber, asOf, complete }) {
+  return buildConfirmationSnapshot({
+    evaluation: serviceEvaluation({ briefDate, revisionId, revisionNumber, asOf, complete }),
+    createdAt: CREATED_AT,
+  });
 }
 
 describe("dynamic beta confirmation snapshots", () => {
@@ -216,5 +242,238 @@ describe("canonical confirmation snapshot content", () => {
     assert.equal(isConfirmationSnapshotComplete({ completion: { complete: true } }), true);
     assert.equal(isConfirmationSnapshotComplete({ completion: { complete: false } }), false);
     assert.equal(isConfirmationSnapshotComplete(null), false);
+  });
+});
+
+describe("recent confirmation snapshot service", () => {
+  it("selects each exact recent revision in deterministic order and skips only complete snapshots", async () => {
+    const recent = [
+      brief({ briefDate: "2026-07-18", revisionId: "r18", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-29", revisionId: "r29", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-19", revisionId: "r19", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-20", revisionId: "r20", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-21", revisionId: "r21", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-22", revisionId: "r22", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-23", revisionId: "r23", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-24", revisionId: "r24", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-25", revisionId: "r25", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-26", revisionId: "r26", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-27", revisionId: "r27b", revisionNumber: 2 }),
+      brief({ briefDate: "2026-07-27", revisionId: "r27a", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-28", revisionId: "r28", revisionNumber: 1 }),
+    ];
+    const evaluated = [];
+    const saved = [];
+    const complete = storedSnapshot({
+      briefDate: "2026-07-20", revisionId: "r20", revisionNumber: 1, asOf: "2026-07-29", complete: true,
+    });
+    const incomplete = storedSnapshot({
+      briefDate: "2026-07-21", revisionId: "r21", revisionNumber: 1, asOf: "2026-07-29", complete: false,
+    });
+    const snapshots = new Map([
+      ["2026-07-20:r20", complete],
+      ["2026-07-21:r21", incomplete],
+    ]);
+    const service = createConfirmationSnapshotService({
+      newsRepository: { readRecentBriefs: async ({ limit }) => { assert.equal(limit, 200); return recent; } },
+      confirmationService: {
+        evaluate: async (identity) => {
+          evaluated.push(identity);
+          const matched = recent.find((candidate) => candidate.briefDate === identity.briefDate
+            && candidate.revisionId === identity.revisionId);
+          return serviceEvaluation({ ...matched, asOf: identity.asOf });
+        },
+      },
+      snapshotRepository: {
+        readLatestSnapshot: async ({ briefDate, revisionId }) => snapshots.get(`${briefDate}:${revisionId}`) || null,
+        saveSnapshot: async (snapshot) => { saved.push(snapshot); return { status: "inserted", snapshotId: snapshot.snapshotId, snapshotRevisionNumber: 1 }; },
+      },
+      now: () => new Date(CREATED_AT),
+    });
+
+    const result = await service.run({ asOf: "2026-07-29", lookbackDays: 10 });
+
+    assert.deepEqual(evaluated.map(({ briefDate, revisionId, asOf }) => ({ briefDate, revisionId, asOf })), [
+      { briefDate: "2026-07-19", revisionId: "r19", asOf: "2026-07-29" },
+      { briefDate: "2026-07-21", revisionId: "r21", asOf: "2026-07-29" },
+      { briefDate: "2026-07-22", revisionId: "r22", asOf: "2026-07-29" },
+      { briefDate: "2026-07-23", revisionId: "r23", asOf: "2026-07-29" },
+      { briefDate: "2026-07-24", revisionId: "r24", asOf: "2026-07-29" },
+      { briefDate: "2026-07-25", revisionId: "r25", asOf: "2026-07-29" },
+      { briefDate: "2026-07-26", revisionId: "r26", asOf: "2026-07-29" },
+      { briefDate: "2026-07-27", revisionId: "r27a", asOf: "2026-07-29" },
+      { briefDate: "2026-07-27", revisionId: "r27b", asOf: "2026-07-29" },
+      { briefDate: "2026-07-28", revisionId: "r28", asOf: "2026-07-29" },
+      { briefDate: "2026-07-29", revisionId: "r29", asOf: "2026-07-29" },
+    ]);
+    assert.equal(saved.length, 11);
+    assert.deepEqual(result, {
+      status: "success",
+      selected: 12,
+      skippedComplete: 1,
+      inserted: 11,
+      revised: 0,
+      unchanged: 0,
+      failed: 0,
+      results: [
+        { briefDate: "2026-07-19", revisionId: "r19", status: "inserted" },
+        { briefDate: "2026-07-20", revisionId: "r20", status: "skipped_complete" },
+        { briefDate: "2026-07-21", revisionId: "r21", status: "inserted" },
+        { briefDate: "2026-07-22", revisionId: "r22", status: "inserted" },
+        { briefDate: "2026-07-23", revisionId: "r23", status: "inserted" },
+        { briefDate: "2026-07-24", revisionId: "r24", status: "inserted" },
+        { briefDate: "2026-07-25", revisionId: "r25", status: "inserted" },
+        { briefDate: "2026-07-26", revisionId: "r26", status: "inserted" },
+        { briefDate: "2026-07-27", revisionId: "r27a", status: "inserted" },
+        { briefDate: "2026-07-27", revisionId: "r27b", status: "inserted" },
+        { briefDate: "2026-07-28", revisionId: "r28", status: "inserted" },
+        { briefDate: "2026-07-29", revisionId: "r29", status: "inserted" },
+      ],
+    });
+  });
+
+  it("re-evaluates incomplete snapshots, isolates safe failures, and never writes a mismatched identity", async () => {
+    const recent = [
+      brief({ briefDate: "2026-07-25", revisionId: "incomplete", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-26", revisionId: "complete", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-27", revisionId: "evaluator-fails", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-28", revisionId: "mismatch", revisionNumber: 1 }),
+      brief({ briefDate: "2026-07-29", revisionId: "succeeds", revisionNumber: 1 }),
+    ];
+    const evaluated = [];
+    const saved = [];
+    const logged = [];
+    const snapshots = new Map([
+      ["2026-07-25:incomplete", storedSnapshot({
+        briefDate: "2026-07-25", revisionId: "incomplete", revisionNumber: 1, asOf: "2026-07-29", complete: false,
+      })],
+      ["2026-07-26:complete", storedSnapshot({
+        briefDate: "2026-07-26", revisionId: "complete", revisionNumber: 1, asOf: "2026-07-29", complete: true,
+      })],
+    ]);
+    const service = createConfirmationSnapshotService({
+      newsRepository: { readRecentBriefs: async () => recent },
+      confirmationService: {
+        evaluate: async (identity) => {
+          evaluated.push(identity);
+          if (identity.revisionId === "evaluator-fails") throw new Error("FRED_API_KEY=secret");
+          if (identity.revisionId === "mismatch") {
+            return serviceEvaluation({
+              briefDate: identity.briefDate,
+              revisionId: "wrong-revision",
+              revisionNumber: 1,
+              asOf: identity.asOf,
+            });
+          }
+          const selected = recent.find((candidate) => candidate.revisionId === identity.revisionId);
+          return serviceEvaluation({ ...selected, asOf: identity.asOf, complete: true });
+        },
+      },
+      snapshotRepository: {
+        readLatestSnapshot: async ({ briefDate, revisionId }) => snapshots.get(`${briefDate}:${revisionId}`) || null,
+        saveSnapshot: async (snapshot) => { saved.push(snapshot); return { status: "inserted", snapshotId: snapshot.snapshotId, snapshotRevisionNumber: 1 }; },
+      },
+      now: () => new Date(CREATED_AT),
+      logger: { error: (...args) => logged.push(args) },
+    });
+
+    const result = await service.run({ asOf: "2026-07-29", lookbackDays: 10 });
+
+    assert.deepEqual(evaluated.map(({ revisionId }) => revisionId), [
+      "incomplete", "evaluator-fails", "mismatch", "succeeds",
+    ]);
+    assert.equal(saved.length, 2);
+    assert.equal(saved[0].briefDate, "2026-07-25");
+    assert.equal(saved[0].completion.complete, true);
+    assert.deepEqual(result, {
+      status: "partial",
+      selected: 5,
+      skippedComplete: 1,
+      inserted: 2,
+      revised: 0,
+      unchanged: 0,
+      failed: 2,
+      results: [
+        { briefDate: "2026-07-25", revisionId: "incomplete", status: "inserted" },
+        { briefDate: "2026-07-26", revisionId: "complete", status: "skipped_complete" },
+        { briefDate: "2026-07-27", revisionId: "evaluator-fails", status: "error", code: "EVALUATION_FAILED" },
+        { briefDate: "2026-07-28", revisionId: "mismatch", status: "error", code: "IDENTITY_MISMATCH" },
+        { briefDate: "2026-07-29", revisionId: "succeeds", status: "inserted" },
+      ],
+    });
+    assert.doesNotMatch(JSON.stringify({ result, logged }), /FRED_API_KEY=secret/);
+  });
+
+  it("uses a fixed snapshot-save code when a write fails", async () => {
+    const service = createConfirmationSnapshotService({
+      newsRepository: {
+        readRecentBriefs: async () => [brief({ briefDate: "2026-07-29", revisionId: "write-fails", revisionNumber: 1 })],
+      },
+      confirmationService: {
+        evaluate: async ({ briefDate, revisionId, asOf }) => serviceEvaluation({
+          briefDate, revisionId, revisionNumber: 1, asOf,
+        }),
+      },
+      snapshotRepository: {
+        readLatestSnapshot: async () => null,
+        saveSnapshot: async () => { throw new Error("FRED_API_KEY=secret"); },
+      },
+      now: () => new Date(CREATED_AT),
+    });
+
+    const result = await service.run({ asOf: "2026-07-29" });
+
+    assert.deepEqual(result, {
+      status: "error",
+      selected: 1,
+      skippedComplete: 0,
+      inserted: 0,
+      revised: 0,
+      unchanged: 0,
+      failed: 1,
+      results: [{
+        briefDate: "2026-07-29",
+        revisionId: "write-fails",
+        status: "error",
+        code: "SNAPSHOT_SAVE_FAILED",
+      }],
+    });
+  });
+
+  it("rejects invalid as-of values and non-integer lookback windows", async () => {
+    const service = createConfirmationSnapshotService({
+      newsRepository: { readRecentBriefs: async () => [] },
+      confirmationService: {},
+      snapshotRepository: {},
+    });
+
+    await assert.rejects(
+      service.run({ asOf: "2026-07-32" }),
+      (error) => error.code === "INVALID_AS_OF",
+    );
+    await assert.rejects(
+      service.run({ asOf: "2026-07-29", lookbackDays: 1.5 }),
+      (error) => error.code === "INVALID_LOOKBACK_DAYS",
+    );
+    await assert.rejects(
+      service.run({ asOf: "2026-07-29", lookbackDays: 31 }),
+      (error) => error.code === "INVALID_LOOKBACK_DAYS",
+    );
+  });
+
+  it("uses a fixed error when recent brief selection fails", async () => {
+    const logged = [];
+    const service = createConfirmationSnapshotService({
+      newsRepository: { readRecentBriefs: async () => { throw new Error("FRED_API_KEY=secret"); } },
+      confirmationService: {},
+      snapshotRepository: {},
+      logger: { error: (...args) => logged.push(args) },
+    });
+
+    await assert.rejects(
+      service.run({ asOf: "2026-07-29" }),
+      (error) => error.code === "BRIEF_READ_FAILED" && error.message === "BRIEF_READ_FAILED",
+    );
+    assert.doesNotMatch(JSON.stringify(logged), /FRED_API_KEY=secret/);
   });
 });
