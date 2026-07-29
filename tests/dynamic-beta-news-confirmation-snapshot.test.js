@@ -173,6 +173,21 @@ describe("canonical confirmation snapshot content", () => {
     assert.deepEqual(parseStoredConfirmationSnapshot({ payload, committed: "1" }), snapshot);
   });
 
+  it("round-trips every built snapshot when an optional rule field is omitted", () => {
+    const snapshot = buildConfirmationSnapshot({
+      evaluation: evaluation([rule({
+        expectedDirection: undefined,
+        d3: { observation: null, reason: "missing_observation" },
+      })]),
+      createdAt: CREATED_AT,
+    });
+
+    assert.deepEqual(
+      parseStoredConfirmationSnapshot({ payload: JSON.stringify(snapshot), committed: "1" }),
+      snapshot,
+    );
+  });
+
   it("rejects invalid snapshot timestamps with stable error codes", () => {
     assert.throws(
       () => buildConfirmationSnapshot({ evaluation: { ...evaluation([rule()]), asOf: "2026-07-32" }, createdAt: CREATED_AT }),

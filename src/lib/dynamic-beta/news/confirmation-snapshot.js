@@ -129,7 +129,8 @@ export function buildConfirmationSnapshot({ evaluation, createdAt }) {
   if (!validDateKey(evaluation?.asOf)) throw new ConfirmationSnapshotError("INVALID_AS_OF");
   if (!validTimestamp(createdAt)) throw new ConfirmationSnapshotError("INVALID_CREATED_AT");
 
-  const completion = completionFor(evaluation.events);
+  const events = normalizeEvents(evaluation.events);
+  const completion = completionFor(events);
   const content = {
     briefDate: nullable(evaluation.briefDate),
     revisionId: nullable(evaluation.revisionId),
@@ -140,7 +141,7 @@ export function buildConfirmationSnapshot({ evaluation, createdAt }) {
       truePointInTime: false,
     },
     completion,
-    events: normalizeEvents(evaluation.events),
+    events,
   };
   return {
     snapshotId: confirmationSnapshotId(content),
