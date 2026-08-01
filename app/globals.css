@@ -179,7 +179,7 @@ p {
 
 .appCard,
 .alertCard {
-  border: 1px solid rgba(234, 237, 241, 0.9);
+  border: 0;
   border-radius: var(--radius-xl);
   background: var(--card);
   box-shadow: var(--shadow);
@@ -343,32 +343,30 @@ p {
 
 .betaRail {
   position: relative;
-  height: 16px;
-  margin-top: 26px;
+  height: 10px;
+  margin-top: 30px;
   border-radius: 999px;
   overflow: visible;
   background: linear-gradient(
     90deg,
     var(--rail) 0 var(--beta-lower),
-    #dff1eb var(--beta-lower) var(--beta-upper),
+    rgba(49, 155, 114, 0.16) var(--beta-lower) var(--beta-upper),
     var(--rail) var(--beta-upper) 100%
   );
-}
-
-.targetMarker,
-.currentMarker {
-  position: absolute;
-  top: -7px;
-  width: 6px;
-  height: 32px;
-  border-radius: 999px;
-  transform: translateX(-50%);
+  box-shadow: inset 0 1px 2px rgba(17, 24, 33, 0.06);
 }
 
 .targetMarker {
+  position: absolute;
+  top: 50%;
   left: var(--beta-target);
-  background: var(--muted);
-  opacity: 0.32;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px dashed var(--muted-strong);
+  background: var(--card);
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
 }
 
 .targetLabel {
@@ -388,9 +386,15 @@ p {
 }
 
 .currentMarker {
+  position: absolute;
+  top: 50%;
   left: var(--beta-current);
-  background: var(--text);
-  box-shadow: 0 0 0 7px rgba(17, 24, 33, 0.08);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary-dark);
+  box-shadow: 0 0 0 6px rgba(36, 120, 86, 0.14);
+  transform: translate(-50%, -50%);
 }
 
 .betaScale {
@@ -407,19 +411,31 @@ p {
 }
 
 .marketLevelCard {
+  position: relative;
   overflow: hidden;
+  padding-left: 24px;
 }
 
-.marketLevelCard.normal {
-  border-color: rgba(49, 155, 114, 0.18);
+.marketLevelCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary);
 }
 
-.marketLevelCard.prepare {
-  border-color: rgba(197, 139, 26, 0.24);
+.marketLevelCard.normal::before {
+  background: var(--primary);
 }
 
-.marketLevelCard.deep {
-  border-color: rgba(193, 81, 90, 0.24);
+.marketLevelCard.prepare::before {
+  background: var(--warning);
+}
+
+.marketLevelCard.deep::before {
+  background: var(--danger);
 }
 
 .marketLevelBadge {
@@ -635,32 +651,18 @@ p {
   width: 42px;
   height: 42px;
   border-radius: 50%;
+  color: var(--primary);
   background: #eaf7f0;
 }
 
-.adviceIcon span {
-  width: 19px;
-  height: 13px;
-  border-left: 4px solid var(--primary);
-  border-bottom: 4px solid var(--primary);
-  transform: rotate(-45deg) translate(1px, -1px);
-  border-radius: 2px;
-}
-
 .adviceIcon.sell {
+  color: var(--danger);
   background: #fff0f1;
 }
 
-.adviceIcon.sell span {
-  border-color: var(--danger);
-}
-
 .adviceIcon.none {
+  color: var(--muted-strong);
   background: #f0f2f5;
-}
-
-.adviceIcon.none span {
-  border-color: var(--muted);
 }
 
 .adviceStatus {
@@ -673,9 +675,9 @@ p {
 
 .adviceContent strong {
   display: block;
-  color: var(--text);
+  color: #0a0f16;
   font-size: clamp(20px, 4.5vw, 28px);
-  font-weight: 800;
+  font-weight: 820;
   line-height: 1.15;
 }
 
@@ -689,7 +691,7 @@ p {
 
 .adviceMeta {
   margin: 6px 0 0;
-  color: var(--text);
+  color: var(--muted-strong);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.35;
@@ -898,6 +900,46 @@ p {
   color: var(--muted);
   font-size: 11px;
   font-weight: 680;
+}
+
+.allocationMetricBar {
+  position: relative;
+  grid-column: 2 / -1;
+  height: 6px;
+  margin: 5px 0 4px;
+  border-radius: 999px;
+  background: #edf0f4;
+}
+
+.allocationMetricFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 260ms ease;
+}
+
+.allocationMetricFill.purple {
+  background: var(--purple);
+}
+
+.allocationMetricFill.teal {
+  background: var(--teal);
+}
+
+.allocationMetricFill.blue {
+  background: var(--blue);
+}
+
+.allocationMetricTarget {
+  position: absolute;
+  top: -2px;
+  left: var(--metric-target);
+  width: 2px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--muted-strong);
+  opacity: 0.6;
+  transform: translateX(-50%);
 }
 
 .historyStack {
