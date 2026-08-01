@@ -287,9 +287,10 @@ p {
 
 .betaTopline {
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(160px, 0.58fr);
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 0.58fr);
   align-items: end;
   gap: 12px;
+  min-width: 0;
 }
 
 .megaNumber {
@@ -303,11 +304,13 @@ p {
   display: grid;
   gap: 8px;
   min-height: 0;
+  min-width: 0;
 }
 
 .betaMetaGrid div {
   display: grid;
   gap: 3px;
+  min-width: 0;
   border-radius: 12px;
   padding: 9px 10px;
   background: var(--card-soft);
@@ -321,12 +324,15 @@ p {
 
 .betaMetaGrid strong {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
   color: var(--text);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 790;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .betaMetaGrid small {
@@ -2484,7 +2490,7 @@ select {
   }
 
   .betaTopline {
-    grid-template-columns: minmax(0, 1fr) minmax(132px, 0.42fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.5fr);
     align-items: end;
   }
 
@@ -2842,8 +2848,8 @@ select {
   }
 
   .betaTopline {
-    grid-template-columns: minmax(0, 1fr) minmax(120px, 0.5fr);
-    align-items: end;
+    grid-template-columns: 1fr;
+    align-items: stretch;
     gap: 10px;
   }
 
@@ -2854,6 +2860,7 @@ select {
   .betaMetaGrid strong {
     font-size: 13px;
     white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .betaMetaGrid small {
