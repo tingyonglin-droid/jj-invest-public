@@ -1455,19 +1455,7 @@ function AdviceCard({ advice }) {
   return (
     <section className="appCard adviceCard">
       <div className={`adviceIcon ${advice.tone}`} aria-hidden="true">
-        {advice.tone === "buy" ? (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ) : advice.tone === "sell" ? (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5V19M12 19L6 13M12 19L18 13" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M5 13L10 18L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
+        <span />
       </div>
       <div className="adviceContent">
         <p className="cardLabel">今日操作建議</p>
@@ -1555,22 +1543,11 @@ function AllocationBar({ leveragedRatio, originalRatio, cashRatio }) {
 }
 
 function AllocationMetric({ color, label, current, target, valueTwd }) {
-  const safeCurrent = Math.min(Math.max(Number.isFinite(current) ? current : 0, 0), 1);
-  const safeTarget = Math.min(Math.max(Number.isFinite(target) ? target : 0, 0), 1);
-
   return (
     <div className="legendItem allocationMetric">
       <span className={color} aria-hidden="true" />
       <strong>{label}</strong>
       <em>{formatPercent(current)}</em>
-      <div
-        className="allocationMetricBar"
-        aria-hidden="true"
-        style={{ "--metric-target": `${safeTarget * 100}%` }}
-      >
-        <span className={`allocationMetricFill ${color}`} style={{ width: `${safeCurrent * 100}%` }} />
-        <span className="allocationMetricTarget" />
-      </div>
       <small>目標 {formatPercent(target)}</small>
       <small>市值 {formatTwd(valueTwd)}</small>
     </div>
