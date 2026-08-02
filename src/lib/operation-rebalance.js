@@ -225,16 +225,9 @@ function createOperationRebalanceForTarget({
     }
 
     const safeRemainingTargetValue = Math.max(remainingTargetValue, 0);
-    const selectedTargetWeightTotal = selectedRows.reduce(
-      (sum, row) => sum + toNumber(row.targetWeightPct),
-      0,
-    );
 
     selectedRows.forEach((row) => {
-      const selectedWeight =
-        selectedTargetWeightTotal > 0
-          ? toNumber(row.targetWeightPct) / selectedTargetWeightTotal
-          : 1 / selectedRows.length;
+      const selectedWeight = 1 / selectedRows.length;
       nextTargetValues.set(row.id, roundMoney(safeRemainingTargetValue * selectedWeight));
     });
 
