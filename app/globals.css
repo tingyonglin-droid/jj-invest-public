@@ -1532,18 +1532,6 @@ p {
   background: var(--muted);
 }
 
-.holdingProgressTarget {
-  position: absolute;
-  top: -5px;
-  left: var(--target-ratio);
-  width: 4px;
-  height: 22px;
-  border-radius: 999px;
-  background: var(--text);
-  box-shadow: 0 0 0 4px rgba(17, 24, 33, 0.08);
-  transform: translateX(-50%);
-}
-
 .holdingProgressAfter {
   position: absolute;
   top: -3px;
@@ -1565,11 +1553,6 @@ p {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
-}
-
-.holdingRatioLabels.after {
-  justify-content: flex-start;
-  color: var(--primary-dark);
 }
 
 .holdingDrift {

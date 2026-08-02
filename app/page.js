@@ -71,10 +71,6 @@ const BEFORE_REBALANCE_STORAGE_KEY = "jj-invest-public-before-rebalance-v1";
 const BEFORE_CLEAR_HISTORY_STORAGE_KEY = "jj-invest-public-before-clear-history-v1";
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.1.0";
 const BENCHMARK_HISTORY_FROM = "2003-06-30";
-const TARGET_WEIGHT_ERROR_MESSAGES = new Set([
-  "正二標的目標比例合計必須等於 100%。",
-  "原形標的目標比例合計必須等於 100%。",
-]);
 
 const DEFAULT_STATE = {
   positions: [
@@ -83,12 +79,11 @@ const DEFAULT_STATE = {
       tickerInput: "00631L",
       shares: 0,
       assetBeta: 2,
-      targetWeightPct: 100,
     },
   ],
   cashTwd: 0,
   cashUsd: 0,
-  targetBeta: 1.2,
+  leveragedTargetPct: 60,
   originalTargetPct: 0,
   tolerancePct: 10,
 };
@@ -213,27 +208,8 @@ function getTradeClass(item) {
   return "none";
 }
 
-function getDriftClass(value) {
-  if (value < -0.00005) {
-    return "buy";
-  }
-  if (value > 0.00005) {
-    return "sell";
-  }
-  return "none";
-}
-
 function clampPercent(value) {
   return Math.min(Math.max((Number.isFinite(value) ? value : 0) * 100, 0), 100);
-}
-
-function getPrimaryRecommendation(recommendations) {
-  return recommendations.reduce((primary, item) => {
-    if (!primary || Math.abs(item.tradeAmountTwd) > Math.abs(primary.tradeAmountTwd)) {
-      return item;
-    }
-    return primary;
-  }, null);
 }
 
 function getBetaStatus(calculation) {
@@ -266,40 +242,32 @@ function getBetaStatus(calculation) {
   };
 }
 
-function getAdvice(calculation, primaryRecommendation) {
+function getAdvice(calculation) {
   const betaStatus = getBetaStatus(calculation);
-  const actionRecommendations = calculation.recommendations.filter(
-    (item) => item.action !== "none" && Math.abs(item.tradeAmountTwd) > 0.5,
-  );
 
   if (!calculation.isValid) {
     return {
       tone: "none",
       status: "設定需修正",
       headline: "設定需修正",
-      netFlowText: "請先調整比例",
-      primaryActionText: "同類資產分配需修正",
+      classActions: ["請先調整比例"],
     };
   }
 
-  if (
-    !primaryRecommendation ||
-    !calculation.needsRebalance ||
-    actionRecommendations.length === 0
-  ) {
+  if (!calculation.needsRebalance) {
     return {
       tone: "none",
       status: "目前位於容忍區間",
       headline: "無需操作",
-      netFlowText: "淨調整：無需調整",
-      primaryActionText: "主要動作：不調整",
+      classActions: ["正二：無需調整", "原形：無需調整", "現金：無需調整"],
     };
   }
 
   const display = createAdviceDisplay({
     betaBoundaryLabel: betaStatus.boundaryLabel,
-    totalTradeAmountTwd: calculation.totalTradeAmountTwd,
-    recommendations: actionRecommendations,
+    leveragedTradeAmountTwd: calculation.leveragedTradeAmountTwd,
+    originalTradeAmountTwd: calculation.originalTradeAmountTwd,
+    cashTradeAmountTwd: calculation.cashTradeAmountTwd,
   });
 
   return {
@@ -436,7 +404,7 @@ export default function Home() {
         positions: formState.positions,
         quotes: quoteResult.quotes,
         cashTwd: cashValueTwd,
-        targetBeta: formState.targetBeta,
+        leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
       });
@@ -445,12 +413,9 @@ export default function Home() {
   );
 
   const quoteErrors = quoteResult.quotes.filter((quote) => quote.error);
-  const pageCalculationErrors = calculation.errors.filter(
-    (error) => !TARGET_WEIGHT_ERROR_MESSAGES.has(error),
-  );
+  const pageCalculationErrors = calculation.errors;
   const betaRail = createBetaRailModel(calculation);
-  const primaryRecommendation = getPrimaryRecommendation(calculation.recommendations);
-  const advice = getAdvice(calculation, primaryRecommendation);
+  const advice = getAdvice(calculation);
   const recommendationIds = useMemo(
     () => calculation.recommendations.map((item) => String(item.id)),
     [calculation.recommendations],
@@ -463,7 +428,7 @@ export default function Home() {
     [excludedRebalanceIds, recommendationIds],
   );
   const rebalanceTargetBeta =
-    rebalanceTargetBetaOverride === "" ? formState.targetBeta : rebalanceTargetBetaOverride;
+    rebalanceTargetBetaOverride === "" ? calculation.targetBeta : rebalanceTargetBetaOverride;
   const operationRebalance = useMemo(
     () =>
       createOperationRebalance({
@@ -520,7 +485,7 @@ export default function Home() {
         positions: formState.positions,
         quotes: payload.quotes,
         cashTwd: nextCashValueTwd,
-        targetBeta: formState.targetBeta,
+        leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
       });
@@ -811,7 +776,6 @@ export default function Home() {
           tickerInput: "",
           shares: 0,
           assetBeta,
-          targetWeightPct: 0,
         },
       ],
     }));
@@ -1461,8 +1425,11 @@ function AdviceCard({ advice }) {
         <p className="cardLabel">今日操作建議</p>
         <p className={`adviceStatus ${advice.tone}`}>{advice.status}</p>
         <strong className={advice.tone}>{advice.headline}</strong>
-        <p className="adviceMeta">{advice.netFlowText}</p>
-        <p className="adviceMeta muted">{advice.primaryActionText}</p>
+        {(advice.classActions || []).map((line, index) => (
+          <p className={`adviceMeta${index > 0 ? " muted" : ""}`} key={line}>
+            {line}
+          </p>
+        ))}
       </div>
     </section>
   );
@@ -2113,12 +2080,10 @@ function HoldingRow({ item, onToggleSelection, precision }) {
   const displayedAction = !item.isSelected || estimatedShares === 0 ? "none" : item.action;
   const actionText = item.isSelected ? getActionText(displayedAction) : "不納入再平衡清單";
   const displayedTradeAmountTwd = estimatedShares * item.priceTwd;
-  const drift = item.currentSleeveWeight - item.targetSleeveWeight;
-  const driftClass = getDriftClass(drift);
   const currentPct = clampPercent(item.currentSleeveWeight);
-  const targetPct = clampPercent(item.targetSleeveWeight);
   const afterSleeveWeight = item.appliedAfterSleeveWeight ?? item.afterSleeveWeight;
   const afterPct = clampPercent(afterSleeveWeight);
+  const afterDrift = afterSleeveWeight - item.currentSleeveWeight;
 
   return (
     <article className={`holdingRow ${item.isSelected ? "" : "unselected"}`}>
@@ -2144,29 +2109,26 @@ function HoldingRow({ item, onToggleSelection, precision }) {
 
       <div className="holdingRatioPanel">
         <div
-          className={`holdingProgress ${driftClass}`}
+          className={`holdingProgress ${displayedAction}`}
           style={{
             "--current-ratio": `${currentPct}%`,
-            "--target-ratio": `${targetPct}%`,
             "--after-ratio": `${afterPct}%`,
           }}
-          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}，目標 ${formatPercent(item.targetSleeveWeight)}，再平衡後 ${formatPercent(afterSleeveWeight)}`}
+          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}，再平衡後 ${formatPercent(afterSleeveWeight)}`}
         >
           <span className="holdingProgressFill" />
-          <span className="holdingProgressTarget" />
           <span className="holdingProgressAfter" />
         </div>
         <div className="holdingRatioLabels">
           <span>目前 {formatPercent(item.currentSleeveWeight)}</span>
-          <span>目標 {formatPercent(item.targetSleeveWeight)}</span>
-        </div>
-        <div className="holdingRatioLabels after">
           <span>再平衡後 {formatPercent(afterSleeveWeight)}</span>
         </div>
-        <div className="holdingDrift">
-          距離目標{" "}
-          <strong className={driftClass}>{formatSignedPercent(drift)}</strong>
-        </div>
+        {displayedAction !== "none" && (
+          <div className="holdingDrift">
+            調整幅度{" "}
+            <strong className={displayedAction}>{formatSignedPercent(afterDrift)}</strong>
+          </div>
+        )}
       </div>
 
       <div className="holdingAction">
@@ -2181,23 +2143,20 @@ function HoldingRow({ item, onToggleSelection, precision }) {
 function PositionSection({
   addLabel,
   emptyText,
-  errorText,
   formState,
   onAddPosition,
   onRemovePosition,
   onUpdatePosition,
   positions,
-  status,
   title,
 }) {
   return (
-    <section className={`positionSection ${status.isValid ? "ok" : "error"}`}>
+    <section className="positionSection ok">
       <div className="positionSectionHeader">
         <div>
           <strong>{title}</strong>
           <span>{positions.length} 筆標的</span>
         </div>
-        <em>合計 {formatNumber(status.totalPct)}% / 100%</em>
       </div>
 
       <div className="positionList">
@@ -2224,34 +2183,17 @@ function PositionSection({
                 placeholder="00631L 或 QLD"
               />
             </label>
-            <div className="twoCol">
-              <label>
-                <span>股數</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={position.shares}
-                  onChange={(event) =>
-                    onUpdatePosition(position.id, "shares", event.target.value)
-                  }
-                />
-              </label>
-              <label>
-                <span>同類資產內目標比例 %</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={position.targetWeightPct}
-                  aria-invalid={!status.isValid}
-                  onChange={(event) =>
-                    onUpdatePosition(position.id, "targetWeightPct", event.target.value)
-                  }
-                />
-              </label>
-            </div>
-            {!status.isValid && <p className="fieldError">{errorText}</p>}
+            <label>
+              <span>股數</span>
+              <input
+                type="number"
+                min="0"
+                value={position.shares}
+                onChange={(event) =>
+                  onUpdatePosition(position.id, "shares", event.target.value)
+                }
+              />
+            </label>
             <p className="hint">
               正規化代號：{normalizeTicker(position.tickerInput) || "尚未輸入"}
             </p>
@@ -2283,18 +2225,9 @@ function SettingsAccordions({
   onUpdateSetting,
 }) {
   const positionGroups = getPositionGroups(formState.positions);
-  const leveragedStatus = getPositionGroupTargetStatus({
-    positions: positionGroups.leveraged,
-    targetRatio: calculation.targetLeveragedRatio,
-  });
-  const originalStatus = getPositionGroupTargetStatus({
-    positions: positionGroups.original,
-    targetRatio: calculation.targetOriginalRatio,
-  });
   const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
   const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
-  const betaErrors = calculation.errors.filter((error) => !TARGET_WEIGHT_ERROR_MESSAGES.has(error));
-  const betaGuardIsValid = betaErrors.length === 0;
+  const betaGuardIsValid = calculation.errors.length === 0;
   const [activeSettingsPage, setActiveSettingsPage] = useState("cash");
 
   return (
@@ -2404,34 +2337,30 @@ function SettingsAccordions({
               <div className="settingsSummaryLine">
                 <strong>{formState.positions.length} 筆標的</strong>
                 <span>
-                  正二 {formatNumber(leveragedStatus.totalPct)}%
-                  {hasOriginalPositions ? ` / 原形 ${formatNumber(originalStatus.totalPct)}%` : ""}
+                  正二 {positionGroups.leveraged.length} 檔
+                  {hasOriginalPositions ? ` / 原形 ${positionGroups.original.length} 檔` : ""}
                 </span>
               </div>
               <div className="positionSections">
                 <PositionSection
                   addLabel="新增正二"
                   emptyText="尚未設定正二標的。"
-                  errorText="正二標的目標比例合計必須等於 100%。"
                   formState={formState}
                   onAddPosition={() => onAddPosition(2)}
                   onRemovePosition={onRemovePosition}
                   onUpdatePosition={onUpdatePosition}
                   positions={positionGroups.leveraged}
-                  status={leveragedStatus}
                   title="正二"
                 />
                 {(hasOriginalTarget || hasOriginalPositions) && (
                   <PositionSection
                     addLabel="新增原形"
                     emptyText="原形目標比例大於 0 時，請新增至少一個原形標的。"
-                    errorText="原形標的目標比例合計必須等於 100%。"
                     formState={formState}
                     onAddPosition={() => onAddPosition(1)}
                     onRemovePosition={onRemovePosition}
                     onUpdatePosition={onUpdatePosition}
                     positions={positionGroups.original}
-                    status={originalStatus}
                     title="原形"
                   />
                 )}
@@ -2458,53 +2387,55 @@ function SettingsAccordions({
             </strong>
             <span>
               {betaGuardIsValid
-                ? "依照下方 Beta 核心參數與原形配置即時計算。"
-                : betaErrors.join(" ")}
+                ? `換算 Beta ≈ ${formatNumber(calculation.targetBeta)}。依照下方正二與原形目標比例即時計算。`
+                : calculation.errors.join(" ")}
             </span>
           </div>
           <div className="positionEditor betaParameterGroup">
             <div className="positionTitle">
-              <strong>Beta 核心參數</strong>
+              <strong>資產配置目標</strong>
             </div>
             <div className="twoCol">
               <label>
-                <span>目標 Beta</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formState.targetBeta}
-                  onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
-                />
-              </label>
-              <label>
-                <span>容忍區間 %</span>
+                <span>正二目標比例 %</span>
                 <input
                   type="number"
                   step="0.1"
                   min="0"
-                  value={formState.tolerancePct}
-                  onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
+                  max="100"
+                  value={formState.leveragedTargetPct}
+                  onChange={(event) => onUpdateSetting("leveragedTargetPct", event.target.value)}
+                />
+              </label>
+              <label>
+                <span>原形目標比例 %</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={formState.originalTargetPct}
+                  onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
                 />
               </label>
             </div>
+            <p className="hint">現金比例 = 100% − 正二% − 原形%，會自動換算成對應的 Beta。</p>
           </div>
           <div className="positionEditor betaParameterGroup secondary">
             <div className="positionTitle">
-              <strong>原形配置</strong>
+              <strong>再平衡容忍度</strong>
             </div>
             <label>
-              <span>原形目標比例 %</span>
+              <span>容忍區間 %</span>
               <input
                 type="number"
                 step="0.1"
                 min="0"
-                max="100"
-                value={formState.originalTargetPct}
-                onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
+                value={formState.tolerancePct}
+                onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
               />
             </label>
-            <p className="hint">會先保留原形比例，再自動推算需要多少正二與現金。</p>
+            <p className="hint">Beta 偏離目標在這個範圍內時，首頁會顯示「無需操作」。</p>
           </div>
             </>
           )}
