@@ -16,6 +16,12 @@ function toNumber(value, fallback = 0) {
 export function normalizeBackupSettings(settings, fallbackSettings = {}) {
   const source = settings && typeof settings === "object" ? settings : {};
   const fallback = fallbackSettings && typeof fallbackSettings === "object" ? fallbackSettings : {};
+  const originalTargetPct = toNumber(source.originalTargetPct, fallback.originalTargetPct ?? 0);
+  const leveragedTargetPct = Number.isFinite(Number(source.leveragedTargetPct))
+    ? toNumber(source.leveragedTargetPct)
+    : Number.isFinite(Number(source.targetBeta))
+      ? toNumber(source.targetBeta - originalTargetPct / 100) * 50
+      : fallback.leveragedTargetPct ?? 60;
 
   return {
     ...fallback,
@@ -25,13 +31,12 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
           tickerInput: String(position.tickerInput || ""),
           shares: toInteger(position.shares),
           assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
-          targetWeightPct: toNumber(position.targetWeightPct),
         }))
       : fallback.positions || [],
     cashTwd: toInteger(source.cashTwd),
     cashUsd: toInteger(source.cashUsd),
-    targetBeta: toNumber(source.targetBeta, fallback.targetBeta ?? 1.2),
-    originalTargetPct: toNumber(source.originalTargetPct, fallback.originalTargetPct ?? 0),
+    leveragedTargetPct,
+    originalTargetPct,
     tolerancePct: toNumber(source.tolerancePct, fallback.tolerancePct ?? 10),
   };
 }

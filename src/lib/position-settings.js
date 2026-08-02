@@ -8,18 +8,3 @@ export function getPositionGroups(positions) {
     original: positions.filter(isOriginalPosition),
   };
 }
-
-export function getPositionGroupTargetStatus({ positions, targetRatio }) {
-  const totalPct = positions.reduce(
-    (sum, position) => sum + (Number(position.targetWeightPct) || 0),
-    0,
-  );
-  const isRequired = positions.length > 0 || Number(targetRatio) > 0.0001;
-  const isValid = !isRequired || Math.abs(totalPct - 100) <= 0.01;
-
-  return {
-    totalPct,
-    isRequired,
-    isValid,
-  };
-}
