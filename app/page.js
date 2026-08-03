@@ -2380,16 +2380,26 @@ function SettingsAccordions({
           {activeSettingsPage === "beta" && (
             <>
           <div className={`weightGuard ${betaGuardIsValid ? "ok" : "error"}`}>
-            <strong>
-              推算目標：正二 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
-              {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
-              {formatPercent(calculation.afterCashRatio)}
-            </strong>
-            <span>
-              {betaGuardIsValid
-                ? `換算 Beta ≈ ${formatNumber(calculation.targetBeta)}。依照下方正二與原形目標比例即時計算。`
-                : calculation.errors.join(" ")}
-            </span>
+            {betaGuardIsValid ? (
+              <>
+                <div className="weightGuardSummary">
+                  <strong>
+                    推算目標：正二 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
+                    {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
+                    {formatPercent(calculation.afterCashRatio)}
+                  </strong>
+                  <span>依照下方正二與原形目標比例即時計算。</span>
+                </div>
+                <div className="weightGuardBeta" aria-label={`目標 Beta 設定 ${formatNumber(calculation.targetBeta, 1)}`}>
+                  <span className="weightGuardBetaLabel">目標Beta設定</span>
+                  <strong className="weightGuardBetaValue">
+                    {formatNumber(calculation.targetBeta, 1)}
+                  </strong>
+                </div>
+              </>
+            ) : (
+              <span>{calculation.errors.join(" ")}</span>
+            )}
           </div>
           <div className="positionEditor betaParameterGroup">
             <div className="positionTitle">
