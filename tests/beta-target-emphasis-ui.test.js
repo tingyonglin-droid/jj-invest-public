@@ -6,12 +6,21 @@ const pageSource = readFileSync(new URL("../app/page.js", import.meta.url), "utf
 const stylesSource = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
 describe("Beta target emphasis UI", () => {
-  it("renders the calculated Beta in a dedicated visual badge", () => {
+  it("renders the target Beta with equal-size label and one-decimal value", () => {
     assert.match(pageSource, /className="weightGuardSummary"/);
     assert.match(pageSource, /className="weightGuardBeta"/);
-    assert.match(pageSource, /className="weightGuardBetaLabel">換算 Beta/);
+    assert.match(pageSource, /className="weightGuardBetaLabel">目標Beta設定/);
     assert.match(pageSource, /className="weightGuardBetaValue"/);
-    assert.match(pageSource, /≈\{" "\}\{formatNumber\(calculation\.targetBeta\)\}/);
+    assert.match(pageSource, /formatNumber\(calculation\.targetBeta, 1\)/);
+    assert.doesNotMatch(pageSource, /className="weightGuardBetaValue">[\s\S]*?≈/);
+    assert.match(
+      stylesSource,
+      /\.weightGuardBetaLabel,\s*\.weightGuardBetaValue\s*\{[^}]*font-size:/s,
+    );
+    assert.match(
+      stylesSource,
+      /\.weightGuardBeta\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*auto auto;/,
+    );
   });
 
   it("defines a responsive two-column summary that stacks on narrow screens", () => {

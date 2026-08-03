@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make the calculated target Beta immediately visible in the Beta settings summary.
+**Goal:** Make the calculated target Beta immediately visible as `目標Beta設定 1.0` in the Beta settings summary.
 
 **Architecture:** Restructure the existing `weightGuard` success state into a summary region and a dedicated Beta badge. Add scoped responsive styles; preserve the existing calculation and error behavior.
 
@@ -25,7 +25,7 @@
 
 **Interfaces:**
 - Consumes: `calculation.targetBeta`, `calculation.targetLeveragedRatio`, `calculation.targetOriginalRatio`, `calculation.afterCashRatio`, and `betaGuardIsValid`.
-- Produces: `.weightGuardSummary`, `.weightGuardBeta`, `.weightGuardBetaLabel`, and `.weightGuardBetaValue` UI hooks.
+- Produces: `.weightGuardSummary`, `.weightGuardBeta`, `.weightGuardBetaLabel`, and `.weightGuardBetaValue` UI hooks, with the label and one-decimal value at the same size.
 
 - [ ] **Step 1: Write the failing test**
 

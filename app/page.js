@@ -2390,10 +2390,10 @@ function SettingsAccordions({
                   </strong>
                   <span>依照下方正二與原形目標比例即時計算。</span>
                 </div>
-                <div className="weightGuardBeta" aria-label={`換算 Beta 約 ${formatNumber(calculation.targetBeta)}`}>
-                  <span className="weightGuardBetaLabel">換算 Beta</span>
+                <div className="weightGuardBeta" aria-label={`目標 Beta 設定 ${formatNumber(calculation.targetBeta, 1)}`}>
+                  <span className="weightGuardBetaLabel">目標Beta設定</span>
                   <strong className="weightGuardBetaValue">
-                    ≈{" "}{formatNumber(calculation.targetBeta)}
+                    {formatNumber(calculation.targetBeta, 1)}
                   </strong>
                 </div>
               </>

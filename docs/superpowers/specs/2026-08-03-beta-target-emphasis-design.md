@@ -7,7 +7,8 @@ Make the calculated target Beta the primary visual takeaway in the Beta settings
 ## Approved design
 
 - Keep the inferred allocation summary on the left.
-- Present `換算 Beta` and its formatted value in a dedicated high-contrast badge on the right.
+- Present `目標Beta設定 1.0` in a dedicated high-contrast badge on the right.
+- Give the label and one-decimal value the same font size; do not show an approximation symbol.
 - Keep the explanatory sentence visually secondary.
 - Stack the summary and badge on narrow screens.
 - Show validation errors in the existing error state without the Beta badge.
