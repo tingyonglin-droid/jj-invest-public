@@ -2066,29 +2066,70 @@ p {
 
 .weightGuard {
   display: grid;
-  gap: 4px;
+  gap: 12px;
   border-radius: 16px;
-  padding: 13px 14px;
+  padding: 14px 16px;
   font-weight: 720;
 }
 
-.weightGuard strong {
-  font-size: 15px;
+.weightGuard.ok {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  color: var(--primary-dark);
+  background: #e9f7f0;
 }
 
-.weightGuard span {
+.weightGuardSummary {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.weightGuardSummary strong {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.weightGuardSummary > span {
+  color: rgba(36, 120, 86, 0.78);
   font-size: 13px;
   line-height: 1.5;
 }
 
-.weightGuard.ok {
+.weightGuardBeta {
+  display: grid;
+  gap: 2px;
+  min-width: 150px;
+  border: 1px solid rgba(36, 120, 86, 0.15);
+  border-radius: 14px;
+  padding: 10px 16px;
+  text-align: center;
   color: var(--primary-dark);
-  background: #e9f7f0;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 8px 22px rgba(36, 120, 86, 0.08);
+}
+
+.weightGuardBetaLabel {
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0.04em;
+}
+
+.weightGuardBetaValue {
+  font-size: clamp(26px, 4vw, 34px);
+  font-weight: 840;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
 .weightGuard.error {
   color: var(--danger);
   background: #fff0f1;
+}
+
+.weightGuard.error > span {
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .positionTitle,
@@ -2438,6 +2479,18 @@ select {
 }
 
 @media (max-width: 760px) {
+  .weightGuard.ok {
+    grid-template-columns: 1fr;
+  }
+
+  .weightGuardBeta {
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
   .appShell {
     padding: 22px 14px calc(112px + env(safe-area-inset-bottom));
   }
