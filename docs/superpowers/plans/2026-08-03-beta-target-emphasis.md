@@ -25,7 +25,7 @@
 
 **Interfaces:**
 - Consumes: `calculation.targetBeta`, `calculation.targetLeveragedRatio`, `calculation.targetOriginalRatio`, `calculation.afterCashRatio`, and `betaGuardIsValid`.
-- Produces: `.weightGuardSummary`, `.weightGuardBeta`, `.weightGuardBetaLabel`, and `.weightGuardBetaValue` UI hooks, with the label and one-decimal value at the same size.
+- Produces: `.weightGuardSummary`, `.weightGuardBeta`, `.weightGuardBetaLabel`, and `.weightGuardBetaValue` UI hooks, with the label and one-decimal value at the same compact size and the value in danger red.
 
 - [ ] **Step 1: Write the failing test**
 

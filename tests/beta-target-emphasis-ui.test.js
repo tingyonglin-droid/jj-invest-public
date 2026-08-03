@@ -15,8 +15,9 @@ describe("Beta target emphasis UI", () => {
     assert.doesNotMatch(pageSource, /className="weightGuardBetaValue">[\s\S]*?≈/);
     assert.match(
       stylesSource,
-      /\.weightGuardBetaLabel,\s*\.weightGuardBetaValue\s*\{[^}]*font-size:/s,
+      /\.weightGuardBetaLabel,\s*\.weightGuardBetaValue\s*\{[^}]*font-size:\s*clamp\(20px, 3vw, 26px\);/s,
     );
+    assert.match(stylesSource, /\.weightGuardBetaValue\s*\{[^}]*color:\s*var\(--danger\);/s);
     assert.match(
       stylesSource,
       /\.weightGuardBeta\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*auto auto;/,

@@ -2114,7 +2114,7 @@ p {
 
 .weightGuardBetaLabel,
 .weightGuardBetaValue {
-  font-size: clamp(26px, 4vw, 34px);
+  font-size: clamp(20px, 3vw, 26px);
 }
 
 .weightGuardBetaLabel {
@@ -2123,6 +2123,7 @@ p {
 }
 
 .weightGuardBetaValue {
+  color: var(--danger);
   font-weight: 840;
   line-height: 1.05;
   letter-spacing: -0.02em;
