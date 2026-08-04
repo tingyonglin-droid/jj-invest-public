@@ -22,8 +22,16 @@ export function getBenchmarkDrawdownLevel(drawdownRatio) {
 function normalizePriceRecord(item) {
   const price = Number(item?.price);
   const date = String(item?.date || "");
+  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
 
-  if (!date || !Number.isFinite(price) || price <= 0) {
+  if (
+    !date ||
+    !Number.isFinite(price) ||
+    price <= 0 ||
+    !Number.isInteger(weekday) ||
+    weekday === 0 ||
+    weekday === 6
+  ) {
     return null;
   }
 
@@ -59,6 +67,7 @@ export function createBenchmarkDrawdown(prices, options = {}) {
   }
 
   const history = [...priceByDate.values()]
+    .filter((item) => item.date <= current.date)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-7)
     .map((item) => {

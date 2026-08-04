@@ -6,7 +6,7 @@ import { createBenchmarkDrawdown } from "../src/lib/benchmark-drawdown.js";
 describe("benchmark drawdown", () => {
   it("calculates current drawdown from the highest historical closing price", () => {
     const drawdown = createBenchmarkDrawdown([
-      { date: "2026-06-21", price: 250 },
+      { date: "2026-06-19", price: 250 },
       { date: "2026-06-23", price: 260.1 },
       { date: "2026-07-23", price: 244.18 },
     ]);
@@ -20,7 +20,7 @@ describe("benchmark drawdown", () => {
       level: "normal",
       currentSource: "close",
       history: [
-        { date: "2026-06-21", price: 250, drawdownRatio: -0.038831, level: "normal" },
+        { date: "2026-06-19", price: 250, drawdownRatio: -0.038831, level: "normal" },
         { date: "2026-06-23", price: 260.1, drawdownRatio: 0, level: "normal" },
         { date: "2026-07-23", price: 244.18, drawdownRatio: -0.061207, level: "normal" },
       ],
@@ -30,7 +30,7 @@ describe("benchmark drawdown", () => {
   it("uses live 0050 quote as the current market level when available", () => {
     const drawdown = createBenchmarkDrawdown(
       [
-        { date: "2026-06-21", price: 250 },
+        { date: "2026-06-19", price: 250 },
         { date: "2026-06-23", price: 260 },
         { date: "2026-07-23", price: 258 },
       ],
@@ -48,7 +48,7 @@ describe("benchmark drawdown", () => {
       level: "normal",
       currentSource: "live",
       history: [
-        { date: "2026-06-21", price: 250, drawdownRatio: -0.038462, level: "normal" },
+        { date: "2026-06-19", price: 250, drawdownRatio: -0.038462, level: "normal" },
         { date: "2026-06-23", price: 260, drawdownRatio: 0, level: "normal" },
         { date: "2026-07-23", price: 258, drawdownRatio: -0.007692, level: "normal" },
         { date: "2026-07-24", price: 244.4, drawdownRatio: -0.06, level: "normal" },
@@ -126,6 +126,24 @@ describe("benchmark drawdown", () => {
     assert.deepEqual(drawdown.history, [
       { date: "2026-06-22", price: 100, drawdownRatio: 0, level: "normal" },
       { date: "2026-08-03", price: 102, drawdownRatio: 0.02, level: "normal" },
+    ]);
+  });
+
+  it("excludes weekend carry-forwards and closes later than the live quote date", () => {
+    const drawdown = createBenchmarkDrawdown(
+      [
+        { date: "2026-07-31", price: 100 },
+        { date: "2026-08-01", price: 100 },
+        { date: "2026-08-02", price: 100 },
+        { date: "2026-08-03", price: 99 },
+        { date: "2026-08-04", price: 99 },
+      ],
+      { currentQuote: { date: "2026-08-03", price: 98, source: "TWSE" } },
+    );
+
+    assert.deepEqual(drawdown.history, [
+      { date: "2026-07-31", price: 100, drawdownRatio: 0, level: "normal" },
+      { date: "2026-08-03", price: 98, drawdownRatio: -0.02, level: "normal" },
     ]);
   });
 });
