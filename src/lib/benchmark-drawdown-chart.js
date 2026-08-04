@@ -7,7 +7,7 @@ const PLOT = Object.freeze({ left: 92, right: 718, top: 40, bottom: 340 });
 const MARKET_LEVEL_LABELS = Object.freeze({
   normal: "正常區間",
   prepare: "觀察區間",
-  deep: "風險區間",
+  deep: "股災區間",
 });
 
 function round(value, digits = 2) {
@@ -20,15 +20,20 @@ function drawdownY(ratio) {
   return round(PLOT.top + (Math.abs(clampedRatio) / 0.3) * (PLOT.bottom - PLOT.top));
 }
 
-export function createBenchmarkDrawdownChart(history, highPrice) {
+export function createBenchmarkDrawdownChart(history, highPrice, options = {}) {
   const records = Array.isArray(history) ? history : [];
-  const width = Math.max(
-    MIN_WIDTH,
-    PLOT.left + RIGHT_PADDING + Math.max(0, records.length - 1) * POINT_GAP,
-  );
+  const mode = options.mode === "overview" ? "overview" : "detail";
+  const width =
+    mode === "overview"
+      ? MIN_WIDTH
+      : Math.max(
+          MIN_WIDTH,
+          PLOT.left + RIGHT_PADDING + Math.max(0, records.length - 1) * POINT_GAP,
+        );
   const plot = { ...PLOT, right: width - RIGHT_PADDING };
   const step = records.length > 1 ? (plot.right - plot.left) / (records.length - 1) : 0;
-  const labelEvery = Math.max(1, Math.ceil(records.length / 12));
+  const labelTarget = mode === "overview" ? 8 : 12;
+  const labelEvery = Math.max(1, Math.ceil(records.length / labelTarget));
   const points = records.map((record, index) => {
     const x = round(
       records.length === 1 ? (plot.left + plot.right) / 2 : plot.left + step * index,
@@ -42,10 +47,13 @@ export function createBenchmarkDrawdownChart(history, highPrice) {
       tooltipX: round(x + (isFirst ? 12 : isLast ? -12 : 0)),
       tooltipAnchor: isFirst ? "start" : isLast ? "end" : "middle",
       showDateLabel: isFirst || isLast || index % labelEvery === 0,
+      showPercentLabel:
+        mode === "detail" || isFirst || isLast || index % labelEvery === 0,
     };
   });
 
   return {
+    mode,
     width,
     height: VIEWBOX_HEIGHT,
     scrollKey: `${records.length}:${records.at(-1)?.date || ""}`,

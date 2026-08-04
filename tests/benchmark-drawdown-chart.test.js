@@ -67,8 +67,10 @@ describe("benchmark drawdown chart", () => {
       drawdownRatio: -index / 100,
       level: index < 10 ? "normal" : index < 20 ? "prepare" : "deep",
     }));
-    const model = createBenchmarkDrawdownChart(history, 100);
+    const model = createBenchmarkDrawdownChart(history, 100, { mode: "detail" });
+    const overview = createBenchmarkDrawdownChart(history, 100, { mode: "overview" });
 
+    assert.equal(model.mode, "detail");
     assert.equal(model.points.length, 24);
     assert.equal(model.width, 1146);
     assert.equal(model.height, 430);
@@ -77,6 +79,19 @@ describe("benchmark drawdown chart", () => {
     assert.equal(model.points[0].showDateLabel, true);
     assert.equal(model.points.at(-1).showDateLabel, true);
     assert.equal(model.plot.right, model.width - 42);
+    assert.equal(overview.mode, "overview");
+    assert.equal(overview.width, 760);
+    assert.equal(overview.points.length, 24);
+    assert.deepEqual(
+      overview.points.map(({ price, drawdownRatio, y }) => ({ price, drawdownRatio, y })),
+      model.points.map(({ price, drawdownRatio, y }) => ({ price, drawdownRatio, y })),
+    );
+    assert.equal(overview.points[0].showDateLabel, true);
+    assert.equal(overview.points.at(-1).showDateLabel, true);
+    assert.ok(
+      overview.points.filter(({ showPercentLabel }) => showPercentLabel).length <
+        model.points.filter(({ showPercentLabel }) => showPercentLabel).length,
+    );
   });
 
   it("changes the scroll key when short-chart data arrives at the same width", () => {
@@ -107,7 +122,7 @@ describe("benchmark drawdown chart", () => {
   it("returns the user-facing market level labels", () => {
     assert.equal(getMarketLevelLabel("normal"), "正常區間");
     assert.equal(getMarketLevelLabel("prepare"), "觀察區間");
-    assert.equal(getMarketLevelLabel("deep"), "風險區間");
+    assert.equal(getMarketLevelLabel("deep"), "股災區間");
     assert.equal(getMarketLevelLabel("unknown"), "市場水位");
   });
 });
