@@ -63,7 +63,7 @@ function getAppliedBeta(recommendationsToApply, totalAssetsTwd, precision) {
 describe("operation rebalance", () => {
   it("classifies the current beta against the inclusive target tolerance range", () => {
     assert.deepEqual(getOperationRebalanceStatus(0.89, 0.9, 1.1), {
-      label: "增加 Beta",
+      label: "需增加 Beta",
       tone: "increase",
     });
     assert.deepEqual(getOperationRebalanceStatus(0.9, 0.9, 1.1), {
@@ -75,7 +75,7 @@ describe("operation rebalance", () => {
       tone: "balanced",
     });
     assert.deepEqual(getOperationRebalanceStatus(1.11, 0.9, 1.1), {
-      label: "降低 Beta",
+      label: "需降低 Beta",
       tone: "decrease",
     });
   });
