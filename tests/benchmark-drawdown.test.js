@@ -20,7 +20,6 @@ describe("benchmark drawdown", () => {
       level: "normal",
       currentSource: "close",
       history: [
-        { date: "2026-06-19", price: 250, drawdownRatio: -0.038831, level: "normal" },
         { date: "2026-06-23", price: 260.1, drawdownRatio: 0, level: "normal" },
         { date: "2026-07-23", price: 244.18, drawdownRatio: -0.061207, level: "normal" },
       ],
@@ -48,7 +47,6 @@ describe("benchmark drawdown", () => {
       level: "normal",
       currentSource: "live",
       history: [
-        { date: "2026-06-19", price: 250, drawdownRatio: -0.038462, level: "normal" },
         { date: "2026-06-23", price: 260, drawdownRatio: 0, level: "normal" },
         { date: "2026-07-23", price: 258, drawdownRatio: -0.007692, level: "normal" },
         { date: "2026-07-24", price: 244.4, drawdownRatio: -0.06, level: "normal" },
@@ -83,32 +81,47 @@ describe("benchmark drawdown", () => {
     );
   });
 
-  it("keeps the latest seven sorted trading dates and the last valid close per date", () => {
+  it("keeps every trading date from the latest historical closing high", () => {
     const drawdown = createBenchmarkDrawdown([
-      { date: "2026-08-03", price: 92 },
-      { date: "2026-07-23", price: 100 },
-      { date: "2026-07-24", price: 99 },
-      { date: "2026-07-27", price: 98 },
-      { date: "2026-07-28", price: 97 },
-      { date: "2026-07-29", price: 96 },
-      { date: "2026-07-30", price: 95 },
-      { date: "2026-07-31", price: 93 },
-      { date: "2026-07-31", price: 94 },
+      { date: "2026-06-19", price: 99 },
+      { date: "2026-06-22", price: 100 },
+      { date: "2026-06-23", price: 99 },
+      { date: "2026-06-24", price: 98 },
+      { date: "2026-06-25", price: 97 },
+      { date: "2026-06-26", price: 96 },
+      { date: "2026-06-29", price: 95 },
+      { date: "2026-06-30", price: 93 },
+      { date: "2026-06-30", price: 94 },
+      { date: "2026-07-01", price: 93 },
       { date: "", price: 500 },
-      { date: "2026-08-01", price: 0 },
+      { date: "2026-06-27", price: 500 },
     ]);
 
+    assert.equal(drawdown.highDate, "2026-06-22");
     assert.deepEqual(drawdown.history.map(({ date }) => date), [
-      "2026-07-24",
-      "2026-07-27",
-      "2026-07-28",
-      "2026-07-29",
-      "2026-07-30",
-      "2026-07-31",
-      "2026-08-03",
+      "2026-06-22",
+      "2026-06-23",
+      "2026-06-24",
+      "2026-06-25",
+      "2026-06-26",
+      "2026-06-29",
+      "2026-06-30",
+      "2026-07-01",
     ]);
     assert.equal(drawdown.history.at(-2).price, 94);
-    assert.equal(drawdown.history.at(-1).drawdownRatio, -0.08);
+    assert.equal(drawdown.history.at(-1).drawdownRatio, -0.07);
+  });
+
+  it("restarts at the latest date that matches the highest close", () => {
+    const drawdown = createBenchmarkDrawdown([
+      { date: "2026-06-22", price: 100 },
+      { date: "2026-06-23", price: 98 },
+      { date: "2026-07-02", price: 100 },
+      { date: "2026-07-03", price: 97 },
+    ]);
+
+    assert.equal(drawdown.highDate, "2026-07-02");
+    assert.deepEqual(drawdown.history.map(({ date }) => date), ["2026-07-02", "2026-07-03"]);
   });
 
   it("replaces the same-date close with a live quote without redefining the closing high", () => {
@@ -121,6 +134,7 @@ describe("benchmark drawdown", () => {
     );
 
     assert.equal(drawdown.highPrice, 100);
+    assert.equal(drawdown.highDate, "2026-06-22");
     assert.equal(drawdown.drawdownRatio, 0.02);
     assert.equal(drawdown.currentSource, "live");
     assert.deepEqual(drawdown.history, [

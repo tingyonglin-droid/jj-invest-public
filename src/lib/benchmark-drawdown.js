@@ -58,7 +58,7 @@ export function createBenchmarkDrawdown(prices, options = {}) {
   const liveCurrent = normalizePriceRecord(options.currentQuote);
   const current = liveCurrent || validPrices.at(-1);
   const high = validPrices.reduce(
-    (best, item) => (item.price > best.price ? item : best),
+    (best, item) => (item.price >= best.price ? item : best),
     validPrices[0],
   );
 
@@ -67,9 +67,8 @@ export function createBenchmarkDrawdown(prices, options = {}) {
   }
 
   const history = [...priceByDate.values()]
-    .filter((item) => item.date <= current.date)
+    .filter((item) => item.date >= high.date && item.date <= current.date)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-7)
     .map((item) => {
       const itemDrawdownRatio = roundNumber(item.price / high.price - 1);
       return {
