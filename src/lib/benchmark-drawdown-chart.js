@@ -73,7 +73,10 @@ export function toggleActiveMarketPoint(currentIndex, clickedIndex) {
   return currentIndex === clickedIndex ? null : clickedIndex;
 }
 
-export function getMarketChartScrollLeft(scrollWidth) {
+export function getMarketChartScrollLeft(scrollWidth, mode = "detail") {
+  if (mode === "overview") {
+    return 0;
+  }
   const width = Number(scrollWidth);
   return Number.isFinite(width) && width > 0 ? width : 0;
 }

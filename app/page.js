@@ -1251,18 +1251,20 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
 
 function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
   const [activePointIndex, setActivePointIndex] = useState(null);
+  const [chartMode, setChartMode] = useState("detail");
   const chartScrollRef = useRef(null);
   const chart = createBenchmarkDrawdownChart(
     benchmarkDrawdown?.history,
     benchmarkDrawdown?.highPrice,
+    { mode: chartMode },
   );
 
   useEffect(() => {
     const element = chartScrollRef.current;
     if (element) {
-      element.scrollLeft = getMarketChartScrollLeft(element.scrollWidth);
+      element.scrollLeft = getMarketChartScrollLeft(element.scrollWidth, chart.mode);
     }
-  }, [chart.scrollKey, chart.width]);
+  }, [chart.mode, chart.scrollKey, chart.width]);
 
   if (!benchmarkDrawdown) {
     return null;
@@ -1290,6 +1292,11 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
       event.preventDefault();
       activatePoint(event, index);
     }
+  }
+
+  function toggleChartMode() {
+    setActivePointIndex(null);
+    setChartMode((current) => current === "detail" ? "overview" : "detail");
   }
 
   return (
@@ -1325,7 +1332,18 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
         </div>
       </div>
 
-      <div className="marketLevelChartWrap" ref={chartScrollRef}>
+      <div className="marketLevelChartToolbar">
+        <button
+          type="button"
+          className="marketLevelViewButton"
+          aria-pressed={chartMode === "overview"}
+          onClick={toggleChartMode}
+        >
+          {chartMode === "overview" ? "查看詳細點位" : "看全部曲線"}
+        </button>
+      </div>
+
+      <div className={`marketLevelChartWrap ${chartMode}`} ref={chartScrollRef}>
         <svg
           className="marketLevelChart"
           width={chart.width}
@@ -1341,7 +1359,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
 
           <text className="marketBandName normal" x="12" y="94">正常</text>
           <text className="marketBandName prepare" x="12" y="194">觀察</text>
-          <text className="marketBandName deep" x="12" y="294">風險</text>
+          <text className="marketBandName deep" x="12" y="294">股災</text>
 
           {chart.thresholds.map((threshold) => (
             <g key={threshold.ratio}>
@@ -1372,9 +1390,11 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
             const isActive = activePointIndex === index;
             return (
               <g key={point.date}>
-                <text className="marketPointPercent" x={point.x} y={Math.max(24, point.y - 16)} textAnchor="middle">
-                  {formatSignedPercent(point.drawdownRatio)}
-                </text>
+                {point.showPercentLabel && (
+                  <text className="marketPointPercent" x={point.x} y={Math.max(24, point.y - 16)} textAnchor="middle">
+                    {formatSignedPercent(point.drawdownRatio)}
+                  </text>
+                )}
                 <circle
                   className={`marketPoint ${point.level}${isActive ? " active" : ""}`}
                   cx={point.x}
@@ -1426,7 +1446,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
       <div className="marketLevelLegend" aria-label="市場水位區間圖例">
         <span><i className="normal" />正常區間（-10% 以內）</span>
         <span><i className="prepare" />觀察區間（-10%～-20%）</span>
-        <span><i className="deep" />風險區間（-20% 以上）</span>
+        <span><i className="deep" />股災區間（-20% 以上）</span>
       </div>
 
       <div className="marketLevelFooter">

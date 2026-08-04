@@ -114,9 +114,10 @@ describe("benchmark drawdown chart", () => {
 
   it("targets the newest edge when the chart is wider than its viewport", () => {
     assert.equal(typeof benchmarkChart.getMarketChartScrollLeft, "function");
-    assert.equal(benchmarkChart.getMarketChartScrollLeft(1840), 1840);
-    assert.equal(benchmarkChart.getMarketChartScrollLeft(0), 0);
-    assert.equal(benchmarkChart.getMarketChartScrollLeft(Number.NaN), 0);
+    assert.equal(benchmarkChart.getMarketChartScrollLeft(1840, "detail"), 1840);
+    assert.equal(benchmarkChart.getMarketChartScrollLeft(1840, "overview"), 0);
+    assert.equal(benchmarkChart.getMarketChartScrollLeft(0, "detail"), 0);
+    assert.equal(benchmarkChart.getMarketChartScrollLeft(Number.NaN, "detail"), 0);
   });
 
   it("returns the user-facing market level labels", () => {
