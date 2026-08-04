@@ -1262,7 +1262,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
     if (element) {
       element.scrollLeft = getMarketChartScrollLeft(element.scrollWidth);
     }
-  }, [chart.width]);
+  }, [chart.scrollKey, chart.width]);
 
   if (!benchmarkDrawdown) {
     return null;
@@ -1331,7 +1331,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
           width={chart.width}
           height={chart.height}
           viewBox={chart.viewBox}
-          role="img"
+          role="group"
           aria-label="0050 自最新歷史最高收盤價以來的市場水位走勢圖"
           onClick={() => setActivePointIndex(null)}
         >

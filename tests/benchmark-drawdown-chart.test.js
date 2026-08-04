@@ -79,6 +79,18 @@ describe("benchmark drawdown chart", () => {
     assert.equal(model.plot.right, model.width - 42);
   });
 
+  it("changes the scroll key when short-chart data arrives at the same width", () => {
+    const emptyModel = createBenchmarkDrawdownChart([], 100);
+    const loadedModel = createBenchmarkDrawdownChart(
+      [{ date: "2026-06-22", price: 100, drawdownRatio: 0, level: "normal" }],
+      100,
+    );
+
+    assert.equal(emptyModel.width, loadedModel.width);
+    assert.notEqual(emptyModel.scrollKey, loadedModel.scrollKey);
+    assert.equal(loadedModel.scrollKey, "1:2026-06-22");
+  });
+
   it("opens, switches, and closes one active point at a time", () => {
     assert.equal(toggleActiveMarketPoint(null, 2), 2);
     assert.equal(toggleActiveMarketPoint(2, 5), 5);

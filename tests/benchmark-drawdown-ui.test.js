@@ -23,5 +23,7 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /marketPointTooltip/);
     assert.match(pageSource, /aria-pressed/);
     assert.match(pageSource, /0050 股價/);
+    assert.match(pageSource, /className="marketLevelChart"[^>]*role="group"/);
+    assert.doesNotMatch(pageSource, /className="marketLevelChart"[^>]*role="img"/);
   });
 });
