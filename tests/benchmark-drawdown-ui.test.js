@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 const pageSource = readFileSync(new URL("../app/page.js", import.meta.url), "utf8");
+const cssSource = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
 describe("benchmark drawdown UI", () => {
   it("shows 0050 closing-high drawdown in a market level card", () => {
@@ -32,7 +33,13 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /activePointDate === point\.date/);
     assert.match(pageSource, /getNearestMarketPointIndex/);
     assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
+    assert.match(pageSource, /marketLevelTitleActions/);
+    assert.match(pageSource, /cardTitleRow[\s\S]*marketLevelViewButton/);
+    assert.doesNotMatch(pageSource, /marketLevelChartToolbar/);
     assert.match(pageSource, /股災區間/);
     assert.doesNotMatch(pageSource, /風險區間/);
+    assert.match(cssSource, /\.marketLevelTitleActions/);
+    assert.match(cssSource, /\.marketLevelViewButton[\s\S]*min-height:\s*44px/);
+    assert.doesNotMatch(cssSource, /\.marketLevelChartToolbar/);
   });
 });

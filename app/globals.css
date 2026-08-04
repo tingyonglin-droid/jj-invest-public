@@ -407,7 +407,7 @@ p {
 }
 
 .marketLevelCard {
-  gap: 18px;
+  gap: 10px;
   overflow: hidden;
   padding: 0;
   border-color: rgba(186, 194, 204, 0.42);
@@ -430,7 +430,7 @@ p {
   grid-template-columns: minmax(180px, 1fr) minmax(340px, auto);
   gap: 24px;
   align-items: start;
-  padding: 24px 26px 0;
+  padding: 18px 22px 4px;
 }
 
 .marketLevelHeading {
@@ -447,6 +447,19 @@ p {
   color: var(--muted);
   font-size: 16px;
   font-weight: 720;
+}
+
+.marketLevelTitleRow {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
+.marketLevelTitleActions {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
 }
 
 .marketLevelSummaries {
@@ -502,13 +515,8 @@ p {
   overscroll-behavior-inline: contain;
 }
 
-.marketLevelChartToolbar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 4px 20px 0;
-}
-
 .marketLevelViewButton {
+  flex: 0 0 auto;
   min-height: 44px;
   border: 1px solid rgba(36, 135, 94, 0.3);
   border-radius: 999px;
@@ -3905,13 +3913,13 @@ select {
 
 @media (max-width: 760px) {
   .marketLevelCard {
-    gap: 12px;
+    gap: 6px;
   }
 
   .marketLevelHeader {
     grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 18px 18px 0;
+    gap: 8px;
+    padding: 14px 18px 2px;
   }
 
   .marketLevelSummaries {
@@ -3926,8 +3934,9 @@ select {
     min-height: 245px;
   }
 
-  .marketLevelChartToolbar {
-    padding-inline: 18px;
+  .marketLevelViewButton {
+    padding-inline: 12px;
+    font-size: 12px;
   }
 
   .marketLevelChartWrap.overview .marketBandName,

@@ -1321,15 +1321,25 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
     <section className={`appCard marketLevelCard ${benchmarkDrawdown.level}`}>
       <div className="marketLevelHeader">
         <div className="marketLevelHeading">
-          <div className="cardTitleRow">
-            <h2>市場水位</h2>
+          <div className="cardTitleRow marketLevelTitleRow">
+            <div className="marketLevelTitleActions">
+              <h2>市場水位</h2>
+              <button
+                type="button"
+                className="infoButton small"
+                onClick={onOpenGlossary}
+                aria-label="查看 0050 距收盤高點說明"
+              >
+                i
+              </button>
+            </div>
             <button
               type="button"
-              className="infoButton small"
-              onClick={onOpenGlossary}
-              aria-label="查看 0050 距收盤高點說明"
+              className="marketLevelViewButton"
+              aria-pressed={chartMode === "overview"}
+              onClick={toggleChartMode}
             >
-              i
+              {chartMode === "overview" ? "查看詳細點位" : "看全部曲線"}
             </button>
           </div>
           <p>0050 距歷史高點</p>
@@ -1348,17 +1358,6 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
             <time dateTime={benchmarkDrawdown.currentDate}>{benchmarkDrawdown.currentDate}</time>
           </div>
         </div>
-      </div>
-
-      <div className="marketLevelChartToolbar">
-        <button
-          type="button"
-          className="marketLevelViewButton"
-          aria-pressed={chartMode === "overview"}
-          onClick={toggleChartMode}
-        >
-          {chartMode === "overview" ? "查看詳細點位" : "看全部曲線"}
-        </button>
       </div>
 
       <div className={`marketLevelChartWrap ${chartMode}`} ref={chartScrollRef}>
