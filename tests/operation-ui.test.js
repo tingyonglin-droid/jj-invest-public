@@ -30,6 +30,8 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.doesNotMatch(page, /<span>納入本次再平衡<\/span>/);
   assert.match(page, /aria-label="降低再平衡 Beta 0\.01"/);
   assert.match(page, /aria-label="提高再平衡 Beta 0\.01"/);
+  assert.match(page, /operationRebalanceStatus/);
+  assert.match(page, /getOperationRebalanceStatus/);
 });
 
 test("operations page places precision in parameters and apply action after the list", async () => {

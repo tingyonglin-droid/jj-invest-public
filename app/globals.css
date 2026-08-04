@@ -1616,6 +1616,50 @@ p {
   gap: 18px;
 }
 
+.operationRebalanceStatus {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 2px;
+  min-width: 132px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  text-align: right;
+}
+
+.operationRebalanceStatus span {
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.operationRebalanceStatus strong {
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.operationRebalanceStatus.increase {
+  color: #137b59;
+  background: #e9f7f1;
+}
+
+.operationRebalanceStatus.balanced {
+  color: #52606d;
+  background: #eef2f5;
+}
+
+.operationRebalanceStatus.decrease {
+  color: #b33f4b;
+  background: #fff0f1;
+}
+
+@media (max-width: 640px) {
+  .operationRebalanceStatus {
+    min-width: 118px;
+    padding: 8px 10px;
+  }
+}
+
 .operationParameterCard {
   display: grid;
   gap: 16px;

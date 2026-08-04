@@ -38,6 +38,16 @@ export function adjustOperationTargetBeta(value, delta) {
   return Math.round((nextValue + Number.EPSILON) * 100) / 100;
 }
 
+export function getOperationRebalanceStatus(currentBeta, betaLower, betaUpper) {
+  if (toNumber(currentBeta) < toNumber(betaLower)) {
+    return { label: "增加 Beta", tone: "increase" };
+  }
+  if (toNumber(currentBeta) > toNumber(betaUpper)) {
+    return { label: "降低 Beta", tone: "decrease" };
+  }
+  return { label: "不需再平衡", tone: "balanced" };
+}
+
 function distributeBuyAmount(rows, amount) {
   const tradeAmounts = new Map();
   let remainingAmount = roundMoney(amount);

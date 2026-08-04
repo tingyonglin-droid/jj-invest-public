@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import {
   adjustOperationTargetBeta,
   createOperationRebalance,
+  getOperationRebalanceStatus,
   normalizeSelectedRebalanceIds,
 } from "../src/lib/operation-rebalance.js";
 import {
@@ -60,6 +61,25 @@ function getAppliedBeta(recommendationsToApply, totalAssetsTwd, precision) {
 }
 
 describe("operation rebalance", () => {
+  it("classifies the current beta against the inclusive target tolerance range", () => {
+    assert.deepEqual(getOperationRebalanceStatus(0.89, 0.9, 1.1), {
+      label: "增加 Beta",
+      tone: "increase",
+    });
+    assert.deepEqual(getOperationRebalanceStatus(0.9, 0.9, 1.1), {
+      label: "不需再平衡",
+      tone: "balanced",
+    });
+    assert.deepEqual(getOperationRebalanceStatus(1.1, 0.9, 1.1), {
+      label: "不需再平衡",
+      tone: "balanced",
+    });
+    assert.deepEqual(getOperationRebalanceStatus(1.11, 0.9, 1.1), {
+      label: "降低 Beta",
+      tone: "decrease",
+    });
+  });
+
   it("adjusts the operation target beta in 0.01 steps within the supported range", () => {
     assert.equal(adjustOperationTargetBeta(1, 0.01), 1.01);
     assert.equal(adjustOperationTargetBeta(1, -0.01), 0.99);

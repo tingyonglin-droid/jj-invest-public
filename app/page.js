@@ -59,6 +59,7 @@ import {
 import {
   adjustOperationTargetBeta,
   createOperationRebalance,
+  getOperationRebalanceStatus,
 } from "../src/lib/operation-rebalance.js";
 import { createAdviceDisplay } from "../src/lib/advice-summary.js";
 import {
@@ -2065,6 +2066,11 @@ function OperationsView({
     recommendations,
     totalAssetsTwd: operationRebalance.totalAssetsTwd,
   });
+  const rebalanceStatus = getOperationRebalanceStatus(
+    calculation.currentBeta,
+    calculation.betaLower,
+    calculation.betaUpper,
+  );
 
   return (
     <section className="appCard operationsPageCard">
@@ -2082,6 +2088,13 @@ function OperationsView({
             </button>
           </div>
           <p>共 {appliedSummary.actionCount} 筆操作，金額依目前交易精度估算。</p>
+        </div>
+        <div
+          className={`operationRebalanceStatus ${rebalanceStatus.tone}`}
+          role="status"
+        >
+          <span>目前狀態</span>
+          <strong>{rebalanceStatus.label}</strong>
         </div>
       </div>
       <div className="operationSummaryGrid">
