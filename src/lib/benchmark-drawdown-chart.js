@@ -64,6 +64,11 @@ export function toggleActiveMarketPoint(currentIndex, clickedIndex) {
   return currentIndex === clickedIndex ? null : clickedIndex;
 }
 
+export function getMarketChartScrollLeft(scrollWidth) {
+  const width = Number(scrollWidth);
+  return Number.isFinite(width) && width > 0 ? width : 0;
+}
+
 export function getMarketLevelLabel(level) {
   return MARKET_LEVEL_LABELS[level] || "市場水位";
 }

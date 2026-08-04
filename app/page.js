@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   AUTO_REFRESH_INTERVAL_MS,
@@ -14,6 +14,7 @@ import {
 import { createBenchmarkDrawdown } from "../src/lib/benchmark-drawdown.js";
 import {
   createBenchmarkDrawdownChart,
+  getMarketChartScrollLeft,
   getMarketLevelLabel,
   toggleActiveMarketPoint,
 } from "../src/lib/benchmark-drawdown-chart.js";
@@ -1250,15 +1251,23 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
 
 function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
   const [activePointIndex, setActivePointIndex] = useState(null);
+  const chartScrollRef = useRef(null);
+  const chart = createBenchmarkDrawdownChart(
+    benchmarkDrawdown?.history,
+    benchmarkDrawdown?.highPrice,
+  );
+
+  useEffect(() => {
+    const element = chartScrollRef.current;
+    if (element) {
+      element.scrollLeft = getMarketChartScrollLeft(element.scrollWidth);
+    }
+  }, [chart.width]);
 
   if (!benchmarkDrawdown) {
     return null;
   }
 
-  const chart = createBenchmarkDrawdownChart(
-    benchmarkDrawdown.history,
-    benchmarkDrawdown.highPrice,
-  );
   const activePoint = activePointIndex === null ? null : chart.points[activePointIndex];
   const tooltipLeft = activePoint
     ? activePoint.tooltipAnchor === "start"
@@ -1316,17 +1325,19 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
         </div>
       </div>
 
-      <div className="marketLevelChartWrap">
+      <div className="marketLevelChartWrap" ref={chartScrollRef}>
         <svg
           className="marketLevelChart"
+          width={chart.width}
+          height={chart.height}
           viewBox={chart.viewBox}
           role="img"
-          aria-label="0050 最近七個交易日距歷史最高收盤價的市場水位走勢圖"
+          aria-label="0050 自最新歷史最高收盤價以來的市場水位走勢圖"
           onClick={() => setActivePointIndex(null)}
         >
-          <rect className="marketBand normal" x="0" y="40" width="760" height="100" />
-          <rect className="marketBand prepare" x="0" y="140" width="760" height="100" />
-          <rect className="marketBand deep" x="0" y="240" width="760" height="100" />
+          <rect className="marketBand normal" x="0" y="40" width={chart.width} height="100" />
+          <rect className="marketBand prepare" x="0" y="140" width={chart.width} height="100" />
+          <rect className="marketBand deep" x="0" y="240" width={chart.width} height="100" />
 
           <text className="marketBandName normal" x="12" y="94">正常</text>
           <text className="marketBandName prepare" x="12" y="194">觀察</text>
@@ -1344,7 +1355,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
               <text className="marketThresholdRatio" x="8" y={threshold.y - 7}>
                 {formatSignedPercent(threshold.ratio)}
               </text>
-              <text className="marketThresholdPrice" x="752" y={threshold.y + 17} textAnchor="end">
+              <text className="marketThresholdPrice" x={chart.width - 8} y={threshold.y + 17} textAnchor="end">
                 {formatNumber(threshold.price, 2)}
               </text>
             </g>
@@ -1376,8 +1387,12 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
                   onClick={(event) => activatePoint(event, index)}
                   onKeyDown={(event) => handlePointKeyDown(event, index)}
                 />
-                <text className="marketPointDate" x={point.x} y="372" textAnchor="middle">{shortDate}</text>
-                <text className="marketPointWeekday" x={point.x} y="398" textAnchor="middle">（{weekday}）</text>
+                {point.showDateLabel && (
+                  <>
+                    <text className="marketPointDate" x={point.x} y="372" textAnchor="middle">{shortDate}</text>
+                    <text className="marketPointWeekday" x={point.x} y="398" textAnchor="middle">（{weekday}）</text>
+                  </>
+                )}
               </g>
             );
           })}

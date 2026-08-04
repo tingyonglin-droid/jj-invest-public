@@ -6,6 +6,7 @@ import {
   getMarketLevelLabel,
   toggleActiveMarketPoint,
 } from "../src/lib/benchmark-drawdown-chart.js";
+import * as benchmarkChart from "../src/lib/benchmark-drawdown-chart.js";
 
 describe("benchmark drawdown chart", () => {
   it("maps drawdown boundaries into a fixed comparable vertical scale", () => {
@@ -82,6 +83,13 @@ describe("benchmark drawdown chart", () => {
     assert.equal(toggleActiveMarketPoint(null, 2), 2);
     assert.equal(toggleActiveMarketPoint(2, 5), 5);
     assert.equal(toggleActiveMarketPoint(5, 5), null);
+  });
+
+  it("targets the newest edge when the chart is wider than its viewport", () => {
+    assert.equal(typeof benchmarkChart.getMarketChartScrollLeft, "function");
+    assert.equal(benchmarkChart.getMarketChartScrollLeft(1840), 1840);
+    assert.equal(benchmarkChart.getMarketChartScrollLeft(0), 0);
+    assert.equal(benchmarkChart.getMarketChartScrollLeft(Number.NaN), 0);
   });
 
   it("returns the user-facing market level labels", () => {

@@ -20,7 +20,6 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /股災等級/);
     assert.match(pageSource, /分批加碼買進/);
     assert.match(pageSource, /createBenchmarkDrawdown/);
-    assert.match(pageSource, /最近七個交易日/);
     assert.match(pageSource, /marketPointTooltip/);
     assert.match(pageSource, /aria-pressed/);
     assert.match(pageSource, /0050 股價/);
