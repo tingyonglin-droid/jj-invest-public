@@ -2,6 +2,12 @@ const VIEWBOX_WIDTH = 760;
 const VIEWBOX_HEIGHT = 430;
 const PLOT = Object.freeze({ left: 92, right: 718, top: 40, bottom: 340 });
 
+const MARKET_LEVEL_LABELS = Object.freeze({
+  normal: "正常區間",
+  prepare: "觀察區間",
+  deep: "風險區間",
+});
+
 function round(value, digits = 2) {
   const scale = 10 ** digits;
   return Math.round(value * scale) / scale;
@@ -39,4 +45,12 @@ export function createBenchmarkDrawdownChart(history, highPrice) {
       price: round(Number(highPrice) * (1 + ratio)),
     })),
   };
+}
+
+export function toggleActiveMarketPoint(currentIndex, clickedIndex) {
+  return currentIndex === clickedIndex ? null : clickedIndex;
+}
+
+export function getMarketLevelLabel(level) {
+  return MARKET_LEVEL_LABELS[level] || "市場水位";
 }

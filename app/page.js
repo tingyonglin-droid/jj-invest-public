@@ -13,6 +13,11 @@ import {
 } from "../src/lib/backup.js";
 import { createBenchmarkDrawdown } from "../src/lib/benchmark-drawdown.js";
 import {
+  createBenchmarkDrawdownChart,
+  getMarketLevelLabel,
+  toggleActiveMarketPoint,
+} from "../src/lib/benchmark-drawdown-chart.js";
+import {
   createAnalyticsClient,
   getAssetType,
   getMarketFromTicker,
@@ -1244,20 +1249,44 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
 }
 
 function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
+  const [activePointIndex, setActivePointIndex] = useState(null);
+
   if (!benchmarkDrawdown) {
     return null;
   }
 
-  const levelLabel = {
-    normal: "正常區間",
-    prepare: "觀察低接",
-    deep: "深度回落",
-  }[benchmarkDrawdown.level] || "市場水位";
+  const chart = createBenchmarkDrawdownChart(
+    benchmarkDrawdown.history,
+    benchmarkDrawdown.highPrice,
+  );
+  const activePoint = activePointIndex === null ? null : chart.points[activePointIndex];
+  const tooltipLeft = activePoint
+    ? activePoint.tooltipAnchor === "start"
+      ? activePoint.tooltipX
+      : activePoint.tooltipAnchor === "end"
+        ? activePoint.tooltipX - 178
+        : activePoint.tooltipX - 89
+    : 0;
+  const tooltipTop = activePoint ? Math.min(246, Math.max(50, activePoint.y - 104)) : 0;
+  const tooltipTextX = tooltipLeft + 12;
+  const levelLabel = getMarketLevelLabel(benchmarkDrawdown.level);
+
+  function activatePoint(event, index) {
+    event.stopPropagation();
+    setActivePointIndex((current) => toggleActiveMarketPoint(current, index));
+  }
+
+  function handlePointKeyDown(event, index) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activatePoint(event, index);
+    }
+  }
 
   return (
     <section className={`appCard marketLevelCard ${benchmarkDrawdown.level}`}>
-      <div className="cardHeaderRow">
-        <div>
+      <div className="marketLevelHeader">
+        <div className="marketLevelHeading">
           <div className="cardTitleRow">
             <h2>市場水位</h2>
             <button
@@ -1269,21 +1298,126 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
               i
             </button>
           </div>
-          <p>0050 距收盤高點</p>
+          <p>0050 距歷史高點</p>
         </div>
-        <span className="marketLevelBadge">{levelLabel}</span>
+
+        <div className="marketLevelSummaries">
+          <div>
+            <span>歷史高點（收盤）</span>
+            <strong>{formatNumber(benchmarkDrawdown.highPrice, 2)}</strong>
+            <time dateTime={benchmarkDrawdown.highDate}>{benchmarkDrawdown.highDate}</time>
+          </div>
+          <div className="marketLevelCurrent">
+            <span>目前（{benchmarkDrawdown.currentSource === "live" ? "即時" : "收盤"}）</span>
+            <strong>{formatNumber(benchmarkDrawdown.currentPrice, 2)}</strong>
+            <b>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</b>
+            <time dateTime={benchmarkDrawdown.currentDate}>{benchmarkDrawdown.currentDate}</time>
+          </div>
+        </div>
       </div>
 
-      <div className="marketLevelBody">
-        <strong>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</strong>
-        <div>
-          <span>
-            高點 {formatNumber(benchmarkDrawdown.highPrice, 2)} · {benchmarkDrawdown.highDate}
-          </span>
-          <span>
-            目前 {formatNumber(benchmarkDrawdown.currentPrice, 2)} · {benchmarkDrawdown.currentDate}
-          </span>
-        </div>
+      <div className="marketLevelChartWrap">
+        <svg
+          className="marketLevelChart"
+          viewBox={chart.viewBox}
+          role="img"
+          aria-label="0050 最近七個交易日距歷史最高收盤價的市場水位走勢圖"
+          onClick={() => setActivePointIndex(null)}
+        >
+          <rect className="marketBand normal" x="0" y="40" width="760" height="100" />
+          <rect className="marketBand prepare" x="0" y="140" width="760" height="100" />
+          <rect className="marketBand deep" x="0" y="240" width="760" height="100" />
+
+          <text className="marketBandName normal" x="12" y="94">正常</text>
+          <text className="marketBandName prepare" x="12" y="194">觀察</text>
+          <text className="marketBandName deep" x="12" y="294">風險</text>
+
+          {chart.thresholds.map((threshold) => (
+            <g key={threshold.ratio}>
+              <line
+                className="marketThreshold"
+                x1={chart.plot.left}
+                x2={chart.plot.right}
+                y1={threshold.y}
+                y2={threshold.y}
+              />
+              <text className="marketThresholdRatio" x="8" y={threshold.y - 7}>
+                {formatSignedPercent(threshold.ratio)}
+              </text>
+              <text className="marketThresholdPrice" x="752" y={threshold.y + 17} textAnchor="end">
+                {formatNumber(threshold.price, 2)}
+              </text>
+            </g>
+          ))}
+
+          <polyline className="marketTrendLine" points={chart.linePoints} />
+
+          {chart.points.map((point, index) => {
+            const date = new Date(`${point.date}T12:00:00+08:00`);
+            const weekday = new Intl.DateTimeFormat("zh-TW", { weekday: "short" })
+              .format(date)
+              .replace("週", "");
+            const shortDate = point.date.slice(5).replace("-", "/");
+            const isActive = activePointIndex === index;
+            return (
+              <g key={point.date}>
+                <text className="marketPointPercent" x={point.x} y={Math.max(24, point.y - 16)} textAnchor="middle">
+                  {formatSignedPercent(point.drawdownRatio)}
+                </text>
+                <circle
+                  className={`marketPoint ${point.level}${isActive ? " active" : ""}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r="8"
+                  role="button"
+                  tabIndex="0"
+                  aria-pressed={isActive}
+                  aria-label={`${point.date}，0050 股價 ${formatNumber(point.price, 2)}，市場水位 ${formatSignedPercent(point.drawdownRatio)}，${getMarketLevelLabel(point.level)}`}
+                  onClick={(event) => activatePoint(event, index)}
+                  onKeyDown={(event) => handlePointKeyDown(event, index)}
+                />
+                <text className="marketPointDate" x={point.x} y="372" textAnchor="middle">{shortDate}</text>
+                <text className="marketPointWeekday" x={point.x} y="398" textAnchor="middle">（{weekday}）</text>
+              </g>
+            );
+          })}
+
+          {activePoint && (
+            <g
+              className={`marketPointTooltip ${activePoint.level}`}
+              onClick={(event) => event.stopPropagation()}
+              pointerEvents="all"
+            >
+              <rect
+                x={tooltipLeft}
+                y={tooltipTop}
+                width="178"
+                height="82"
+                rx="10"
+              />
+              <text
+                x={tooltipTextX}
+                y={tooltipTop + 22}
+              >
+                <tspan className="tooltipDate">{activePoint.date}</tspan>
+                <tspan x={tooltipTextX} dy="20">0050　{formatNumber(activePoint.price, 2)}</tspan>
+                <tspan x={tooltipTextX} dy="20">{formatSignedPercent(activePoint.drawdownRatio)}　{getMarketLevelLabel(activePoint.level)}</tspan>
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
+
+      <div className="marketLevelLegend" aria-label="市場水位區間圖例">
+        <span><i className="normal" />正常區間（-10% 以內）</span>
+        <span><i className="prepare" />觀察區間（-10%～-20%）</span>
+        <span><i className="deep" />風險區間（-20% 以上）</span>
+      </div>
+
+      <div className="marketLevelFooter">
+        <span>資料來源：0050 {benchmarkDrawdown.currentSource === "live" ? "即時價與歷史收盤價" : "收盤價"}</span>
+        <span>更新日期：{benchmarkDrawdown.currentDate}</span>
+        <span className={`marketLevelBadge ${benchmarkDrawdown.level}`}>{levelLabel}</span>
       </div>
     </section>
   );

@@ -8,7 +8,7 @@ describe("benchmark drawdown UI", () => {
   it("shows 0050 closing-high drawdown in a market level card", () => {
     assert.match(pageSource, /MarketLevelCard/);
     assert.match(pageSource, /市場水位/);
-    assert.match(pageSource, /0050 距收盤高點/);
+    assert.match(pageSource, /0050 距歷史高點/);
     assert.match(pageSource, /高點/);
     assert.match(pageSource, /目前/);
     assert.match(pageSource, /查看 0050 距收盤高點說明/);
@@ -20,5 +20,9 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /股災等級/);
     assert.match(pageSource, /分批加碼買進/);
     assert.match(pageSource, /createBenchmarkDrawdown/);
+    assert.match(pageSource, /最近七個交易日/);
+    assert.match(pageSource, /marketPointTooltip/);
+    assert.match(pageSource, /aria-pressed/);
+    assert.match(pageSource, /0050 股價/);
   });
 });

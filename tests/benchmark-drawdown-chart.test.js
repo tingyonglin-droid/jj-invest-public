@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { createBenchmarkDrawdownChart } from "../src/lib/benchmark-drawdown-chart.js";
+import {
+  createBenchmarkDrawdownChart,
+  getMarketLevelLabel,
+  toggleActiveMarketPoint,
+} from "../src/lib/benchmark-drawdown-chart.js";
 
 describe("benchmark drawdown chart", () => {
   it("maps drawdown boundaries into a fixed comparable vertical scale", () => {
@@ -53,5 +57,18 @@ describe("benchmark drawdown chart", () => {
     assert.equal(model.points[3].tooltipAnchor, "middle");
     assert.equal(model.points.at(-1).tooltipAnchor, "end");
     assert.equal(model.points.at(-1).tooltipX, 706);
+  });
+
+  it("opens, switches, and closes one active point at a time", () => {
+    assert.equal(toggleActiveMarketPoint(null, 2), 2);
+    assert.equal(toggleActiveMarketPoint(2, 5), 5);
+    assert.equal(toggleActiveMarketPoint(5, 5), null);
+  });
+
+  it("returns the user-facing market level labels", () => {
+    assert.equal(getMarketLevelLabel("normal"), "正常區間");
+    assert.equal(getMarketLevelLabel("prepare"), "觀察區間");
+    assert.equal(getMarketLevelLabel("deep"), "風險區間");
+    assert.equal(getMarketLevelLabel("unknown"), "市場水位");
   });
 });
