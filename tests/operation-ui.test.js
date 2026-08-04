@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 
 test("operations page exposes target beta and selectable holdings", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(page, /再平衡參數設定/);
   assert.match(page, /再平衡/);
@@ -32,6 +33,8 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(page, /aria-label="提高再平衡 Beta 0\.01"/);
   assert.match(page, /operationRebalanceStatus/);
   assert.match(page, /getOperationRebalanceStatus/);
+  assert.match(page, /cardHeaderRow operationHeaderRow/);
+  assert.match(styles, /\.operationHeaderRow/);
 });
 
 test("operations page places precision in parameters and apply action after the list", async () => {

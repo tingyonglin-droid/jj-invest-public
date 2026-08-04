@@ -2074,7 +2074,7 @@ function OperationsView({
 
   return (
     <section className="appCard operationsPageCard">
-      <div className="cardHeaderRow">
+      <div className="cardHeaderRow operationHeaderRow">
         <div>
           <div className="cardTitleRow">
             <h2>再平衡參數設定</h2>

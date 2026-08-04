@@ -1627,6 +1627,14 @@ p {
   text-align: right;
 }
 
+.operationHeaderRow > :first-child {
+  min-width: 0;
+}
+
+.operationHeaderRow .operationRebalanceStatus {
+  flex: 0 0 auto;
+}
+
 .operationRebalanceStatus span {
   font-size: 11px;
   font-weight: 760;
@@ -3355,6 +3363,17 @@ select {
   .cardHeaderRow {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .operationHeaderRow {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .operationHeaderRow .operationRebalanceStatus {
+    align-self: flex-start;
+    min-width: 108px;
   }
 
   .precisionControl {
