@@ -25,18 +25,17 @@ describe("advice summary helpers", () => {
     assert.deepEqual(
       createAdviceDisplay({
         betaBoundaryLabel: "低於下限",
-        totalTradeAmountTwd: -158362,
-        recommendations: [
-          { action: "buy", tradeAmountTwd: 289600, assetBeta: 2 },
-          { action: "sell", tradeAmountTwd: -233000, assetBeta: 1 },
-          { action: "sell", tradeAmountTwd: -122000, assetBeta: 1 },
-          { action: "sell", tradeAmountTwd: -92962, assetBeta: 1 },
-        ],
+        leveragedTradeAmountTwd: 289600,
+        originalTradeAmountTwd: -447962,
+        cashTradeAmountTwd: 158362,
       }),
       {
         headline: "提高曝險",
-        netFlowText: "淨調整：賣出 NT$158,362",
-        primaryActionText: "主要動作：賣出原形、買入正二",
+        classActions: [
+          "正二：買入 NT$289,600",
+          "原形：賣出 NT$447,962",
+          "現金：增加 NT$158,362",
+        ],
         tone: "buy",
       },
     );

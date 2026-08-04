@@ -13,12 +13,11 @@ const settings = {
       tickerInput: "00631L",
       shares: 1000,
       assetBeta: 2,
-      targetWeightPct: 100,
     },
   ],
   cashTwd: 100000,
   cashUsd: 500,
-  targetBeta: 1.2,
+  leveragedTargetPct: 60,
   tolerancePct: 10,
   originalTargetPct: 0,
 };

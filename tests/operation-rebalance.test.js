@@ -79,8 +79,8 @@ describe("operation rebalance", () => {
     });
 
     assert.equal(result.afterBeta, 1.4);
-    assert.equal(result.recommendations[0].targetValueTwd, 36000);
-    assert.equal(result.recommendations[1].targetValueTwd, 24000);
+    assert.equal(result.recommendations[0].targetValueTwd, 30000);
+    assert.equal(result.recommendations[1].targetValueTwd, 30000);
     assert.equal(result.recommendations[2].targetValueTwd, 20000);
     assert.equal(result.summary.totalAmountTwd, 40000);
   });

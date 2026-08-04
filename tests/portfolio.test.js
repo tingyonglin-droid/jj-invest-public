@@ -9,14 +9,12 @@ const positions = [
     tickerInput: "00631L",
     shares: 1000,
     assetBeta: 2,
-    targetWeightPct: 100,
   },
   {
     id: "us-original",
     tickerInput: "QLD",
     shares: 10,
     assetBeta: 1,
-    targetWeightPct: 100,
   },
 ];
 
@@ -49,7 +47,7 @@ describe("portfolio calculations", () => {
       positions,
       quotes,
       cashTwd: 28500,
-      targetBeta: 1.2,
+      leveragedTargetPct: 40,
       originalTargetPct: 40,
       tolerancePct: 10,
     });
@@ -63,12 +61,12 @@ describe("portfolio calculations", () => {
     assert.equal(result.needsRebalance, false);
   });
 
-  it("creates per-position rebalance recommendations from target weights inside each asset type", () => {
+  it("keeps current position values while class targets are calculated separately", () => {
     const result = calculatePortfolio({
       positions,
       quotes,
       cashTwd: 28500,
-      targetBeta: 1.2,
+      leveragedTargetPct: 40,
       originalTargetPct: 40,
       tolerancePct: 10,
     });
@@ -78,29 +76,17 @@ describe("portfolio calculations", () => {
         ticker: item.normalizedTicker,
         currentValueTwd: item.currentValueTwd,
         currentSleeveWeight: item.currentSleeveWeight,
-        targetSleeveWeight: item.targetSleeveWeight,
-        targetValueTwd: item.targetValueTwd,
-        tradeAmountTwd: item.tradeAmountTwd,
-        action: item.action,
       })),
       [
         {
           ticker: "00631L.TW",
           currentValueTwd: 40000,
           currentSleeveWeight: 1,
-          targetSleeveWeight: 1,
-          targetValueTwd: 40000,
-          tradeAmountTwd: 0,
-          action: "none",
         },
         {
           ticker: "QLD",
           currentValueTwd: 31500,
           currentSleeveWeight: 1,
-          targetSleeveWeight: 1,
-          targetValueTwd: 40000,
-          tradeAmountTwd: 8500,
-          action: "buy",
         },
       ],
     );
@@ -111,7 +97,7 @@ describe("portfolio calculations", () => {
       positions,
       quotes,
       cashTwd: 28500,
-      targetBeta: 1.2,
+      leveragedTargetPct: 40,
       originalTargetPct: 40,
       tolerancePct: 10,
     });
@@ -128,7 +114,7 @@ describe("portfolio calculations", () => {
       positions,
       quotes,
       cashTwd: 28500,
-      targetBeta: 1.2,
+      leveragedTargetPct: 40,
       originalTargetPct: 40,
       tolerancePct: 10,
     });
@@ -151,12 +137,11 @@ describe("portfolio calculations", () => {
           tickerInput: "00631L",
           shares: 1000,
           assetBeta: 2,
-          targetWeightPct: 100,
         },
       ],
       quotes: [quotes[0]],
       cashTwd: 60000,
-      targetBeta: 1.2,
+      leveragedTargetPct: 60,
       tolerancePct: 10,
     });
 
@@ -164,12 +149,10 @@ describe("portfolio calculations", () => {
     assert.equal(result.afterStockRatio, 0.6);
     assert.equal(result.afterCashRatio, 0.4);
     assert.equal(result.afterBeta, 1.2);
-    assert.equal(result.recommendations[0].targetValueTwd, 60000);
-    assert.equal(result.recommendations[0].tradeAmountTwd, 20000);
-    assert.equal(result.recommendations[0].action, "buy");
+    assert.equal(result.leveragedTradeAmountTwd, 20000);
   });
 
-  it("marks target weights above 100 percent as invalid", () => {
+  it("marks class target percentages above 100 percent as invalid", () => {
     const result = calculatePortfolio({
       positions: [
         {
@@ -177,27 +160,26 @@ describe("portfolio calculations", () => {
           tickerInput: "00631L",
           shares: 1000,
           assetBeta: 2,
-          targetWeightPct: 60,
         },
         {
           id: "second",
           tickerInput: "00685L",
           shares: 1000,
           assetBeta: 2,
-          targetWeightPct: 60,
         },
       ],
       quotes,
       cashTwd: 28500,
-      targetBeta: 1.2,
+      leveragedTargetPct: 80,
+      originalTargetPct: 30,
       tolerancePct: 10,
     });
 
     assert.equal(result.isValid, false);
-    assert.equal(result.errors[0], "正二標的目標比例合計必須等於 100%。");
+    assert.equal(result.errors[0], "正二與原形目標比例合計不能超過 100%。");
   });
 
-  it("marks target weights below 100 percent as invalid", () => {
+  it("uses the unallocated class target percentage as cash", () => {
     const result = calculatePortfolio({
       positions: [
         {
@@ -205,24 +187,24 @@ describe("portfolio calculations", () => {
           tickerInput: "00631L",
           shares: 1000,
           assetBeta: 2,
-          targetWeightPct: 60,
         },
         {
           id: "second",
           tickerInput: "QLD",
           shares: 10,
-          assetBeta: 2.5,
-          targetWeightPct: 20,
+          assetBeta: 1,
         },
       ],
       quotes,
       cashTwd: 28500,
-      targetBeta: 1.2,
+      leveragedTargetPct: 60,
+      originalTargetPct: 20,
       tolerancePct: 10,
     });
 
-    assert.equal(result.isValid, false);
-    assert.equal(result.errors[0], "正二標的目標比例合計必須等於 100%。");
+    assert.equal(result.isValid, true);
+    assert.equal(result.afterCashRatio, 0.2);
+    assert.equal(result.targetBeta, 1.4);
   });
 
   it("marks original target percent without original allocation as invalid", () => {
@@ -233,17 +215,16 @@ describe("portfolio calculations", () => {
           tickerInput: "00631L",
           shares: 1000,
           assetBeta: 2,
-          targetWeightPct: 100,
         },
       ],
       quotes: [quotes[0]],
       cashTwd: 60000,
-      targetBeta: 1.2,
+      leveragedTargetPct: 40,
       originalTargetPct: 40,
       tolerancePct: 10,
     });
 
     assert.equal(result.isValid, false);
-    assert.equal(result.errors[0], "原形標的目標比例合計必須等於 100%。");
+    assert.equal(result.errors[0], "原形目標比例大於 0 時，請新增至少一個原形標的。");
   });
 });

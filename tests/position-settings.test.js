@@ -3,7 +3,6 @@ import { describe, it } from "node:test";
 
 import {
   getPositionGroups,
-  getPositionGroupTargetStatus,
 } from "../src/lib/position-settings.js";
 
 describe("position settings helpers", () => {
@@ -18,50 +17,5 @@ describe("position settings helpers", () => {
       leveraged: [positions[0], positions[2]],
       original: [positions[1]],
     });
-  });
-
-  it("marks a required section invalid when target weights do not add to 100 percent", () => {
-    assert.deepEqual(
-      getPositionGroupTargetStatus({
-        positions: [
-          { targetWeightPct: 60 },
-          { targetWeightPct: 20 },
-        ],
-        targetRatio: 0.4,
-      }),
-      {
-        totalPct: 80,
-        isRequired: true,
-        isValid: false,
-      },
-    );
-  });
-
-  it("marks a populated section invalid even when its target asset ratio is zero", () => {
-    assert.deepEqual(
-      getPositionGroupTargetStatus({
-        positions: [{ targetWeightPct: 60 }],
-        targetRatio: 0,
-      }),
-      {
-        totalPct: 60,
-        isRequired: true,
-        isValid: false,
-      },
-    );
-  });
-
-  it("does not require target weights for an unused section", () => {
-    assert.deepEqual(
-      getPositionGroupTargetStatus({
-        positions: [],
-        targetRatio: 0,
-      }),
-      {
-        totalPct: 0,
-        isRequired: false,
-        isValid: true,
-      },
-    );
   });
 });
