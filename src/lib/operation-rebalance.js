@@ -33,6 +33,11 @@ function getAssetType(assetBeta) {
   return toNumber(assetBeta) >= 1.5 ? "leveraged" : "original";
 }
 
+export function adjustOperationTargetBeta(value, delta) {
+  const nextValue = Math.min(Math.max(toNumber(value) + toNumber(delta), 0), 2);
+  return Math.round((nextValue + Number.EPSILON) * 100) / 100;
+}
+
 function distributeBuyAmount(rows, amount) {
   const tradeAmounts = new Map();
   let remainingAmount = roundMoney(amount);

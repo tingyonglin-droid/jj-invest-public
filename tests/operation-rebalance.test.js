@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  adjustOperationTargetBeta,
   createOperationRebalance,
   normalizeSelectedRebalanceIds,
 } from "../src/lib/operation-rebalance.js";
@@ -59,6 +60,13 @@ function getAppliedBeta(recommendationsToApply, totalAssetsTwd, precision) {
 }
 
 describe("operation rebalance", () => {
+  it("adjusts the operation target beta in 0.01 steps within the supported range", () => {
+    assert.equal(adjustOperationTargetBeta(1, 0.01), 1.01);
+    assert.equal(adjustOperationTargetBeta(1, -0.01), 0.99);
+    assert.equal(adjustOperationTargetBeta(2, 0.01), 2);
+    assert.equal(adjustOperationTargetBeta(0, -0.01), 0);
+  });
+
   it("defaults every current holding to selected", () => {
     assert.deepEqual(
       normalizeSelectedRebalanceIds({

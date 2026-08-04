@@ -57,6 +57,7 @@ import {
   parseRebalanceRestorePoint,
 } from "../src/lib/rebalance-restore.js";
 import {
+  adjustOperationTargetBeta,
   createOperationRebalance,
 } from "../src/lib/operation-rebalance.js";
 import { createAdviceDisplay } from "../src/lib/advice-summary.js";
@@ -158,6 +159,20 @@ function formatPercent(ratio) {
 function formatSignedPercent(ratio) {
   const safeRatio = Number.isFinite(ratio) ? ratio : 0;
   return `${safeRatio > 0 ? "+" : ""}${formatPercent(safeRatio)}`;
+}
+
+function formatNetTradeAmount(value) {
+  if (Math.abs(value) < 0.5) {
+    return "無調整";
+  }
+  return `${value > 0 ? "淨買入" : "淨賣出"} ${formatTwd(Math.abs(value))}`;
+}
+
+function formatCashDelta(value) {
+  if (Math.abs(value) < 0.5) {
+    return "無變化";
+  }
+  return `${value > 0 ? "淨增加" : "淨減少"} ${formatTwd(Math.abs(value))}`;
 }
 
 function formatQuoteDate(date) {
@@ -1052,6 +1067,7 @@ export default function Home() {
           <OperationsView
             canApplyRebalance={canApplyRebalance}
             appliedSummary={appliedRebalanceSummary}
+            calculation={calculation}
             hasRestorePoint={hasRebalanceRestorePoint}
             operationRebalance={operationRebalance}
             onApplyRebalance={applyOneClickRebalance}
@@ -2030,6 +2046,7 @@ function HistoryChart({ model }) {
 function OperationsView({
   appliedSummary,
   canApplyRebalance,
+  calculation,
   hasRestorePoint,
   operationRebalance,
   onApplyRebalance,
@@ -2064,23 +2081,73 @@ function OperationsView({
               i
             </button>
           </div>
-          <p>
-            共 {appliedSummary.actionCount} 筆操作 / 調整後 Beta {formatNumber(appliedAfterBeta)} / 預估調整{" "}
-            {formatTwd(appliedSummary.totalAmountTwd)}
-          </p>
+          <p>共 {appliedSummary.actionCount} 筆操作，金額依目前交易精度估算。</p>
+        </div>
+      </div>
+      <div className="operationSummaryGrid">
+        <div>
+          <span>目標 Beta</span>
+          <strong>{formatNumber(calculation.targetBeta)}</strong>
+          <small>
+            容忍區間 {formatNumber(calculation.betaLower)}–{formatNumber(calculation.betaUpper)}
+          </small>
+        </div>
+        <div>
+          <span>目前 Beta</span>
+          <strong>{formatNumber(calculation.currentBeta)}</strong>
+        </div>
+        <div>
+          <span>再平衡後 Beta</span>
+          <strong>{formatNumber(appliedAfterBeta)}</strong>
+        </div>
+        <div>
+          <span>正二</span>
+          <strong>{formatNetTradeAmount(appliedSummary.leveragedNetAmountTwd)}</strong>
+        </div>
+        <div>
+          <span>原形</span>
+          <strong>{formatNetTradeAmount(appliedSummary.originalNetAmountTwd)}</strong>
+        </div>
+        <div>
+          <span>現金</span>
+          <strong>{formatCashDelta(appliedSummary.cashDeltaTwd)}</strong>
         </div>
       </div>
       <div className="operationParameterCard">
         <label className="operationBetaField">
           <span>再平衡到 Beta</span>
-          <input
-            type="number"
-            min="0"
-            max="2"
-            step="0.01"
-            value={rebalanceTargetBeta}
-            onChange={(event) => onTargetBetaChange(event.target.value)}
-          />
+          <div className="operationBetaStepper">
+            <input
+              type="number"
+              min="0"
+              max="2"
+              step="0.01"
+              value={rebalanceTargetBeta}
+              onChange={(event) => onTargetBetaChange(event.target.value)}
+            />
+            <div className="operationBetaStepButtons">
+              <button
+                type="button"
+                aria-label="提高再平衡 Beta 0.01"
+                disabled={Number(rebalanceTargetBeta) >= 2}
+                onClick={() => onTargetBetaChange(
+                  adjustOperationTargetBeta(rebalanceTargetBeta, 0.01),
+                )}
+              >
+                ＋
+              </button>
+              <button
+                type="button"
+                aria-label="降低再平衡 Beta 0.01"
+                disabled={Number(rebalanceTargetBeta) <= 0}
+                onClick={() => onTargetBetaChange(
+                  adjustOperationTargetBeta(rebalanceTargetBeta, -0.01),
+                )}
+              >
+                −
+              </button>
+            </div>
+          </div>
         </label>
         <div className="operationPrecisionField">
           <span>台股交易精度</span>

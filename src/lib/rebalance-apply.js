@@ -45,22 +45,43 @@ export function getAppliedRebalanceShareDelta(recommendation, precision = "share
 }
 
 export function getAppliedRebalanceSummary({ recommendations, precision = "shares" }) {
-  return recommendations.reduce(
+  const summary = recommendations.reduce(
     (summary, recommendation) => {
       const appliedDeltaShares = getAppliedRebalanceShareDelta(recommendation, precision);
       if (appliedDeltaShares === 0) {
         return summary;
       }
 
+      const appliedAmountTwd = appliedDeltaShares * toNumber(recommendation.priceTwd);
+      const sleeveKey = toNumber(recommendation.assetBeta) >= 1.5
+        ? "leveragedNetAmountTwd"
+        : "originalNetAmountTwd";
+
       return {
+        ...summary,
         actionCount: summary.actionCount + 1,
         totalAmountTwd: roundCash(
-          summary.totalAmountTwd + Math.abs(appliedDeltaShares * toNumber(recommendation.priceTwd)),
+          summary.totalAmountTwd + Math.abs(appliedAmountTwd),
         ),
+        [sleeveKey]: summary[sleeveKey] + appliedAmountTwd,
       };
     },
-    { actionCount: 0, totalAmountTwd: 0 },
+    {
+      actionCount: 0,
+      totalAmountTwd: 0,
+      leveragedNetAmountTwd: 0,
+      originalNetAmountTwd: 0,
+    },
   );
+
+  return {
+    ...summary,
+    leveragedNetAmountTwd: roundCash(summary.leveragedNetAmountTwd),
+    originalNetAmountTwd: roundCash(summary.originalNetAmountTwd),
+    cashDeltaTwd: roundCash(
+      -(summary.leveragedNetAmountTwd + summary.originalNetAmountTwd),
+    ),
+  };
 }
 
 export function applyRebalanceToState({ positions, cashTwd, recommendations, precision }) {

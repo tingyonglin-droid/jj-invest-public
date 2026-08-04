@@ -8,8 +8,17 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(page, /再平衡參數設定/);
   assert.match(page, /再平衡/);
   assert.match(page, /再平衡到 Beta/);
-  assert.match(page, /調整後 Beta/);
-  assert.match(page, /預估調整/);
+  assert.match(page, /目標 Beta/);
+  assert.match(page, /容忍區間/);
+  assert.match(page, /目前 Beta/);
+  assert.match(page, /再平衡後 Beta/);
+  assert.match(page, /正二/);
+  assert.match(page, /原形/);
+  assert.match(page, /現金/);
+  assert.match(page, /淨買入/);
+  assert.match(page, /淨賣出/);
+  assert.match(page, /淨增加/);
+  assert.match(page, /淨減少/);
   assert.match(page, /getAppliedRebalanceSummary/);
   assert.match(page, /appliedSummary\.actionCount/);
   assert.doesNotMatch(page, /summary\.actionCount/);
@@ -19,6 +28,8 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(page, /不納入再平衡清單/);
   assert.doesNotMatch(page, /<h2>再平衡操作清單<\/h2>/);
   assert.doesNotMatch(page, /<span>納入本次再平衡<\/span>/);
+  assert.match(page, /aria-label="降低再平衡 Beta 0\.01"/);
+  assert.match(page, /aria-label="提高再平衡 Beta 0\.01"/);
 });
 
 test("operations page places precision in parameters and apply action after the list", async () => {

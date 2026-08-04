@@ -123,4 +123,59 @@ describe("apply rebalance", () => {
     assert.equal(summary.actionCount, 1);
     assert.equal(summary.totalAmountTwd, 120000);
   });
+
+  it("summarizes applied net trades by sleeve and the matching cash change", () => {
+    const summary = getAppliedRebalanceSummary({
+      recommendations: [
+        {
+          id: "leveraged-buy",
+          normalizedTicker: "00631L.TW",
+          shares: 1000,
+          assetBeta: 2,
+          tradeAmountTwd: 46000,
+          priceTwd: 40,
+        },
+        {
+          id: "original-sell",
+          normalizedTicker: "0050.TW",
+          shares: 1000,
+          assetBeta: 1,
+          tradeAmountTwd: -25200,
+          priceTwd: 25,
+        },
+      ],
+      precision: "lots",
+    });
+
+    assert.equal(summary.leveragedNetAmountTwd, 40000);
+    assert.equal(summary.originalNetAmountTwd, -25000);
+    assert.equal(summary.cashDeltaTwd, -15000);
+  });
+
+  it("rounds sleeve and cash net amounts after combining fractional trades", () => {
+    const summary = getAppliedRebalanceSummary({
+      recommendations: [
+        {
+          id: "fraction-a",
+          normalizedTicker: "QLD",
+          shares: 0,
+          assetBeta: 2,
+          tradeAmountTwd: 0.4,
+          priceTwd: 0.4,
+        },
+        {
+          id: "fraction-b",
+          normalizedTicker: "SSO",
+          shares: 0,
+          assetBeta: 2,
+          tradeAmountTwd: 0.4,
+          priceTwd: 0.4,
+        },
+      ],
+      precision: "shares",
+    });
+
+    assert.equal(summary.leveragedNetAmountTwd, 1);
+    assert.equal(summary.cashDeltaTwd, -1);
+  });
 });

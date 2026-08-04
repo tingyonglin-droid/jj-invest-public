@@ -1624,6 +1624,38 @@ p {
   background: var(--card-soft);
 }
 
+.operationSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.operationSummaryGrid > div {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid rgba(17, 24, 33, 0.07);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.operationSummaryGrid span,
+.operationSummaryGrid small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.4;
+}
+
+.operationSummaryGrid strong {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 840;
+  line-height: 1.3;
+}
+
 .operationBetaField,
 .operationPrecisionField {
   display: grid;
@@ -1634,6 +1666,55 @@ p {
   min-height: 52px;
   font-size: 22px;
   font-weight: 820;
+}
+
+.operationBetaStepper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.operationBetaStepper input {
+  width: 100%;
+  min-width: 0;
+}
+
+.operationBetaStepButtons {
+  display: grid;
+  grid-template-columns: repeat(2, 48px);
+  gap: 6px;
+}
+
+.operationBetaStepButtons button {
+  min-width: 48px;
+  min-height: 52px;
+  padding: 0;
+  border: 1px solid rgba(17, 24, 33, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 820;
+  cursor: pointer;
+}
+
+.operationBetaStepButtons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+@media (max-width: 640px) {
+  .operationSummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .operationBetaStepButtons {
+    grid-template-columns: repeat(2, 44px);
+  }
+
+  .operationBetaStepButtons button {
+    min-width: 44px;
+  }
 }
 
 .operationBetaField span,
