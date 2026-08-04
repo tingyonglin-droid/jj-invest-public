@@ -16,6 +16,7 @@ import {
   createBenchmarkDrawdownChart,
   getMarketChartScrollLeft,
   getMarketLevelLabel,
+  getNearestMarketPointIndex,
 } from "../src/lib/benchmark-drawdown-chart.js";
 import {
   createAnalyticsClient,
@@ -1299,6 +1300,23 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
     setChartMode((current) => current === "detail" ? "overview" : "detail");
   }
 
+  function handleChartClick(event) {
+    if (chartMode !== "overview") {
+      setActivePointDate(null);
+      return;
+    }
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (bounds.width <= 0) {
+      return;
+    }
+    const chartX = ((event.clientX - bounds.left) / bounds.width) * chart.width;
+    const nearestIndex = getNearestMarketPointIndex(chart.points, chartX);
+    if (nearestIndex !== null) {
+      const nearestDate = chart.points[nearestIndex].date;
+      setActivePointDate((current) => current === nearestDate ? null : nearestDate);
+    }
+  }
+
   return (
     <section className={`appCard marketLevelCard ${benchmarkDrawdown.level}`}>
       <div className="marketLevelHeader">
@@ -1351,7 +1369,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
           viewBox={chart.viewBox}
           role="group"
           aria-label="0050 自最新歷史最高收盤價以來的市場水位走勢圖"
-          onClick={() => setActivePointDate(null)}
+          onClick={handleChartClick}
         >
           <rect className="marketBand normal" x="0" y="40" width={chart.width} height="100" />
           <rect className="marketBand prepare" x="0" y="140" width={chart.width} height="100" />

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   createBenchmarkDrawdownChart,
+  getNearestMarketPointIndex,
   getMarketLevelLabel,
   toggleActiveMarketPoint,
 } from "../src/lib/benchmark-drawdown-chart.js";
@@ -116,6 +117,14 @@ describe("benchmark drawdown chart", () => {
     assert.equal(toggleActiveMarketPoint(null, 2), 2);
     assert.equal(toggleActiveMarketPoint(2, 5), 5);
     assert.equal(toggleActiveMarketPoint(5, 5), null);
+  });
+
+  it("selects the nearest overview point from a rendered chart coordinate", () => {
+    const points = [{ x: 92 }, { x: 405 }, { x: 718 }];
+    assert.equal(getNearestMarketPointIndex(points, 100), 0);
+    assert.equal(getNearestMarketPointIndex(points, 390), 1);
+    assert.equal(getNearestMarketPointIndex(points, 700), 2);
+    assert.equal(getNearestMarketPointIndex([], 100), null);
   });
 
   it("targets the newest edge when the chart is wider than its viewport", () => {

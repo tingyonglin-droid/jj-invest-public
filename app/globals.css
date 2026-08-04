@@ -3934,16 +3934,16 @@ select {
   .marketLevelChartWrap.overview .marketThresholdRatio,
   .marketLevelChartWrap.overview .marketThresholdPrice,
   .marketLevelChartWrap.overview .marketPointPercent {
-    font-size: 22px;
+    font-size: 30px;
   }
 
   .marketLevelChartWrap.overview .marketPointDate {
-    font-size: 23px;
+    font-size: 32px;
   }
 
   .marketLevelChartWrap.overview .marketPointWeekday,
   .marketLevelChartWrap.overview .marketPointTooltip text {
-    font-size: 20px;
+    font-size: 28px;
   }
 
   .marketLevelChartWrap.overview .marketPoint {

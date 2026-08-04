@@ -30,6 +30,7 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /aria-pressed=\{chartMode === "overview"\}/);
     assert.match(pageSource, /activePointDate/);
     assert.match(pageSource, /activePointDate === point\.date/);
+    assert.match(pageSource, /getNearestMarketPointIndex/);
     assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
     assert.match(pageSource, /股災區間/);
     assert.doesNotMatch(pageSource, /風險區間/);

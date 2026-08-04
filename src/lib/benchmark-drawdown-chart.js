@@ -73,6 +73,16 @@ export function toggleActiveMarketPoint(currentIndex, clickedIndex) {
   return currentIndex === clickedIndex ? null : clickedIndex;
 }
 
+export function getNearestMarketPointIndex(points, chartX) {
+  const records = Array.isArray(points) ? points : [];
+  const x = Number(chartX);
+  if (records.length === 0 || !Number.isFinite(x)) {
+    return null;
+  }
+  return records.reduce((nearestIndex, point, index) =>
+    Math.abs(point.x - x) < Math.abs(records[nearestIndex].x - x) ? index : nearestIndex, 0);
+}
+
 export function getMarketChartScrollLeft(scrollWidth, mode = "detail") {
   if (mode === "overview") {
     return 0;
