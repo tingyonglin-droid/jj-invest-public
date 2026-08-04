@@ -89,9 +89,18 @@ describe("benchmark drawdown chart", () => {
     );
     assert.equal(overview.points[0].showDateLabel, true);
     assert.equal(overview.points.at(-1).showDateLabel, true);
-    assert.ok(
-      overview.points.filter(({ showPercentLabel }) => showPercentLabel).length <
-        model.points.filter(({ showPercentLabel }) => showPercentLabel).length,
+    assert.equal(
+      overview.points.filter(({ showPercentLabel }) => showPercentLabel).length,
+      0,
+    );
+    const overviewDateLabels = overview.points.filter(({ showDateLabel }) => showDateLabel);
+    assert.ok(overviewDateLabels.length >= 4);
+    assert.ok(overviewDateLabels.length <= 5);
+    assert.equal(overviewDateLabels[0].date, history[0].date);
+    assert.equal(overviewDateLabels.at(-1).date, history.at(-1).date);
+    assert.equal(
+      model.points.filter(({ showPercentLabel }) => showPercentLabel).length,
+      history.length,
     );
   });
 

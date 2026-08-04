@@ -32,8 +32,10 @@ export function createBenchmarkDrawdownChart(history, highPrice, options = {}) {
         );
   const plot = { ...PLOT, right: width - RIGHT_PADDING };
   const step = records.length > 1 ? (plot.right - plot.left) / (records.length - 1) : 0;
-  const labelTarget = mode === "overview" ? 8 : 12;
-  const labelEvery = Math.max(1, Math.ceil(records.length / labelTarget));
+  const labelEvery =
+    mode === "overview"
+      ? Math.max(1, Math.ceil(Math.max(0, records.length - 1) / 4))
+      : Math.max(1, Math.ceil(records.length / 12));
   const points = records.map((record, index) => {
     const x = round(
       records.length === 1 ? (plot.left + plot.right) / 2 : plot.left + step * index,
@@ -47,8 +49,7 @@ export function createBenchmarkDrawdownChart(history, highPrice, options = {}) {
       tooltipX: round(x + (isFirst ? 12 : isLast ? -12 : 0)),
       tooltipAnchor: isFirst ? "start" : isLast ? "end" : "middle",
       showDateLabel: isFirst || isLast || index % labelEvery === 0,
-      showPercentLabel:
-        mode === "detail" || isFirst || isLast || index % labelEvery === 0,
+      showPercentLabel: mode === "detail",
     };
   });
 
