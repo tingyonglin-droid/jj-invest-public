@@ -1,5 +1,5 @@
 const MIN_WIDTH = 760;
-const VIEWBOX_HEIGHT = 430;
+const VIEWBOX_HEIGHT = 400;
 const POINT_GAP = 44;
 const RIGHT_PADDING = 42;
 const PLOT = Object.freeze({ left: 92, right: 718, top: 40, bottom: 340 });

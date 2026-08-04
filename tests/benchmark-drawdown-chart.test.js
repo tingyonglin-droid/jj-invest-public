@@ -74,8 +74,8 @@ describe("benchmark drawdown chart", () => {
     assert.equal(model.mode, "detail");
     assert.equal(model.points.length, 24);
     assert.equal(model.width, 1146);
-    assert.equal(model.height, 430);
-    assert.equal(model.viewBox, "0 0 1146 430");
+    assert.equal(model.height, 400);
+    assert.equal(model.viewBox, "0 0 1146 400");
     assert.ok(model.points[1].x - model.points[0].x >= 44);
     assert.equal(model.points[0].showDateLabel, true);
     assert.equal(model.points.at(-1).showDateLabel, true);

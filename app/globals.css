@@ -407,7 +407,7 @@ p {
 }
 
 .marketLevelCard {
-  gap: 10px;
+  gap: 6px;
   overflow: hidden;
   padding: 0;
   border-color: rgba(186, 194, 204, 0.42);
@@ -430,7 +430,7 @@ p {
   grid-template-columns: minmax(180px, 1fr) minmax(340px, auto);
   gap: 24px;
   align-items: start;
-  padding: 18px 22px 4px;
+  padding: 12px 22px 0;
 }
 
 .marketLevelHeading {
@@ -594,8 +594,7 @@ p {
 .marketThresholdRatio,
 .marketThresholdPrice,
 .marketPointPercent,
-.marketPointDate,
-.marketPointWeekday {
+.marketPointDate {
   fill: #252d38;
   font-variant-numeric: tabular-nums;
 }
@@ -614,11 +613,6 @@ p {
 .marketPointDate {
   font-size: 14px;
   font-weight: 780;
-}
-
-.marketPointWeekday {
-  font-size: 12px;
-  font-weight: 680;
 }
 
 .marketTrendLine {
@@ -3913,13 +3907,13 @@ select {
 
 @media (max-width: 760px) {
   .marketLevelCard {
-    gap: 6px;
+    gap: 2px;
   }
 
   .marketLevelHeader {
     grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 14px 18px 2px;
+    gap: 4px;
+    padding: 8px 18px 0;
   }
 
   .marketLevelSummaries {
@@ -3932,6 +3926,7 @@ select {
 
   .marketLevelChart {
     min-height: 245px;
+    margin-top: -10px;
   }
 
   .marketLevelViewButton {
@@ -3943,14 +3938,13 @@ select {
   .marketLevelChartWrap.overview .marketThresholdRatio,
   .marketLevelChartWrap.overview .marketThresholdPrice,
   .marketLevelChartWrap.overview .marketPointPercent {
-    font-size: 30px;
+    font-size: 24px;
   }
 
   .marketLevelChartWrap.overview .marketPointDate {
-    font-size: 32px;
+    font-size: 24px;
   }
 
-  .marketLevelChartWrap.overview .marketPointWeekday,
   .marketLevelChartWrap.overview .marketPointTooltip text {
     font-size: 28px;
   }
@@ -3970,7 +3964,6 @@ select {
     font-size: 12px;
   }
 
-  .marketPointWeekday,
   .marketPointTooltip text {
     font-size: 10px;
   }

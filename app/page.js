@@ -1399,10 +1399,6 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
           <polyline className="marketTrendLine" points={chart.linePoints} />
 
           {chart.points.map((point, index) => {
-            const date = new Date(`${point.date}T12:00:00+08:00`);
-            const weekday = new Intl.DateTimeFormat("zh-TW", { weekday: "short" })
-              .format(date)
-              .replace("週", "");
             const shortDate = point.date.slice(5).replace("-", "/");
             const isActive = activePointDate === point.date;
             return (
@@ -1432,10 +1428,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
                   aria-hidden="true"
                 />
                 {point.showDateLabel && (
-                  <>
-                    <text className="marketPointDate" x={point.x} y="372" textAnchor="middle">{shortDate}</text>
-                    <text className="marketPointWeekday" x={point.x} y="398" textAnchor="middle">（{weekday}）</text>
-                  </>
+                  <text className="marketPointDate" x={point.x} y="374" textAnchor="middle">{shortDate}</text>
                 )}
               </g>
             );

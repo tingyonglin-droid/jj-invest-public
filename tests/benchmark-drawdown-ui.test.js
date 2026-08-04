@@ -35,11 +35,16 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
     assert.match(pageSource, /marketLevelTitleActions/);
     assert.match(pageSource, /cardTitleRow[\s\S]*marketLevelViewButton/);
+    assert.doesNotMatch(pageSource, /marketPointWeekday/);
     assert.doesNotMatch(pageSource, /marketLevelChartToolbar/);
     assert.match(pageSource, /股災區間/);
     assert.doesNotMatch(pageSource, /風險區間/);
     assert.match(cssSource, /\.marketLevelTitleActions/);
     assert.match(cssSource, /\.marketLevelViewButton[\s\S]*min-height:\s*44px/);
+    assert.match(
+      cssSource,
+      /\.marketLevelChartWrap\.overview \.marketBandName,[\s\S]*?font-size:\s*24px/,
+    );
     assert.doesNotMatch(cssSource, /\.marketLevelChartToolbar/);
   });
 });
