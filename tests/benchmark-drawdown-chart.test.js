@@ -59,6 +59,25 @@ describe("benchmark drawdown chart", () => {
     assert.equal(model.points.at(-1).tooltipX, 706);
   });
 
+  it("grows wide charts without dropping trading dates", () => {
+    const history = Array.from({ length: 24 }, (_, index) => ({
+      date: `2026-07-${String(index + 1).padStart(2, "0")}`,
+      price: 100 - index,
+      drawdownRatio: -index / 100,
+      level: index < 10 ? "normal" : index < 20 ? "prepare" : "deep",
+    }));
+    const model = createBenchmarkDrawdownChart(history, 100);
+
+    assert.equal(model.points.length, 24);
+    assert.equal(model.width, 1146);
+    assert.equal(model.height, 430);
+    assert.equal(model.viewBox, "0 0 1146 430");
+    assert.ok(model.points[1].x - model.points[0].x >= 44);
+    assert.equal(model.points[0].showDateLabel, true);
+    assert.equal(model.points.at(-1).showDateLabel, true);
+    assert.equal(model.plot.right, model.width - 42);
+  });
+
   it("opens, switches, and closes one active point at a time", () => {
     assert.equal(toggleActiveMarketPoint(null, 2), 2);
     assert.equal(toggleActiveMarketPoint(2, 5), 5);

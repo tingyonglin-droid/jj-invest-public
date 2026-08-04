@@ -1,5 +1,7 @@
-const VIEWBOX_WIDTH = 760;
+const MIN_WIDTH = 760;
 const VIEWBOX_HEIGHT = 430;
+const POINT_GAP = 44;
+const RIGHT_PADDING = 42;
 const PLOT = Object.freeze({ left: 92, right: 718, top: 40, bottom: 340 });
 
 const MARKET_LEVEL_LABELS = Object.freeze({
@@ -20,9 +22,17 @@ function drawdownY(ratio) {
 
 export function createBenchmarkDrawdownChart(history, highPrice) {
   const records = Array.isArray(history) ? history : [];
-  const step = records.length > 1 ? (PLOT.right - PLOT.left) / (records.length - 1) : 0;
+  const width = Math.max(
+    MIN_WIDTH,
+    PLOT.left + RIGHT_PADDING + Math.max(0, records.length - 1) * POINT_GAP,
+  );
+  const plot = { ...PLOT, right: width - RIGHT_PADDING };
+  const step = records.length > 1 ? (plot.right - plot.left) / (records.length - 1) : 0;
+  const labelEvery = Math.max(1, Math.ceil(records.length / 12));
   const points = records.map((record, index) => {
-    const x = round(records.length === 1 ? (PLOT.left + PLOT.right) / 2 : PLOT.left + step * index);
+    const x = round(
+      records.length === 1 ? (plot.left + plot.right) / 2 : plot.left + step * index,
+    );
     const isFirst = index === 0;
     const isLast = index === records.length - 1;
     return {
@@ -31,12 +41,15 @@ export function createBenchmarkDrawdownChart(history, highPrice) {
       y: drawdownY(record.drawdownRatio),
       tooltipX: round(x + (isFirst ? 12 : isLast ? -12 : 0)),
       tooltipAnchor: isFirst ? "start" : isLast ? "end" : "middle",
+      showDateLabel: isFirst || isLast || index % labelEvery === 0,
     };
   });
 
   return {
-    viewBox: `0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`,
-    plot: PLOT,
+    width,
+    height: VIEWBOX_HEIGHT,
+    viewBox: `0 0 ${width} ${VIEWBOX_HEIGHT}`,
+    plot,
     points,
     linePoints: points.map((point) => `${point.x},${point.y}`).join(" "),
     thresholds: [0, -0.1, -0.2].map((ratio) => ({
