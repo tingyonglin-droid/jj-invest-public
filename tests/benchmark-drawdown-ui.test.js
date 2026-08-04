@@ -28,6 +28,8 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /看全部曲線/);
     assert.match(pageSource, /查看詳細點位/);
     assert.match(pageSource, /aria-pressed=\{chartMode === "overview"\}/);
+    assert.match(pageSource, /activePointDate/);
+    assert.match(pageSource, /activePointDate === point\.date/);
     assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
     assert.match(pageSource, /股災區間/);
     assert.doesNotMatch(pageSource, /風險區間/);

@@ -56,7 +56,7 @@ export function createBenchmarkDrawdownChart(history, highPrice, options = {}) {
     mode,
     width,
     height: VIEWBOX_HEIGHT,
-    scrollKey: `${records.length}:${records.at(-1)?.date || ""}`,
+    scrollKey: `${records.length}:${records[0]?.date || ""}:${records.at(-1)?.date || ""}`,
     viewBox: `0 0 ${width} ${VIEWBOX_HEIGHT}`,
     plot,
     points,

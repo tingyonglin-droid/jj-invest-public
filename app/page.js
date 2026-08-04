@@ -16,7 +16,6 @@ import {
   createBenchmarkDrawdownChart,
   getMarketChartScrollLeft,
   getMarketLevelLabel,
-  toggleActiveMarketPoint,
 } from "../src/lib/benchmark-drawdown-chart.js";
 import {
   createAnalyticsClient,
@@ -1250,7 +1249,7 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
 }
 
 function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
-  const [activePointIndex, setActivePointIndex] = useState(null);
+  const [activePointDate, setActivePointDate] = useState(null);
   const [chartMode, setChartMode] = useState("detail");
   const chartScrollRef = useRef(null);
   const chart = createBenchmarkDrawdownChart(
@@ -1270,7 +1269,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
     return null;
   }
 
-  const activePoint = activePointIndex === null ? null : chart.points[activePointIndex];
+  const activePoint = chart.points.find((point) => point.date === activePointDate) || null;
   const tooltipLeft = activePoint
     ? activePoint.tooltipAnchor === "start"
       ? activePoint.tooltipX
@@ -1284,7 +1283,8 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
 
   function activatePoint(event, index) {
     event.stopPropagation();
-    setActivePointIndex((current) => toggleActiveMarketPoint(current, index));
+    const clickedDate = chart.points[index]?.date || null;
+    setActivePointDate((current) => current === clickedDate ? null : clickedDate);
   }
 
   function handlePointKeyDown(event, index) {
@@ -1295,7 +1295,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
   }
 
   function toggleChartMode() {
-    setActivePointIndex(null);
+    setActivePointDate(null);
     setChartMode((current) => current === "detail" ? "overview" : "detail");
   }
 
@@ -1351,7 +1351,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
           viewBox={chart.viewBox}
           role="group"
           aria-label="0050 自最新歷史最高收盤價以來的市場水位走勢圖"
-          onClick={() => setActivePointIndex(null)}
+          onClick={() => setActivePointDate(null)}
         >
           <rect className="marketBand normal" x="0" y="40" width={chart.width} height="100" />
           <rect className="marketBand prepare" x="0" y="140" width={chart.width} height="100" />
@@ -1387,7 +1387,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
               .format(date)
               .replace("週", "");
             const shortDate = point.date.slice(5).replace("-", "/");
-            const isActive = activePointIndex === index;
+            const isActive = activePointDate === point.date;
             return (
               <g key={point.date}>
                 {point.showPercentLabel && (
@@ -1396,16 +1396,23 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
                   </text>
                 )}
                 <circle
-                  className={`marketPoint ${point.level}${isActive ? " active" : ""}`}
+                  className="marketPointHitArea"
                   cx={point.x}
                   cy={point.y}
-                  r="8"
+                  r="18"
                   role="button"
                   tabIndex="0"
                   aria-pressed={isActive}
                   aria-label={`${point.date}，0050 股價 ${formatNumber(point.price, 2)}，市場水位 ${formatSignedPercent(point.drawdownRatio)}，${getMarketLevelLabel(point.level)}`}
                   onClick={(event) => activatePoint(event, index)}
                   onKeyDown={(event) => handlePointKeyDown(event, index)}
+                />
+                <circle
+                  className={`marketPoint ${point.level}${isActive ? " active" : ""}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r="8"
+                  aria-hidden="true"
                 />
                 {point.showDateLabel && (
                   <>

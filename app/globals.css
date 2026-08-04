@@ -622,11 +622,24 @@ p {
 }
 
 .marketPoint {
-  cursor: pointer;
+  pointer-events: none;
   stroke: #fff;
   stroke-width: 2;
   transition: r 150ms ease, stroke-width 150ms ease;
   touch-action: manipulation;
+}
+
+.marketPointHitArea {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+  touch-action: manipulation;
+}
+
+.marketPointHitArea:focus-visible {
+  fill: rgba(36, 135, 94, 0.14);
+  stroke: #18202a;
+  stroke-width: 2;
 }
 
 .marketPoint.normal {
@@ -3915,6 +3928,26 @@ select {
 
   .marketLevelChartToolbar {
     padding-inline: 18px;
+  }
+
+  .marketLevelChartWrap.overview .marketBandName,
+  .marketLevelChartWrap.overview .marketThresholdRatio,
+  .marketLevelChartWrap.overview .marketThresholdPrice,
+  .marketLevelChartWrap.overview .marketPointPercent {
+    font-size: 22px;
+  }
+
+  .marketLevelChartWrap.overview .marketPointDate {
+    font-size: 23px;
+  }
+
+  .marketLevelChartWrap.overview .marketPointWeekday,
+  .marketLevelChartWrap.overview .marketPointTooltip text {
+    font-size: 20px;
+  }
+
+  .marketLevelChartWrap.overview .marketPoint {
+    r: 12px;
   }
 
   .marketBandName,

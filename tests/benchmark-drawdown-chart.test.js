@@ -103,7 +103,13 @@ describe("benchmark drawdown chart", () => {
 
     assert.equal(emptyModel.width, loadedModel.width);
     assert.notEqual(emptyModel.scrollKey, loadedModel.scrollKey);
-    assert.equal(loadedModel.scrollKey, "1:2026-06-22");
+    assert.equal(loadedModel.scrollKey, "1:2026-06-22:2026-06-22");
+
+    const restartedModel = createBenchmarkDrawdownChart(
+      [{ date: "2026-07-01", price: 100, drawdownRatio: 0, level: "normal" }],
+      100,
+    );
+    assert.notEqual(loadedModel.scrollKey, restartedModel.scrollKey);
   });
 
   it("opens, switches, and closes one active point at a time", () => {
