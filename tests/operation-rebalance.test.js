@@ -79,10 +79,77 @@ describe("operation rebalance", () => {
     });
 
     assert.equal(result.afterBeta, 1.4);
-    assert.equal(result.recommendations[0].targetValueTwd, 30000);
-    assert.equal(result.recommendations[1].targetValueTwd, 30000);
+    assert.equal(result.recommendations[0].targetValueTwd, 25000);
+    assert.equal(result.recommendations[1].targetValueTwd, 35000);
     assert.equal(result.recommendations[2].targetValueTwd, 20000);
     assert.equal(result.summary.totalAmountTwd, 40000);
+  });
+
+  it("buys every selected holding in a sleeve when that sleeve needs more exposure", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 40000, shares: 1000 },
+        { ...recommendations[1], currentValueTwd: 0, shares: 0 },
+        { ...recommendations[2], currentValueTwd: 20000, shares: 2000 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b", "original-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.2,
+      originalTargetRatio: 0.2,
+    });
+
+    assert.deepEqual(
+      result.recommendations.map((item) => item.tradeAmountTwd),
+      [5000, 5000, 0],
+    );
+    assert.deepEqual(
+      result.recommendations.map((item) => item.action),
+      ["buy", "buy", "none"],
+    );
+    assert.equal(result.afterBeta, 1.2);
+  });
+
+  it("leaves zero-share holdings untouched when their sleeve needs less exposure", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 60000, shares: 1500 },
+        { ...recommendations[1], currentValueTwd: 0, shares: 0 },
+        { ...recommendations[2], currentValueTwd: 20000, shares: 2000 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b", "original-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1,
+      originalTargetRatio: 0.2,
+    });
+
+    assert.deepEqual(
+      result.recommendations.map((item) => item.tradeAmountTwd),
+      [-20000, 0, 0],
+    );
+    assert.deepEqual(
+      result.recommendations.map((item) => item.action),
+      ["sell", "none", "none"],
+    );
+    assert.equal(result.afterBeta, 1);
+  });
+
+  it("redistributes an unsatisfied equal sale across the remaining selected holdings", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 5000, shares: 125 },
+        { ...recommendations[1], currentValueTwd: 35000, shares: 700 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b"],
+      totalAssetsTwd: 100000,
+      targetBeta: 0.4,
+      originalTargetRatio: 0,
+    });
+
+    assert.deepEqual(
+      result.recommendations.map((item) => item.tradeAmountTwd),
+      [-5000, -15000],
+    );
+    assert.equal(result.afterBeta, 0.4);
   });
 
   it("keeps unselected holdings untouched and reallocates selected holdings", () => {
