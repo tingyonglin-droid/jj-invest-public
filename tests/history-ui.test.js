@@ -75,5 +75,6 @@ describe("history UI", () => {
     assert.match(pageSource, /新資金投入 \/ 提領/);
     assert.match(pageSource, /資料修正/);
     assert.match(pageSource, /addHistoryPerformanceAdjustment/);
+    assert.match(pageSource, /useState\("external"\)/);
   });
 });

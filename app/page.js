@@ -376,7 +376,7 @@ export default function Home() {
   const [rebalanceRestoreStatus, setRebalanceRestoreStatus] = useState("");
   const [hasHistoryRestorePoint, setHasHistoryRestorePoint] = useState(false);
   const [historyRestoreStatus, setHistoryRestoreStatus] = useState("");
-  const [cashChangeReason, setCashChangeReason] = useState("fee");
+  const [cashChangeReason, setCashChangeReason] = useState("external");
   const analyticsClient = useMemo(
     () =>
       createAnalyticsClient({
