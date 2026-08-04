@@ -34,10 +34,14 @@ function normalizePriceRecord(item) {
 }
 
 export function createBenchmarkDrawdown(prices, options = {}) {
-  const validPrices = (Array.isArray(prices) ? prices : [])
-    .map(normalizePriceRecord)
-    .filter(Boolean)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const priceByDate = new Map();
+  (Array.isArray(prices) ? prices : []).forEach((item) => {
+    const normalized = normalizePriceRecord(item);
+    if (normalized) {
+      priceByDate.set(normalized.date, normalized);
+    }
+  });
+  const validPrices = [...priceByDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 
   if (!validPrices.length) {
     return null;
@@ -50,6 +54,22 @@ export function createBenchmarkDrawdown(prices, options = {}) {
     validPrices[0],
   );
 
+  if (liveCurrent) {
+    priceByDate.set(liveCurrent.date, liveCurrent);
+  }
+
+  const history = [...priceByDate.values()]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-7)
+    .map((item) => {
+      const itemDrawdownRatio = roundNumber(item.price / high.price - 1);
+      return {
+        ...item,
+        drawdownRatio: itemDrawdownRatio,
+        level: getBenchmarkDrawdownLevel(itemDrawdownRatio),
+      };
+    });
+
   const drawdownRatio = roundNumber(current.price / high.price - 1);
 
   return {
@@ -59,5 +79,7 @@ export function createBenchmarkDrawdown(prices, options = {}) {
     highPrice: roundNumber(high.price),
     drawdownRatio,
     level: getBenchmarkDrawdownLevel(drawdownRatio),
+    currentSource: liveCurrent ? "live" : "close",
+    history,
   };
 }
