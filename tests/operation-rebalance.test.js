@@ -321,4 +321,35 @@ describe("operation rebalance", () => {
     assert.ok(corrected.correctedTargetBeta < 1.2);
     assert.equal(corrected.appliedAfterBeta, Number(correctedAppliedBeta.toFixed(4)));
   });
+
+  it("allocates a custom sleeve by target weights", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 40000 },
+        { ...recommendations[1], currentValueTwd: 0, shares: 0 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.2,
+      originalTargetRatio: 0,
+      allocationModes: { leveraged: "custom", original: "auto" },
+    });
+
+    assert.deepEqual(result.recommendations.map((item) => item.targetValueTwd), [36000, 24000]);
+    assert.deepEqual(result.recommendations.map((item) => item.tradeAmountTwd), [-4000, 24000]);
+  });
+
+  it("keeps an unselected custom holding and allocates the remainder by selected weights", () => {
+    const result = createOperationRebalance({
+      recommendations,
+      selectedIds: ["leveraged-a", "original-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.4,
+      originalTargetRatio: 0.2,
+      allocationModes: { leveraged: "custom", original: "custom" },
+    });
+
+    assert.equal(result.recommendations[1].targetValueTwd, 50000);
+    assert.equal(result.recommendations[0].targetValueTwd, 10000);
+  });
 });

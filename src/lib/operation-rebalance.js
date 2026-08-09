@@ -132,6 +132,7 @@ export function createOperationRebalance({
   targetBeta,
   originalTargetRatio,
   precision = null,
+  allocationModes = {},
 }) {
   if (precision) {
     return createSmartOperationRebalance({
@@ -141,6 +142,7 @@ export function createOperationRebalance({
       targetBeta,
       originalTargetRatio,
       precision,
+      allocationModes,
     });
   }
 
@@ -150,6 +152,7 @@ export function createOperationRebalance({
     totalAssetsTwd,
     targetBeta,
     originalTargetRatio,
+    allocationModes,
   });
 }
 
@@ -160,6 +163,7 @@ function createSmartOperationRebalance({
   targetBeta,
   originalTargetRatio,
   precision,
+  allocationModes,
 }) {
   const desiredBeta = toNumber(targetBeta);
   let bestResult = null;
@@ -177,6 +181,7 @@ function createSmartOperationRebalance({
       totalAssetsTwd,
       targetBeta: candidateBeta,
       originalTargetRatio,
+      allocationModes,
     });
     const appliedAfterBeta = calculateAppliedAfterBeta({
       recommendations: result.recommendations,
@@ -210,6 +215,7 @@ function createSmartOperationRebalance({
     totalAssetsTwd,
     targetBeta,
     originalTargetRatio,
+    allocationModes,
   });
 }
 
@@ -248,6 +254,7 @@ function createOperationRebalanceForTarget({
   totalAssetsTwd,
   targetBeta,
   originalTargetRatio,
+  allocationModes = {},
 }) {
   const selectedSet = new Set(selectedIds.map(String));
   const totalAssets = toNumber(totalAssetsTwd);
@@ -282,10 +289,34 @@ function createOperationRebalanceForTarget({
       return;
     }
 
-    const tradeAmounts =
-      typeTradeAmount >= 0
-        ? distributeBuyAmount(selectedRows, typeTradeAmount)
-        : distributeSellAmount(selectedRows, Math.abs(typeTradeAmount)).tradeAmounts;
+    if (allocationModes[assetType] === "custom") {
+      const unselectedValue = roundMoney(
+        rows.filter((row) => !selectedSet.has(String(row.id)))
+          .reduce((sum, row) => sum + toNumber(row.currentValueTwd), 0),
+      );
+      const remainingTargetValue = roundMoney(targetTypeValue - unselectedValue);
+      const selectedWeightTotal = selectedRows.reduce(
+        (sum, row) => sum + Math.max(toNumber(row.targetWeightPct), 0),
+        0,
+      );
+      if (remainingTargetValue < -0.5 || selectedWeightTotal <= 0) {
+        isReachable = false;
+      }
+      selectedRows.forEach((row) => {
+        const relativeWeight = selectedWeightTotal > 0
+          ? Math.max(toNumber(row.targetWeightPct), 0) / selectedWeightTotal
+          : 1 / selectedRows.length;
+        nextTargetValues.set(row.id, roundMoney(Math.max(remainingTargetValue, 0) * relativeWeight));
+      });
+      rows.filter((row) => !selectedSet.has(String(row.id))).forEach((row) => {
+        nextTargetValues.set(row.id, toNumber(row.currentValueTwd));
+      });
+      return;
+    }
+
+    const tradeAmounts = typeTradeAmount >= 0
+      ? distributeBuyAmount(selectedRows, typeTradeAmount)
+      : distributeSellAmount(selectedRows, Math.abs(typeTradeAmount)).tradeAmounts;
     const distributedAmount = roundMoney(
       selectedRows.reduce((sum, row) => sum + toNumber(tradeAmounts.get(row.id)), 0),
     );

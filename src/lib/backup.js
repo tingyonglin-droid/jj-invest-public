@@ -22,6 +22,18 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
     : Number.isFinite(Number(source.targetBeta))
       ? toNumber(source.targetBeta - originalTargetPct / 100) * 50
       : fallback.leveragedTargetPct ?? 60;
+  const sourceModes = source.allocationModes && typeof source.allocationModes === "object"
+    ? source.allocationModes
+    : {};
+  const fallbackModes = fallback.allocationModes && typeof fallback.allocationModes === "object"
+    ? fallback.allocationModes
+    : {};
+  const normalizeMode = (assetType) => {
+    if (sourceModes[assetType] === "custom" || sourceModes[assetType] === "auto") {
+      return sourceModes[assetType];
+    }
+    return fallbackModes[assetType] === "custom" ? "custom" : "auto";
+  };
 
   return {
     ...fallback,
@@ -31,8 +43,13 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
           tickerInput: String(position.tickerInput || ""),
           shares: toInteger(position.shares),
           assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
+          targetWeightPct: toNumber(position.targetWeightPct),
         }))
       : fallback.positions || [],
+    allocationModes: {
+      leveraged: normalizeMode("leveraged"),
+      original: normalizeMode("original"),
+    },
     cashTwd: toInteger(source.cashTwd),
     cashUsd: toInteger(source.cashUsd),
     leveragedTargetPct,

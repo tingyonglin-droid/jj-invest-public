@@ -1949,6 +1949,17 @@ p {
   transform: translateX(-50%);
 }
 
+.holdingProgressTarget {
+  position: absolute;
+  top: -5px;
+  left: var(--target-ratio);
+  width: 2px;
+  height: 22px;
+  border-radius: 999px;
+  background: #202a35;
+  transform: translateX(-50%);
+}
+
 .holdingRatioLabels,
 .holdingDrift {
   display: flex;
@@ -2417,6 +2428,39 @@ p {
 .positionSection.error .positionSectionHeader em,
 .fieldError {
   color: var(--danger);
+}
+
+.allocationModeControl {
+  display: grid;
+  gap: 8px;
+}
+
+.allocationModeControl > span {
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.allocationModeControl > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.allocationModeControl button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--muted-strong);
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 780;
+}
+
+.allocationModeControl button.active {
+  border-color: rgba(49, 155, 114, 0.28);
+  color: var(--primary-dark);
+  background: #e8f6ef;
 }
 
 .fieldError {

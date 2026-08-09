@@ -13,6 +13,7 @@ const settings = {
       tickerInput: "00631L",
       shares: 1000,
       assetBeta: 2,
+      targetWeightPct: 100,
     },
   ],
   cashTwd: 100000,
@@ -20,6 +21,7 @@ const settings = {
   leveragedTargetPct: 60,
   tolerancePct: 10,
   originalTargetPct: 0,
+  allocationModes: { leveraged: "custom", original: "auto" },
 };
 
 describe("rebalance restore points", () => {
@@ -45,6 +47,8 @@ describe("rebalance restore points", () => {
     assert.equal(parsed.settings.cashTwd, 100000);
     assert.equal(parsed.settings.cashUsd, 500);
     assert.equal(parsed.settings.positions[0].shares, 1001);
+    assert.equal(parsed.settings.positions[0].targetWeightPct, 100);
+    assert.equal(parsed.settings.allocationModes.leveraged, "custom");
   });
 
   it("rejects invalid restore point files", () => {

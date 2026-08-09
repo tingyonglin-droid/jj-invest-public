@@ -65,6 +65,7 @@ import { createAdviceDisplay } from "../src/lib/advice-summary.js";
 import {
   getPositionGroups,
   getPositionGroupTargetStatus,
+  initializePositionTargetWeights,
 } from "../src/lib/position-settings.js";
 import {
   getActionText,
@@ -87,6 +88,7 @@ const DEFAULT_STATE = {
       tickerInput: "00631L",
       shares: 0,
       assetBeta: 2,
+      targetWeightPct: 0,
     },
   ],
   cashTwd: 0,
@@ -94,6 +96,7 @@ const DEFAULT_STATE = {
   leveragedTargetPct: 60,
   originalTargetPct: 0,
   tolerancePct: 10,
+  allocationModes: { leveraged: "auto", original: "auto" },
 };
 
 const emptyQuoteResult = {
@@ -208,14 +211,20 @@ function parseIntegerInput(value) {
 }
 
 function normalizeStoredState(state) {
+  const modes = state.allocationModes || DEFAULT_STATE.allocationModes;
   return {
     ...state,
     cashTwd: parseIntegerInput(state.cashTwd),
     cashUsd: parseIntegerInput(state.cashUsd ?? 0),
     originalTargetPct: parseNumericInput(state.originalTargetPct ?? DEFAULT_STATE.originalTargetPct),
+    allocationModes: {
+      leveraged: modes.leveraged === "custom" ? "custom" : "auto",
+      original: modes.original === "custom" ? "custom" : "auto",
+    },
     positions: (state.positions || DEFAULT_STATE.positions).map((position) => ({
       ...position,
       assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
+      targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
     })),
   };
 }
@@ -429,6 +438,7 @@ export default function Home() {
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
+        allocationModes: formState.allocationModes,
       });
     },
     [formState, quoteResult],
@@ -460,6 +470,7 @@ export default function Home() {
         targetBeta: rebalanceTargetBeta,
         originalTargetRatio: calculation.targetOriginalRatio,
         precision: rebalancePrecision,
+        allocationModes: formState.allocationModes,
       }),
     [
       calculation.recommendations,
@@ -468,6 +479,7 @@ export default function Home() {
       rebalanceTargetBeta,
       rebalancePrecision,
       selectedRebalanceIds,
+      formState.allocationModes,
     ],
   );
   const appliedRebalanceSummary = useMemo(
@@ -510,6 +522,7 @@ export default function Home() {
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
+        allocationModes: formState.allocationModes,
       });
       setQuoteResult(payload);
       setLastUpdatedAt(new Date());
@@ -788,6 +801,43 @@ export default function Home() {
     }));
   }
 
+  function updateAllocationMode(assetType, mode) {
+    setFormState((current) => {
+      const nextMode = mode === "custom" ? "custom" : "auto";
+      const positionsInSleeve = current.positions.filter(
+        (position) => getHoldingAssetType(position.assetBeta) === assetType,
+      );
+      const hasSavedWeights = positionsInSleeve.some(
+        (position) => Number(position.targetWeightPct) > 0,
+      );
+      let nextPositions = current.positions;
+      if (nextMode === "custom" && !hasSavedWeights) {
+        const currentValueById = new Map(
+          calculation.recommendations.map((item) => [item.id, item.currentValueTwd]),
+        );
+        const initialized = initializePositionTargetWeights(
+          positionsInSleeve.map((position) => ({
+            ...position,
+            currentValueTwd: currentValueById.get(position.id) || 0,
+          })),
+        );
+        const initializedById = new Map(
+          initialized.map((position) => [position.id, position.targetWeightPct]),
+        );
+        nextPositions = current.positions.map((position) =>
+          initializedById.has(position.id)
+            ? { ...position, targetWeightPct: initializedById.get(position.id) }
+            : position,
+        );
+      }
+      return {
+        ...current,
+        positions: nextPositions,
+        allocationModes: { ...current.allocationModes, [assetType]: nextMode },
+      };
+    });
+  }
+
   function addPosition(assetBeta = 2) {
     setFormState((current) => ({
       ...current,
@@ -798,6 +848,7 @@ export default function Home() {
           tickerInput: "",
           shares: 0,
           assetBeta,
+          targetWeightPct: 0,
         },
       ],
     }));
@@ -1115,6 +1166,7 @@ export default function Home() {
             onRemovePosition={removePosition}
             onSetCashChangeReason={setCashChangeReason}
             onUpdatePosition={updatePosition}
+            onUpdateAllocationMode={updateAllocationMode}
             onUpdateSetting={updateSetting}
             cashChangeReason={cashChangeReason}
           />
@@ -2350,6 +2402,8 @@ function HoldingRow({ item, onToggleSelection, precision }) {
   const afterSleeveWeight = item.appliedAfterSleeveWeight ?? item.afterSleeveWeight;
   const afterPct = clampPercent(afterSleeveWeight);
   const afterDrift = afterSleeveWeight - item.currentSleeveWeight;
+  const hasCustomTarget = item.allocationMode === "custom" && item.targetSleeveWeight !== null;
+  const targetPct = clampPercent(item.targetSleeveWeight);
 
   return (
     <article className={`holdingRow ${item.isSelected ? "" : "unselected"}`}>
@@ -2379,14 +2433,17 @@ function HoldingRow({ item, onToggleSelection, precision }) {
           style={{
             "--current-ratio": `${currentPct}%`,
             "--after-ratio": `${afterPct}%`,
+            "--target-ratio": `${targetPct}%`,
           }}
-          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}，再平衡後 ${formatPercent(afterSleeveWeight)}`}
+          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}${hasCustomTarget ? `，目標 ${formatPercent(item.targetSleeveWeight)}` : ""}，再平衡後 ${formatPercent(afterSleeveWeight)}`}
         >
           <span className="holdingProgressFill" />
+          {hasCustomTarget && <span className="holdingProgressTarget" />}
           <span className="holdingProgressAfter" />
         </div>
         <div className="holdingRatioLabels">
           <span>目前 {formatPercent(item.currentSleeveWeight)}</span>
+          {hasCustomTarget && <span>目標 {formatPercent(item.targetSleeveWeight)}</span>}
           <span>再平衡後 {formatPercent(afterSleeveWeight)}</span>
         </div>
         {displayedAction !== "none" && (
@@ -2415,13 +2472,26 @@ function PositionSection({
   onUpdatePosition,
   positions,
   title,
+  assetType,
+  mode,
+  onUpdateAllocationMode,
 }) {
+  const status = getPositionGroupTargetStatus({ mode, positions });
   return (
-    <section className="positionSection ok">
+    <section className={`positionSection ${status.isValid ? "ok" : "error"}`}>
       <div className="positionSectionHeader">
         <div>
           <strong>{title}</strong>
           <span>{positions.length} 筆標的</span>
+        </div>
+        {mode === "custom" && <em>合計 {formatNumber(status.totalPct)}% / 100%</em>}
+      </div>
+
+      <div className="allocationModeControl" role="radiogroup" aria-label={`${title}個股佔比分配方式`}>
+        <span>個股佔比分配方式</span>
+        <div>
+          <button type="button" className={mode === "auto" ? "active" : ""} onClick={() => onUpdateAllocationMode(assetType, "auto")}>自動分配</button>
+          <button type="button" className={mode === "custom" ? "active" : ""} onClick={() => onUpdateAllocationMode(assetType, "custom")}>自訂個股佔比</button>
         </div>
       </div>
 
@@ -2449,6 +2519,20 @@ function PositionSection({
                 placeholder="00631L 或 QLD"
               />
             </label>
+            {mode === "custom" && (
+              <label>
+                <span>同類資產內目標比例 %</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={position.targetWeightPct}
+                  aria-invalid={!status.isValid}
+                  onChange={(event) => onUpdatePosition(position.id, "targetWeightPct", event.target.value)}
+                />
+              </label>
+            )}
             <label>
               <span>股數</span>
               <input
@@ -2467,6 +2551,10 @@ function PositionSection({
         ))}
         {positions.length === 0 && <div className="emptyState compact">{emptyText}</div>}
       </div>
+
+      {mode === "custom" && !status.isValid && (
+        <p className="fieldError">{title}標的目標比例合計必須等於 100%。</p>
+      )}
 
       <button type="button" className="secondaryButton fullWidth" onClick={onAddPosition}>
         {addLabel}
@@ -2489,6 +2577,7 @@ function SettingsAccordions({
   onSetCashChangeReason,
   onUpdatePosition,
   onUpdateSetting,
+  onUpdateAllocationMode,
 }) {
   const positionGroups = getPositionGroups(formState.positions);
   const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
@@ -2617,6 +2706,9 @@ function SettingsAccordions({
                   onUpdatePosition={onUpdatePosition}
                   positions={positionGroups.leveraged}
                   title="正二"
+                  assetType="leveraged"
+                  mode={formState.allocationModes.leveraged}
+                  onUpdateAllocationMode={onUpdateAllocationMode}
                 />
                 {(hasOriginalTarget || hasOriginalPositions) && (
                   <PositionSection
@@ -2628,6 +2720,9 @@ function SettingsAccordions({
                     onUpdatePosition={onUpdatePosition}
                     positions={positionGroups.original}
                     title="原形"
+                    assetType="original"
+                    mode={formState.allocationModes.original}
+                    onUpdateAllocationMode={onUpdateAllocationMode}
                   />
                 )}
                 {!hasOriginalTarget && !hasOriginalPositions && (

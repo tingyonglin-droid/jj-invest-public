@@ -1,4 +1,5 @@
 import { normalizeTicker } from "./market-data.js";
+import { getPositionGroupTargetStatus } from "./position-settings.js";
 
 const MONEY_PRECISION = 100;
 const RATIO_PRECISION = 10000;
@@ -28,6 +29,7 @@ export function calculatePortfolio({
   leveragedTargetPct = 0,
   originalTargetPct = 0,
   tolerancePct,
+  allocationModes = {},
 }) {
   const quoteByTicker = new Map(
     quotes.map((quote) => [quote.normalizedTicker, quote]),
@@ -37,6 +39,7 @@ export function calculatePortfolio({
     normalizedTicker: normalizeTicker(position.tickerInput),
     shares: toNumber(position.shares),
     assetBeta: toNumber(position.assetBeta),
+    targetWeightPct: toNumber(position.targetWeightPct),
   }));
   const errors = [];
 
@@ -79,6 +82,16 @@ export function calculatePortfolio({
   const targetOriginalRatio = roundRatio(originalTargetRatio);
   const targetCashRatio = roundRatio(1 - targetLeveragedRatio - targetOriginalRatio);
   const targetBetaValue = roundRatio(targetLeveragedRatio * 2 + targetOriginalRatio);
+  const rowsByType = {
+    leveraged: validRows.filter((row) => getAssetType(row.assetBeta) === "leveraged"),
+    original: validRows.filter((row) => getAssetType(row.assetBeta) === "original"),
+  };
+  const targetWeightTotals = Object.fromEntries(
+    Object.entries(rowsByType).map(([assetType, rows]) => [
+      assetType,
+      rows.reduce((sum, row) => sum + row.targetWeightPct, 0),
+    ]),
+  );
 
   if (targetCashRatio < -RATIO_TOLERANCE) {
     errors.push("正二與原形目標比例合計不能超過 100%。");
@@ -91,6 +104,15 @@ export function calculatePortfolio({
   if (targetOriginalRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "original")) {
     errors.push("原形目標比例大於 0 時，請新增至少一個原形標的。");
   }
+
+  Object.entries(rowsByType).forEach(([assetType, rows]) => {
+    if (!getPositionGroupTargetStatus({
+      mode: allocationModes[assetType],
+      positions: rows,
+    }).isValid) {
+      errors.push(`${assetType === "leveraged" ? "正二" : "原形"}標的目標比例合計必須等於 100%。`);
+    }
+  });
 
   const tolerance = toNumber(tolerancePct) / 100;
   const betaLower = roundRatio(targetBetaValue * (1 - tolerance));
@@ -108,6 +130,9 @@ export function calculatePortfolio({
     const assetType = getAssetType(row.assetBeta);
     const typeValueTwd = assetType === "leveraged" ? leveragedValueTwd : originalValueTwd;
     const currentSleeveWeight = typeValueTwd > 0 ? row.currentValueTwd / typeValueTwd : 0;
+    const targetSleeveWeight = allocationModes[assetType] === "custom" && targetWeightTotals[assetType] > 0
+      ? row.targetWeightPct / targetWeightTotals[assetType]
+      : null;
     return {
       id: row.id,
       tickerInput: row.tickerInput,
@@ -122,6 +147,9 @@ export function calculatePortfolio({
       currentValueTwd: row.currentValueTwd,
       currentWeight,
       currentSleeveWeight: roundRatio(currentSleeveWeight),
+      targetWeightPct: row.targetWeightPct,
+      targetSleeveWeight: targetSleeveWeight === null ? null : roundRatio(targetSleeveWeight),
+      allocationMode: allocationModes[assetType] === "custom" ? "custom" : "auto",
       betaContribution: currentWeight * row.assetBeta,
     };
   });

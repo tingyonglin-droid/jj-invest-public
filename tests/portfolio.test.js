@@ -227,4 +227,38 @@ describe("portfolio calculations", () => {
     assert.equal(result.isValid, false);
     assert.equal(result.errors[0], "原形目標比例大於 0 時，請新增至少一個原形標的。");
   });
+
+  it("adds custom target sleeve weights and validates each custom sleeve", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "a", tickerInput: "00631L", shares: 1000, assetBeta: 2, targetWeightPct: 60 },
+        { id: "b", tickerInput: "00685L", shares: 0, assetBeta: 2, targetWeightPct: 40 },
+      ],
+      quotes: [
+        quotes[0],
+        { ...quotes[0], inputTicker: "00685L", normalizedTicker: "00685L.TW", priceTwd: 50 },
+      ],
+      cashTwd: 60000,
+      leveragedTargetPct: 60,
+      originalTargetPct: 0,
+      tolerancePct: 10,
+      allocationModes: { leveraged: "custom", original: "auto" },
+    });
+
+    assert.equal(result.isValid, true);
+    assert.deepEqual(result.recommendations.map((item) => item.targetSleeveWeight), [0.6, 0.4]);
+
+    const invalid = calculatePortfolio({
+      positions: [
+        { id: "a", tickerInput: "00631L", shares: 1000, assetBeta: 2, targetWeightPct: 60 },
+      ],
+      quotes: [quotes[0]],
+      cashTwd: 60000,
+      leveragedTargetPct: 60,
+      tolerancePct: 10,
+      allocationModes: { leveraged: "custom", original: "auto" },
+    });
+    assert.equal(invalid.isValid, false);
+    assert.match(invalid.errors[0], /正二.*100%/);
+  });
 });
