@@ -314,12 +314,12 @@ p {
   min-width: 40px;
   min-height: 40px;
   margin: -4px 0;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .overviewCardInfoButton::after {
-  width: 26px;
-  height: 26px;
+  width: 18px;
+  height: 18px;
 }
 
 .overviewCardHeaderAction {
@@ -529,7 +529,7 @@ button.betaAction {
   grid-template-columns: minmax(180px, 1fr) minmax(340px, auto);
   gap: 24px;
   align-items: start;
-  padding: 12px 22px 0;
+  padding: 12px 20px 0;
 }
 
 .marketLevelSummaries {
@@ -3338,6 +3338,10 @@ select {
 
   .appCard {
     padding: 13px 15px;
+  }
+
+  .marketLevelHeader {
+    padding: 8px 15px 0;
   }
 
   .megaNumber {

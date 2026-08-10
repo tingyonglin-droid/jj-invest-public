@@ -1218,6 +1218,7 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
     <section className="appCard betaCard">
       <OverviewCardHeader
         title="目前 Beta"
+        subtitle="整體資產曝險程度"
         infoLabel="查看 Beta 說明"
         onInfo={onOpenGlossary}
         action={

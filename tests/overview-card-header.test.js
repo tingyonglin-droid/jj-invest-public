@@ -42,11 +42,22 @@ describe("overview card header", () => {
 
   it("connects all three overview cards to the shared header", () => {
     assert.equal(pageSource.match(/<OverviewCardHeader/g)?.length, 3);
+    assert.match(
+      pageSource,
+      /title="目前 Beta"[\s\S]*?subtitle="整體資產曝險程度"/,
+    );
   });
 
   it("uses the confirmed compact title and control sizes", () => {
     assert.match(cssSource, /\.overviewCardHeaderTitle\s*\{[^}]*font-size:\s*16px;/s);
-    assert.match(cssSource, /\.overviewCardInfoButton::after\s*\{[^}]*width:\s*26px;[^}]*height:\s*26px;/s);
+    assert.match(cssSource, /\.overviewCardInfoButton::after\s*\{[^}]*width:\s*18px;[^}]*height:\s*18px;/s);
     assert.match(cssSource, /\.overviewCardAction\s*\{[^}]*height:\s*32px;[^}]*font-size:\s*11px;/s);
+  });
+
+  it("aligns the market header with the other card titles on phones", () => {
+    assert.match(
+      cssSource,
+      /@media \(max-width: 480px\)[\s\S]*?\.marketLevelHeader\s*\{[^}]*padding:\s*8px 15px 0;/s,
+    );
   });
 });
