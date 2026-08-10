@@ -314,7 +314,7 @@ p {
 .overviewCardInfoButton {
   min-width: 40px;
   min-height: 40px;
-  margin: -4px 0;
+  margin: -4px 0 -4px -8px;
   font-size: 10px;
 }
 
@@ -356,7 +356,7 @@ button.overviewCardAction::after {
 }
 
 .betaCard > .overviewCardHeader {
-  margin-bottom: 10px;
+  margin-bottom: 4px;
 }
 
 .betaPrimary {
@@ -511,19 +511,7 @@ button.betaAction {
   gap: 6px;
   overflow: hidden;
   padding: 0;
-  border-color: rgba(186, 194, 204, 0.42);
-}
-
-.marketLevelCard.normal {
-  border-color: rgba(49, 155, 114, 0.18);
-}
-
-.marketLevelCard.prepare {
-  border-color: rgba(197, 139, 26, 0.24);
-}
-
-.marketLevelCard.deep {
-  border-color: rgba(193, 81, 90, 0.24);
+  border-color: transparent;
 }
 
 .marketLevelHeader {
@@ -589,7 +577,7 @@ button.betaAction {
 
 .marketLevelViewButton {
   flex: 0 0 auto;
-  border: 1px solid rgba(36, 135, 94, 0.3);
+  border: 0;
   background: rgba(232, 247, 237, 0.86);
   color: #176b49;
   font: inherit;
@@ -600,7 +588,6 @@ button.betaAction {
 .marketLevelViewButton:hover,
 .marketLevelViewButton:focus-visible,
 .marketLevelViewButton[aria-pressed="true"] {
-  border-color: #24875e;
   background: #d9f0e1;
   outline: none;
 }

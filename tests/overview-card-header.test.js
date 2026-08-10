@@ -54,6 +54,31 @@ describe("overview card header", () => {
     assert.match(cssSource, /\.overviewCardAction\s*\{[^}]*height:\s*32px;[^}]*font-size:\s*11px;/s);
   });
 
+  it("moves all overview info controls closer to their titles", () => {
+    assert.match(
+      cssSource,
+      /\.overviewCardInfoButton\s*\{[^}]*margin:\s*-4px 0 -4px -8px;/s,
+    );
+  });
+
+  it("matches the beta header spacing to the market card", () => {
+    assert.match(
+      cssSource,
+      /\.betaCard > \.overviewCardHeader\s*\{[^}]*margin-bottom:\s*4px;/s,
+    );
+  });
+
+  it("removes the visible market card and action borders", () => {
+    assert.match(
+      cssSource,
+      /\.marketLevelCard\s*\{[^}]*border-color:\s*transparent;/s,
+    );
+    assert.match(
+      cssSource,
+      /\.marketLevelViewButton\s*\{[^}]*border:\s*0;/s,
+    );
+  });
+
   it("uses the same inline inset for every overview card header", () => {
     assert.match(
       cssSource,
