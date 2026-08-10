@@ -177,6 +177,11 @@ describe("portfolio calculations", () => {
 
     assert.equal(result.isValid, false);
     assert.equal(result.errors[0], "正二與原形目標比例合計不能超過 100%。");
+    assert.deepEqual(result.issues[0], {
+      code: "TARGET_TOTAL_EXCEEDED",
+      message: "正二與原形目標比例合計不能超過 100%。",
+      settingsPage: "beta",
+    });
   });
 
   it("uses the unallocated class target percentage as cash", () => {
@@ -226,6 +231,11 @@ describe("portfolio calculations", () => {
 
     assert.equal(result.isValid, false);
     assert.equal(result.errors[0], "原形目標比例大於 0 時，請新增至少一個原形標的。");
+    assert.deepEqual(result.issues[0], {
+      code: "MISSING_ORIGINAL_POSITION",
+      message: "原形目標比例大於 0 時，請新增至少一個原形標的。",
+      settingsPage: "positions",
+    });
   });
 
   it("adds custom target sleeve weights and validates each custom sleeve", () => {
@@ -260,5 +270,7 @@ describe("portfolio calculations", () => {
     });
     assert.equal(invalid.isValid, false);
     assert.match(invalid.errors[0], /正二.*100%/);
+    assert.equal(invalid.issues[0].code, "INVALID_LEVERAGED_WEIGHTS");
+    assert.equal(invalid.issues[0].settingsPage, "positions");
   });
 });

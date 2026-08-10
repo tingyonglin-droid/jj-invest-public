@@ -41,7 +41,10 @@ export function calculatePortfolio({
     assetBeta: toNumber(position.assetBeta),
     targetWeightPct: toNumber(position.targetWeightPct),
   }));
-  const errors = [];
+  const issues = [];
+  const addIssue = (code, message, settingsPage) => {
+    issues.push({ code, message, settingsPage });
+  };
 
   const validRows = normalizedPositions
     .map((position) => {
@@ -94,15 +97,27 @@ export function calculatePortfolio({
   );
 
   if (targetCashRatio < -RATIO_TOLERANCE) {
-    errors.push("正二與原形目標比例合計不能超過 100%。");
+    addIssue(
+      "TARGET_TOTAL_EXCEEDED",
+      "正二與原形目標比例合計不能超過 100%。",
+      "beta",
+    );
   }
 
   if (targetLeveragedRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "leveraged")) {
-    errors.push("正二目標比例大於 0 時，請新增至少一個正二標的。");
+    addIssue(
+      "MISSING_LEVERAGED_POSITION",
+      "正二目標比例大於 0 時，請新增至少一個正二標的。",
+      "positions",
+    );
   }
 
   if (targetOriginalRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "original")) {
-    errors.push("原形目標比例大於 0 時，請新增至少一個原形標的。");
+    addIssue(
+      "MISSING_ORIGINAL_POSITION",
+      "原形目標比例大於 0 時，請新增至少一個原形標的。",
+      "positions",
+    );
   }
 
   Object.entries(rowsByType).forEach(([assetType, rows]) => {
@@ -110,7 +125,12 @@ export function calculatePortfolio({
       mode: allocationModes[assetType],
       positions: rows,
     }).isValid) {
-      errors.push(`${assetType === "leveraged" ? "正二" : "原形"}標的目標比例合計必須等於 100%。`);
+      const label = assetType === "leveraged" ? "正二" : "原形";
+      addIssue(
+        assetType === "leveraged" ? "INVALID_LEVERAGED_WEIGHTS" : "INVALID_ORIGINAL_WEIGHTS",
+        `${label}標的目標比例合計必須等於 100%。`,
+        "positions",
+      );
     }
   });
 
@@ -166,8 +186,9 @@ export function calculatePortfolio({
   const afterBeta = targetBetaValue;
 
   return {
-    isValid: errors.length === 0,
-    errors,
+    isValid: issues.length === 0,
+    errors: issues.map((issue) => issue.message),
+    issues,
     totalAssetsTwd,
     stockValueTwd,
     leveragedValueTwd,

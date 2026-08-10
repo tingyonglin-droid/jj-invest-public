@@ -46,6 +46,7 @@ import {
   parseHistoryRestorePoint,
 } from "../src/lib/history-restore.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
+import { createOverviewAction } from "../src/lib/overview-action.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
   applyRebalanceToState,
@@ -61,7 +62,6 @@ import {
   createOperationRebalance,
   getOperationRebalanceStatus,
 } from "../src/lib/operation-rebalance.js";
-import { createAdviceDisplay } from "../src/lib/advice-summary.js";
 import {
   getPositionGroups,
   getPositionGroupTargetStatus,
@@ -243,70 +243,6 @@ function clampPercent(value) {
   return Math.min(Math.max((Number.isFinite(value) ? value : 0) * 100, 0), 100);
 }
 
-function getBetaStatus(calculation) {
-  if (calculation.currentBeta > calculation.betaUpper) {
-    return {
-      tone: "sell",
-      label: "高於上限，建議降低曝險",
-      boundaryLabel: "高於上限",
-      boundaryGap: calculation.currentBeta - calculation.betaUpper,
-    };
-  }
-
-  if (calculation.currentBeta < calculation.betaLower) {
-    return {
-      tone: "buy",
-      label: "低於下限，建議提高曝險",
-      boundaryLabel: "低於下限",
-      boundaryGap: calculation.currentBeta - calculation.betaLower,
-    };
-  }
-
-  return {
-    tone: "ok",
-    label: "正常",
-    boundaryLabel: "距離區間邊界",
-    boundaryGap: Math.min(
-      calculation.currentBeta - calculation.betaLower,
-      calculation.betaUpper - calculation.currentBeta,
-    ),
-  };
-}
-
-function getAdvice(calculation) {
-  const betaStatus = getBetaStatus(calculation);
-
-  if (!calculation.isValid) {
-    return {
-      tone: "none",
-      status: "設定需修正",
-      headline: "設定需修正",
-      classActions: ["請先調整比例"],
-    };
-  }
-
-  if (!calculation.needsRebalance) {
-    return {
-      tone: "none",
-      status: "目前位於容忍區間",
-      headline: "無需操作",
-      classActions: ["正二：無需調整", "原形：無需調整", "現金：無需調整"],
-    };
-  }
-
-  const display = createAdviceDisplay({
-    betaBoundaryLabel: betaStatus.boundaryLabel,
-    leveragedTradeAmountTwd: calculation.leveragedTradeAmountTwd,
-    originalTradeAmountTwd: calculation.originalTradeAmountTwd,
-    cashTradeAmountTwd: calculation.cashTradeAmountTwd,
-  });
-
-  return {
-    ...display,
-    status: betaStatus.label,
-  };
-}
-
 function isLocalPreviewHost(hostname) {
   return (
     hostname === "localhost" ||
@@ -390,6 +326,7 @@ export default function Home() {
   const [rebalancePrecision, setRebalancePrecision] = useState("lots");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [activeView, setActiveView] = useState("overview");
+  const [settingsTargetPage, setSettingsTargetPage] = useState(null);
   const [glossaryTopic, setGlossaryTopic] = useState(null);
   const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState("");
   const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
@@ -447,7 +384,7 @@ export default function Home() {
   const quoteErrors = quoteResult.quotes.filter((quote) => quote.error);
   const pageCalculationErrors = calculation.errors;
   const betaRail = createBetaRailModel(calculation);
-  const advice = getAdvice(calculation);
+  const overviewAction = createOverviewAction(calculation);
   const recommendationIds = useMemo(
     () => calculation.recommendations.map((item) => String(item.id)),
     [calculation.recommendations],
@@ -1052,7 +989,11 @@ export default function Home() {
     [setFormState, setHistoryRecords],
   );
 
-  function changeView(nextView) {
+  function changeView(nextView, options = {}) {
+    if (nextView === "settings") {
+      setSettingsTargetPage(options.settingsPage || null);
+    }
+
     if (nextView === activeView) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -1062,6 +1003,14 @@ export default function Home() {
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
+  }
+
+  function handleOverviewAction(action) {
+    if (!action.destination) {
+      return;
+    }
+
+    changeView(action.destination, { settingsPage: action.settingsPage });
   }
 
   return (
@@ -1094,18 +1043,16 @@ export default function Home() {
         {activeView === "overview" && (
           <>
             <BetaCard
+              action={overviewAction}
               calculation={calculation}
               betaRail={betaRail}
+              onAction={handleOverviewAction}
               onOpenGlossary={() => setGlossaryTopic("beta")}
             />
 
             <MarketLevelCard
               benchmarkDrawdown={benchmarkDrawdown}
               onOpenGlossary={() => setGlossaryTopic("benchmarkDrawdown")}
-            />
-
-            <AdviceCard
-              advice={advice}
             />
 
             <AllocationCard
@@ -1155,6 +1102,7 @@ export default function Home() {
 
         {activeView === "settings" && (
           <SettingsAccordions
+            initialPage={settingsTargetPage || "cash"}
             backupStatus={backupStatus}
             calculation={calculation}
             formState={formState}
@@ -1258,7 +1206,7 @@ function AppHeader({ status, lastUpdatedAt, onRefresh }) {
   );
 }
 
-function BetaCard({ calculation, betaRail, onOpenGlossary }) {
+function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
   const betaSummary = createBetaSummary({
     currentBeta: calculation.currentBeta,
     targetBeta: calculation.targetBeta,
@@ -1268,7 +1216,7 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
   return (
     <section className="appCard betaCard">
       <div className="betaTopline">
-        <div>
+        <div className="betaPrimary">
           <div className="cardLabelRow">
             <p className="cardLabel">目前 Beta</p>
             <button
@@ -1281,6 +1229,18 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
             </button>
           </div>
           <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
+          {action.destination ? (
+            <button
+              type="button"
+              className={`betaAction ${action.tone}`}
+              onClick={() => onAction(action)}
+              aria-label={action.ariaLabel}
+            >
+              {action.label}
+            </button>
+          ) : (
+            <span className={`betaAction ${action.tone}`}>{action.label}</span>
+          )}
         </div>
         <div className="betaMetaGrid">
           <div>
@@ -1667,26 +1627,6 @@ function GlossaryDialog({ topic, onClose }) {
         </button>
       </section>
     </div>
-  );
-}
-
-function AdviceCard({ advice }) {
-  return (
-    <section className="appCard adviceCard">
-      <div className={`adviceIcon ${advice.tone}`} aria-hidden="true">
-        <span />
-      </div>
-      <div className="adviceContent">
-        <p className="cardLabel">今日操作建議</p>
-        <p className={`adviceStatus ${advice.tone}`}>{advice.status}</p>
-        <strong className={advice.tone}>{advice.headline}</strong>
-        {(advice.classActions || []).map((line, index) => (
-          <p className={`adviceMeta${index > 0 ? " muted" : ""}`} key={line}>
-            {line}
-          </p>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -2570,6 +2510,7 @@ function SettingsAccordions({
   formState,
   fx,
   historyCount,
+  initialPage,
   onAddPosition,
   onExportBackup,
   onImportBackup,
@@ -2583,7 +2524,7 @@ function SettingsAccordions({
   const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
   const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
   const betaGuardIsValid = calculation.errors.length === 0;
-  const [activeSettingsPage, setActiveSettingsPage] = useState("cash");
+  const [activeSettingsPage, setActiveSettingsPage] = useState(initialPage);
 
   return (
     <section className="settingsStack" aria-label="參數設定">
@@ -2614,6 +2555,14 @@ function SettingsAccordions({
         </nav>
 
         <div className="settingsBody">
+          {calculation.errors.length > 0 ? (
+            <div className="settingsErrorSummary" role="alert">
+              <strong>請修正以下設定</strong>
+              <ul>
+                {calculation.errors.map((error) => <li key={error}>{error}</li>)}
+              </ul>
+            </div>
+          ) : null}
           {activeSettingsPage === "cash" && (
             <div className="positionEditor cashEditor">
               <div className="positionTitle">
