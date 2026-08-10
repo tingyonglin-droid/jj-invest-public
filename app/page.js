@@ -1373,7 +1373,12 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
           <div className="marketLevelCurrent">
             <span>目前（{benchmarkDrawdown.currentSource === "live" ? "即時" : "收盤"}）</span>
             <strong>{formatNumber(benchmarkDrawdown.currentPrice, 2)}</strong>
-            <b>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</b>
+            <div className="marketLevelCurrentStatus">
+              <b>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</b>
+              <span className={`marketLevelInlineStatus ${benchmarkDrawdown.level}`}>
+                （{levelLabel}）
+              </span>
+            </div>
             <time dateTime={benchmarkDrawdown.currentDate}>{benchmarkDrawdown.currentDate}</time>
           </div>
         </div>
@@ -1488,7 +1493,6 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
       <div className="marketLevelFooter">
         <span>資料來源：0050 {benchmarkDrawdown.currentSource === "live" ? "即時價與歷史收盤價" : "收盤價"}</span>
         <span>更新日期：{benchmarkDrawdown.currentDate}</span>
-        <span className={`marketLevelBadge ${benchmarkDrawdown.level}`}>{levelLabel}</span>
       </div>
     </section>
   );

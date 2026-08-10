@@ -35,6 +35,14 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
     assert.match(pageSource, /<OverviewCardHeader[\s\S]*?title="市場水位"/);
     assert.match(pageSource, /action=\{[\s\S]*?marketLevelViewButton/);
+    assert.match(
+      pageSource,
+      /marketLevelCurrentStatus[\s\S]*?formatSignedPercent\(benchmarkDrawdown\.drawdownRatio\)[\s\S]*?marketLevelInlineStatus/,
+    );
+    assert.doesNotMatch(
+      pageSource,
+      /marketLevelFooter[\s\S]*?marketLevelBadge/,
+    );
     assert.doesNotMatch(pageSource, /marketPointWeekday/);
     assert.doesNotMatch(pageSource, /marketLevelChartToolbar/);
     assert.match(pageSource, /股災區間/);

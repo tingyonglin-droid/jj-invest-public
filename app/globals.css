@@ -300,7 +300,7 @@ p {
   align-items: center;
   gap: 7px;
   min-width: 0;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .overviewCardHeaderTitle h2 {
@@ -309,6 +309,14 @@ p {
   font-weight: 780;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+.overviewCardSubtitle {
+  margin-bottom: 1em;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .overviewCardInfoButton {
@@ -560,6 +568,28 @@ button.betaAction {
   line-height: 1.1;
 }
 
+.marketLevelCurrentStatus {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.marketLevelSummaries .marketLevelInlineStatus {
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.marketLevelSummaries .marketLevelInlineStatus.prepare {
+  color: var(--warning);
+}
+
+.marketLevelSummaries .marketLevelInlineStatus.deep {
+  color: var(--danger);
+}
+
 .marketLevelCard.prepare .marketLevelSummaries b {
   color: var(--warning);
 }
@@ -784,27 +814,6 @@ button.betaAction {
   font-size: 12px;
   font-weight: 680;
 }
-
-.marketLevelBadge {
-  margin-left: auto;
-  border-radius: 999px;
-  padding: 5px 10px;
-  color: var(--primary-dark);
-  background: #edf8f2;
-  font-size: 12px;
-  font-weight: 780;
-}
-
-.marketLevelBadge.prepare {
-  color: #8a5c0d;
-  background: #fff6e8;
-}
-
-.marketLevelBadge.deep {
-  color: var(--danger);
-  background: #fff0f1;
-}
-
 
 .infoOverlay {
   position: fixed;

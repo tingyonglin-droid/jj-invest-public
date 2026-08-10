@@ -49,7 +49,11 @@ describe("overview card header", () => {
   });
 
   it("uses the confirmed compact title and control sizes", () => {
-    assert.match(cssSource, /\.overviewCardHeaderTitle\s*\{[^}]*font-size:\s*16px;/s);
+    assert.match(cssSource, /\.overviewCardHeaderTitle\s*\{[^}]*font-size:\s*18px;/s);
+    assert.match(
+      cssSource,
+      /\.overviewCardSubtitle\s*\{[^}]*color:\s*var\(--muted\);[^}]*font-size:\s*13px;/s,
+    );
     assert.match(cssSource, /\.overviewCardInfoButton::after\s*\{[^}]*width:\s*18px;[^}]*height:\s*18px;/s);
     assert.match(cssSource, /\.overviewCardAction\s*\{[^}]*height:\s*32px;[^}]*font-size:\s*11px;/s);
   });
