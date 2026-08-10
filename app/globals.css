@@ -3332,9 +3332,8 @@ select {
   }
 
   .betaAction {
-    position: static;
-    width: fit-content;
-    margin-top: 10px;
+    top: 13px;
+    right: 15px;
   }
 
   .betaMetaGrid strong {

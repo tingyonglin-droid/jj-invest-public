@@ -19,4 +19,15 @@ describe("overview action UI", () => {
       /@media \(max-width: 480px\)[\s\S]*?\.marketLevelLegend\s*\{[\s\S]*?margin-bottom:\s*8px;/,
     );
   });
+
+  it("keeps the overview action pinned to the beta card top-right on phones", () => {
+    assert.doesNotMatch(
+      cssSource,
+      /\.betaAction\s*\{[^}]*position:\s*static;/s,
+    );
+    assert.match(
+      cssSource,
+      /@media \(max-width: 480px\)[\s\S]*?\.betaAction\s*\{[^}]*top:\s*13px;[^}]*right:\s*15px;/,
+    );
+  });
 });
