@@ -2052,11 +2052,11 @@ function OperationsView({
     <section className="appCard operationsPageCard">
       <div className="cardHeaderRow operationHeaderRow">
         <div>
-          <div className="cardTitleRow">
+          <div className="cardTitleRow operationTitleRow">
             <h2>再平衡參數設定</h2>
             <button
               type="button"
-              className="infoButton small"
+              className="infoButton overviewCardInfoButton"
               onClick={onOpenGlossary}
               aria-label="查看再平衡操作說明"
             >

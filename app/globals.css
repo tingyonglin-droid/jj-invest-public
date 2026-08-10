@@ -234,6 +234,10 @@ p {
   margin: 0;
 }
 
+.operationTitleRow {
+  gap: 7px;
+}
+
 .infoButton {
   position: relative;
   display: grid;

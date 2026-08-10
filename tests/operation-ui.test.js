@@ -7,6 +7,9 @@ test("operations page exposes target beta and selectable holdings", async () => 
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(page, /再平衡參數設定/);
+  assert.match(page, /cardTitleRow operationTitleRow/);
+  assert.match(page, /className="infoButton overviewCardInfoButton"/);
+  assert.match(styles, /\.operationTitleRow\s*\{[^}]*gap:\s*7px;/s);
   assert.match(page, /再平衡/);
   assert.match(page, /再平衡到 Beta/);
   assert.match(page, /目標 Beta/);
