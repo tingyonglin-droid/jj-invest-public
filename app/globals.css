@@ -186,6 +186,7 @@ p {
 }
 
 .appCard {
+  --app-card-inline-padding: 20px;
   margin-bottom: 12px;
   padding: 18px 20px;
 }
@@ -333,6 +334,7 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 96px;
   height: 32px;
   min-height: 32px;
   border-radius: 9px;
@@ -529,7 +531,7 @@ button.betaAction {
   grid-template-columns: minmax(180px, 1fr) minmax(340px, auto);
   gap: 24px;
   align-items: start;
-  padding: 12px 20px 0;
+  padding: 12px var(--app-card-inline-padding) 0;
 }
 
 .marketLevelSummaries {
@@ -2961,6 +2963,7 @@ select {
   }
 
   .appCard {
+    --app-card-inline-padding: 16px;
     padding: 14px 16px;
     margin-bottom: 10px;
     border-radius: 18px;
@@ -3337,11 +3340,8 @@ select {
   }
 
   .appCard {
+    --app-card-inline-padding: 15px;
     padding: 13px 15px;
-  }
-
-  .marketLevelHeader {
-    padding: 8px 15px 0;
   }
 
   .megaNumber {
@@ -4111,7 +4111,7 @@ select {
   .marketLevelHeader {
     grid-template-columns: 1fr;
     gap: 4px;
-    padding: 8px 18px 0;
+    padding: 8px var(--app-card-inline-padding) 0;
   }
 
   .marketLevelSummaries {

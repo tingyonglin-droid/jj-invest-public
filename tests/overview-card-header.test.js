@@ -54,10 +54,25 @@ describe("overview card header", () => {
     assert.match(cssSource, /\.overviewCardAction\s*\{[^}]*height:\s*32px;[^}]*font-size:\s*11px;/s);
   });
 
-  it("aligns the market header with the other card titles on phones", () => {
+  it("uses the same inline inset for every overview card header", () => {
     assert.match(
       cssSource,
-      /@media \(max-width: 480px\)[\s\S]*?\.marketLevelHeader\s*\{[^}]*padding:\s*8px 15px 0;/s,
+      /\.appCard\s*\{[^}]*--app-card-inline-padding:\s*20px;/s,
+    );
+    assert.match(
+      cssSource,
+      /\.marketLevelHeader\s*\{[^}]*padding:\s*12px var\(--app-card-inline-padding\) 0;/s,
+    );
+    assert.match(
+      cssSource,
+      /@media \(max-width: 480px\)[\s\S]*?\.appCard\s*\{[^}]*--app-card-inline-padding:\s*15px;/s,
+    );
+  });
+
+  it("gives the beta and market actions the same left edge", () => {
+    assert.match(
+      cssSource,
+      /\.overviewCardAction\s*\{[^}]*width:\s*96px;/s,
     );
   });
 });
