@@ -1394,13 +1394,13 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
           aria-label="0050 自最新歷史最高收盤價以來的市場水位走勢圖"
           onClick={handleChartClick}
         >
-          <rect className="marketBand normal" x="0" y="40" width={chart.width} height="100" />
-          <rect className="marketBand prepare" x="0" y="140" width={chart.width} height="100" />
-          <rect className="marketBand deep" x="0" y="240" width={chart.width} height="100" />
+          <rect className="marketBand normal" x={chart.bandInset} y="40" width={chart.width - chart.bandInset * 2} height="100" />
+          <rect className="marketBand prepare" x={chart.bandInset} y="140" width={chart.width - chart.bandInset * 2} height="100" />
+          <rect className="marketBand deep" x={chart.bandInset} y="240" width={chart.width - chart.bandInset * 2} height="100" />
 
-          <text className="marketBandName normal" x="12" y="94">正常</text>
-          <text className="marketBandName prepare" x="12" y="194">觀察</text>
-          <text className="marketBandName deep" x="12" y="294">股災</text>
+          <text className="marketBandName normal" x={chart.edgeLabelInset} y="94">正常</text>
+          <text className="marketBandName prepare" x={chart.edgeLabelInset} y="194">觀察</text>
+          <text className="marketBandName deep" x={chart.edgeLabelInset} y="294">股災</text>
 
           {chart.thresholds.map((threshold) => (
             <g key={threshold.ratio}>

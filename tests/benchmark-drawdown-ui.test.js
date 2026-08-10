@@ -37,6 +37,9 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /activePointDate === point\.date/);
     assert.match(pageSource, /getNearestMarketPointIndex/);
     assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
+    assert.match(pageSource, /x=\{chart\.bandInset\}/);
+    assert.match(pageSource, /width=\{chart\.width - chart\.bandInset \* 2\}/);
+    assert.match(pageSource, /className="marketBandName normal" x=\{chart\.edgeLabelInset\}/);
     assert.match(pageSource, /<OverviewCardHeader[\s\S]*?title="市場水位"/);
     assert.match(pageSource, /action=\{[\s\S]*?marketLevelViewButton/);
     assert.match(
@@ -55,6 +58,10 @@ describe("benchmark drawdown UI", () => {
     assert.match(
       cssSource,
       /\.marketLevelChartWrap\.overview \.marketBandName,[\s\S]*?font-size:\s*18px/,
+    );
+    assert.match(
+      cssSource,
+      /\.marketLevelChartWrap\.overview \.marketPointDate\s*\{[^}]*font-size:\s*18px;/s,
     );
     assert.doesNotMatch(cssSource, /\.marketLevelChartToolbar/);
   });

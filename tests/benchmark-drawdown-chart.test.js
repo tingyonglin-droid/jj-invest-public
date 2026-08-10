@@ -73,6 +73,7 @@ describe("benchmark drawdown chart", () => {
 
     assert.equal(model.mode, "detail");
     assert.equal(model.edgeLabelInset, 8);
+    assert.equal(model.bandInset, 0);
     assert.equal(model.points.length, 24);
     assert.equal(model.width, 1146);
     assert.equal(model.height, 400);
@@ -82,7 +83,8 @@ describe("benchmark drawdown chart", () => {
     assert.equal(model.points.at(-1).showDateLabel, true);
     assert.equal(model.plot.right, model.width - 42);
     assert.equal(overview.mode, "overview");
-    assert.equal(overview.edgeLabelInset, 24);
+    assert.equal(overview.edgeLabelInset, 40);
+    assert.equal(overview.bandInset, 32);
     assert.equal(overview.width, 760);
     assert.equal(overview.points.length, 24);
     assert.deepEqual(
