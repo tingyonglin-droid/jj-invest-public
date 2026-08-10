@@ -713,6 +713,7 @@ button.betaAction {
 }
 
 .marketPoint {
+  r: 6px;
   pointer-events: none;
   stroke: #fff;
   stroke-width: 2;
@@ -4141,7 +4142,7 @@ select {
   }
 
   .marketLevelChartWrap.overview .marketPointDate {
-    font-size: 18px;
+    font-size: 14px;
   }
 
   .marketLevelChartWrap.overview .marketPointTooltip text {
@@ -4149,7 +4150,7 @@ select {
   }
 
   .marketLevelChartWrap.overview .marketPoint {
-    r: 12px;
+    r: 8px;
   }
 
   .marketBandName,

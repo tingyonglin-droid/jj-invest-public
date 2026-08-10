@@ -65,8 +65,15 @@ describe("benchmark drawdown UI", () => {
     );
     assert.match(
       cssSource,
-      /\.marketLevelChartWrap\.overview \.marketPointDate\s*\{[^}]*font-size:\s*18px;/s,
+      /\.marketLevelChartWrap\.overview \.marketPointDate\s*\{[^}]*font-size:\s*14px;/s,
     );
+    assert.match(cssSource, /\.marketPoint\s*\{[^}]*r:\s*6px;/s);
+    assert.match(
+      cssSource,
+      /\.marketLevelChartWrap\.overview \.marketPoint\s*\{[^}]*r:\s*8px;/s,
+    );
+    assert.match(pageSource, /className="marketPointPercent"[\s\S]*?y=\{point\.percentLabelY\}/);
+    assert.match(pageSource, /className="marketPointDate"[\s\S]*?y=\{chart\.dateLabelY\}/);
     assert.doesNotMatch(cssSource, /\.marketLevelChartToolbar/);
   });
 });

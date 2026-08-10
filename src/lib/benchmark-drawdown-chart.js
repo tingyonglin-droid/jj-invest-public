@@ -42,10 +42,13 @@ export function createBenchmarkDrawdownChart(history, highPrice, options = {}) {
     );
     const isFirst = index === 0;
     const isLast = index === records.length - 1;
+    const y = drawdownY(record.drawdownRatio);
+    const bandBottom = record.level === "normal" ? 140 : record.level === "prepare" ? 240 : 340;
     return {
       ...record,
       x,
-      y: drawdownY(record.drawdownRatio),
+      y,
+      percentLabelY: round(Math.min(y + 18, bandBottom - 4)),
       tooltipX: round(x + (isFirst ? 12 : isLast ? -12 : 0)),
       tooltipAnchor: isFirst ? "start" : isLast ? "end" : "middle",
       showDateLabel: isFirst || isLast || index % labelEvery === 0,
@@ -57,6 +60,7 @@ export function createBenchmarkDrawdownChart(history, highPrice, options = {}) {
     mode,
     edgeLabelInset: 40,
     bandInset: 32,
+    dateLabelY: 362,
     width,
     height: VIEWBOX_HEIGHT,
     scrollKey: `${records.length}:${records[0]?.date || ""}:${records.at(-1)?.date || ""}`,

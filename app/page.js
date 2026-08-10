@@ -1428,7 +1428,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
             return (
               <g key={point.date}>
                 {point.showPercentLabel && (
-                  <text className="marketPointPercent" x={point.x} y={Math.max(24, point.y - 16)} textAnchor="middle">
+                  <text className="marketPointPercent" x={point.x} y={point.percentLabelY} textAnchor="middle">
                     {formatSignedPercent(point.drawdownRatio)}
                   </text>
                 )}
@@ -1452,7 +1452,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
                   aria-hidden="true"
                 />
                 {point.showDateLabel && (
-                  <text className="marketPointDate" x={point.x} y="374" textAnchor="middle">{shortDate}</text>
+                  <text className="marketPointDate" x={point.x} y={chart.dateLabelY} textAnchor="middle">{shortDate}</text>
                 )}
               </g>
             );
