@@ -281,9 +281,80 @@ p {
   height: 20px;
 }
 
-.betaCard {
+.overviewCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  min-height: 32px;
+}
+
+.overviewCardHeaderText {
+  min-width: 0;
+}
+
+.overviewCardHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 16px;
+}
+
+.overviewCardHeaderTitle h2 {
+  margin: 0;
+  font: inherit;
+  font-weight: 780;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.overviewCardInfoButton {
+  min-width: 40px;
+  min-height: 40px;
+  margin: -4px 0;
+  font-size: 12px;
+}
+
+.overviewCardInfoButton::after {
+  width: 26px;
+  height: 26px;
+}
+
+.overviewCardHeaderAction {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+}
+
+.overviewCardAction {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 9px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 820;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+button.overviewCardAction::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
+}
+
+.betaCard {
   padding: 18px 20px 16px;
+}
+
+.betaCard > .overviewCardHeader {
+  margin-bottom: 10px;
 }
 
 .betaPrimary {
@@ -291,21 +362,7 @@ p {
 }
 
 .betaAction {
-  position: absolute;
-  top: 18px;
-  right: 20px;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
   border: 0;
-  border-radius: 12px;
-  padding: 8px 11px;
-  font-size: 13px;
-  font-weight: 820;
-  line-height: 1.2;
-  white-space: nowrap;
 }
 
 button.betaAction {
@@ -347,7 +404,6 @@ button.betaAction {
   gap: 8px;
   min-height: 0;
   min-width: 0;
-  padding-top: 46px;
 }
 
 .betaMetaGrid div {
@@ -476,35 +532,6 @@ button.betaAction {
   padding: 12px 22px 0;
 }
 
-.marketLevelHeading {
-  display: grid;
-  gap: 6px;
-}
-
-.marketLevelHeading h2 {
-  font-size: clamp(25px, 3vw, 34px);
-}
-
-.marketLevelHeading > p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 16px;
-  font-weight: 720;
-}
-
-.marketLevelTitleRow {
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  gap: 12px;
-}
-
-.marketLevelTitleActions {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 10px;
-}
-
 .marketLevelSummaries {
   display: grid;
   grid-template-columns: repeat(2, minmax(145px, 1fr));
@@ -560,14 +587,10 @@ button.betaAction {
 
 .marketLevelViewButton {
   flex: 0 0 auto;
-  min-height: 44px;
   border: 1px solid rgba(36, 135, 94, 0.3);
-  border-radius: 999px;
-  padding: 8px 16px;
   background: rgba(232, 247, 237, 0.86);
   color: #176b49;
   font: inherit;
-  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -1038,6 +1061,7 @@ button.betaAction {
   gap: 6px;
   justify-items: end;
   min-width: 0;
+  margin: 6px 0 10px;
   text-align: right;
 }
 
@@ -3331,11 +3355,6 @@ select {
     padding-top: 0;
   }
 
-  .betaAction {
-    top: 13px;
-    right: 15px;
-  }
-
   .betaMetaGrid strong {
     font-size: 13px;
     white-space: normal;
@@ -4162,14 +4181,6 @@ select {
 }
 
 @media (max-width: 480px) {
-  .marketLevelHeading h2 {
-    font-size: 25px;
-  }
-
-  .marketLevelHeading > p {
-    font-size: 14px;
-  }
-
   .marketLevelSummaries span,
   .marketLevelSummaries time {
     font-size: 10px;

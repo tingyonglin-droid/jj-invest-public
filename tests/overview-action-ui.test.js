@@ -21,13 +21,13 @@ describe("overview action UI", () => {
   });
 
   it("keeps the overview action pinned to the beta card top-right on phones", () => {
-    assert.doesNotMatch(
-      cssSource,
-      /\.betaAction\s*\{[^}]*position:\s*static;/s,
+    assert.match(
+      pageSource,
+      /<OverviewCardHeader[\s\S]*?title="目前 Beta"[\s\S]*?action=\{/,
     );
     assert.match(
       cssSource,
-      /@media \(max-width: 480px\)[\s\S]*?\.betaAction\s*\{[^}]*top:\s*13px;[^}]*right:\s*15px;/,
+      /\.overviewCardHeader\s*\{[^}]*justify-content:\s*space-between;/s,
     );
   });
 });

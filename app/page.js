@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { OverviewCardHeader } from "../src/components/overview-card-header.js";
 import {
   AUTO_REFRESH_INTERVAL_MS,
   shouldAutoRefreshQuotes,
@@ -1215,21 +1216,12 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
 
   return (
     <section className="appCard betaCard">
-      <div className="betaTopline">
-        <div className="betaPrimary">
-          <div className="cardLabelRow">
-            <p className="cardLabel">目前 Beta</p>
-            <button
-              type="button"
-              className="infoButton"
-              onClick={onOpenGlossary}
-              aria-label="查看 Beta 說明"
-            >
-              i
-            </button>
-          </div>
-          <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
-          {action.destination ? (
+      <OverviewCardHeader
+        title="目前 Beta"
+        infoLabel="查看 Beta 說明"
+        onInfo={onOpenGlossary}
+        action={
+          action.destination ? (
             <button
               type="button"
               className={`betaAction ${action.tone}`}
@@ -1240,7 +1232,12 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
             </button>
           ) : (
             <span className={`betaAction ${action.tone}`}>{action.label}</span>
-          )}
+          )
+        }
+      />
+      <div className="betaTopline">
+        <div className="betaPrimary">
+          <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
         </div>
         <div className="betaMetaGrid">
           <div>
@@ -1349,19 +1346,12 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
   return (
     <section className={`appCard marketLevelCard ${benchmarkDrawdown.level}`}>
       <div className="marketLevelHeader">
-        <div className="marketLevelHeading">
-          <div className="cardTitleRow marketLevelTitleRow">
-            <div className="marketLevelTitleActions">
-              <h2>市場水位</h2>
-              <button
-                type="button"
-                className="infoButton small"
-                onClick={onOpenGlossary}
-                aria-label="查看 0050 距收盤高點說明"
-              >
-                i
-              </button>
-            </div>
+        <OverviewCardHeader
+          title="市場水位"
+          subtitle="0050 距歷史高點"
+          infoLabel="查看 0050 距收盤高點說明"
+          onInfo={onOpenGlossary}
+          action={
             <button
               type="button"
               className="marketLevelViewButton"
@@ -1370,9 +1360,8 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
             >
               {chartMode === "overview" ? "查看詳細點位" : "看全部曲線"}
             </button>
-          </div>
-          <p>0050 距歷史高點</p>
-        </div>
+          }
+        />
 
         <div className="marketLevelSummaries">
           <div>
@@ -1635,25 +1624,15 @@ function AllocationCard({ calculation, onOpenGlossary }) {
 
   return (
     <section className="appCard allocationCard">
-      <div className="cardHeaderRow">
-        <div>
-          <div className="cardTitleRow">
-            <h2>資產配置比例</h2>
-            <button
-              type="button"
-              className="infoButton small"
-              onClick={onOpenGlossary}
-              aria-label="查看正二、原形與現金說明"
-            >
-              i
-            </button>
-          </div>
-          <p>正二、原形與現金配置</p>
-        </div>
-        <div className="allocationTotal">
-          <span>總資產</span>
-          <strong>{formatTwd(calculation.totalAssetsTwd)}</strong>
-        </div>
+      <OverviewCardHeader
+        title="資產配置比例"
+        subtitle="正二、原形與現金配置"
+        infoLabel="查看正二、原形與現金說明"
+        onInfo={onOpenGlossary}
+      />
+      <div className="allocationTotal">
+        <span>總資產</span>
+        <strong>{formatTwd(calculation.totalAssetsTwd)}</strong>
       </div>
       <AllocationBar
         leveragedRatio={calculation.leveragedRatio}

@@ -33,14 +33,13 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /activePointDate === point\.date/);
     assert.match(pageSource, /getNearestMarketPointIndex/);
     assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
-    assert.match(pageSource, /marketLevelTitleActions/);
-    assert.match(pageSource, /cardTitleRow[\s\S]*marketLevelViewButton/);
+    assert.match(pageSource, /<OverviewCardHeader[\s\S]*?title="市場水位"/);
+    assert.match(pageSource, /action=\{[\s\S]*?marketLevelViewButton/);
     assert.doesNotMatch(pageSource, /marketPointWeekday/);
     assert.doesNotMatch(pageSource, /marketLevelChartToolbar/);
     assert.match(pageSource, /股災區間/);
     assert.doesNotMatch(pageSource, /風險區間/);
-    assert.match(cssSource, /\.marketLevelTitleActions/);
-    assert.match(cssSource, /\.marketLevelViewButton[\s\S]*min-height:\s*44px/);
+    assert.match(cssSource, /\.overviewCardAction[\s\S]*height:\s*32px/);
     assert.match(
       cssSource,
       /\.marketLevelChartWrap\.overview \.marketBandName,[\s\S]*?font-size:\s*24px/,

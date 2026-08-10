@@ -5,8 +5,8 @@ import assert from "node:assert/strict";
 test("overview exposes glossary entry with accessible label", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
-  assert.match(page, /aria-label="查看 Beta 說明"/);
-  assert.match(page, /aria-label="查看正二、原形與現金說明"/);
+  assert.match(page, /infoLabel="查看 Beta 說明"/);
+  assert.match(page, /infoLabel="查看正二、原形與現金說明"/);
   assert.match(page, /function GlossaryDialog/);
 });
 
