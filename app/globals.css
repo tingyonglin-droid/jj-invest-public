@@ -4137,7 +4137,7 @@ select {
   .marketLevelChartWrap.overview .marketThresholdRatio,
   .marketLevelChartWrap.overview .marketThresholdPrice,
   .marketLevelChartWrap.overview .marketPointPercent {
-    font-size: 24px;
+    font-size: 18px;
   }
 
   .marketLevelChartWrap.overview .marketPointDate {

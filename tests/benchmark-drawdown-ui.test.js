@@ -27,7 +27,7 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /className="marketLevelChart"[^>]*role="group"/);
     assert.doesNotMatch(pageSource, /className="marketLevelChart"[^>]*role="img"/);
     assert.match(pageSource, /看全部曲線/);
-    assert.match(pageSource, /查看詳細點位/);
+    assert.match(pageSource, /看詳細點位/);
     assert.match(
       pageSource,
       /const \[chartMode, setChartMode\] = useState\("overview"\)/,
@@ -54,7 +54,7 @@ describe("benchmark drawdown UI", () => {
     assert.match(cssSource, /\.overviewCardAction[\s\S]*height:\s*32px/);
     assert.match(
       cssSource,
-      /\.marketLevelChartWrap\.overview \.marketBandName,[\s\S]*?font-size:\s*24px/,
+      /\.marketLevelChartWrap\.overview \.marketBandName,[\s\S]*?font-size:\s*18px/,
     );
     assert.doesNotMatch(cssSource, /\.marketLevelChartToolbar/);
   });

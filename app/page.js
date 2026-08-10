@@ -1359,7 +1359,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
               aria-pressed={chartMode === "overview"}
               onClick={toggleChartMode}
             >
-              {chartMode === "overview" ? "查看詳細點位" : "看全部曲線"}
+              {chartMode === "overview" ? "看詳細點位" : "看全部曲線"}
             </button>
           }
         />
@@ -1411,10 +1411,10 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
                 y1={threshold.y}
                 y2={threshold.y}
               />
-              <text className="marketThresholdRatio" x="8" y={threshold.y - 7}>
+              <text className="marketThresholdRatio" x={chart.edgeLabelInset} y={threshold.y - 7}>
                 {formatSignedPercent(threshold.ratio)}
               </text>
-              <text className="marketThresholdPrice" x={chart.width - 8} y={threshold.y + 17} textAnchor="end">
+              <text className="marketThresholdPrice" x={chart.width - chart.edgeLabelInset} y={threshold.y + 17} textAnchor="end">
                 {formatNumber(threshold.price, 2)}
               </text>
             </g>
