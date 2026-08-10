@@ -72,8 +72,8 @@ describe("benchmark drawdown chart", () => {
     const overview = createBenchmarkDrawdownChart(history, 100, { mode: "overview" });
 
     assert.equal(model.mode, "detail");
-    assert.equal(model.edgeLabelInset, 8);
-    assert.equal(model.bandInset, 0);
+    assert.equal(model.edgeLabelInset, 40);
+    assert.equal(model.bandInset, 32);
     assert.equal(model.points.length, 24);
     assert.equal(model.width, 1146);
     assert.equal(model.height, 400);

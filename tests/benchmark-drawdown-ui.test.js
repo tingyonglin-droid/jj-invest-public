@@ -40,6 +40,10 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /x=\{chart\.bandInset\}/);
     assert.match(pageSource, /width=\{chart\.width - chart\.bandInset \* 2\}/);
     assert.match(pageSource, /className="marketBandName normal" x=\{chart\.edgeLabelInset\}/);
+    assert.match(
+      pageSource,
+      /className="marketThresholdRatio" x=\{chart\.edgeLabelInset\} y=\{threshold\.y \+ 20\}/,
+    );
     assert.match(pageSource, /<OverviewCardHeader[\s\S]*?title="市場水位"/);
     assert.match(pageSource, /action=\{[\s\S]*?marketLevelViewButton/);
     assert.match(

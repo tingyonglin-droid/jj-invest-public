@@ -1411,7 +1411,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
                 y1={threshold.y}
                 y2={threshold.y}
               />
-              <text className="marketThresholdRatio" x={chart.edgeLabelInset} y={threshold.y - 7}>
+              <text className="marketThresholdRatio" x={chart.edgeLabelInset} y={threshold.y + 20}>
                 {formatSignedPercent(threshold.ratio)}
               </text>
               <text className="marketThresholdPrice" x={chart.width - chart.edgeLabelInset} y={threshold.y + 17} textAnchor="end">

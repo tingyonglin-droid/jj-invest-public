@@ -55,8 +55,8 @@ export function createBenchmarkDrawdownChart(history, highPrice, options = {}) {
 
   return {
     mode,
-    edgeLabelInset: mode === "overview" ? 40 : 8,
-    bandInset: mode === "overview" ? 32 : 0,
+    edgeLabelInset: 40,
+    bandInset: 32,
     width,
     height: VIEWBOX_HEIGHT,
     scrollKey: `${records.length}:${records[0]?.date || ""}:${records.at(-1)?.date || ""}`,
