@@ -67,6 +67,10 @@ describe("overview card header", () => {
       cssSource,
       /@media \(max-width: 480px\)[\s\S]*?\.appCard\s*\{[^}]*--app-card-inline-padding:\s*15px;/s,
     );
+    assert.match(
+      cssSource,
+      /@media \(max-width: 760px\)[\s\S]*?\.marketLevelCard\s*\{[^}]*padding:\s*0;/s,
+    );
   });
 
   it("gives the beta and market actions the same left edge", () => {

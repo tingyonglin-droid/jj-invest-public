@@ -4106,6 +4106,7 @@ select {
 @media (max-width: 760px) {
   .marketLevelCard {
     gap: 2px;
+    padding: 0;
   }
 
   .marketLevelHeader {
