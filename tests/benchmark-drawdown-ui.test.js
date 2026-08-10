@@ -28,6 +28,10 @@ describe("benchmark drawdown UI", () => {
     assert.doesNotMatch(pageSource, /className="marketLevelChart"[^>]*role="img"/);
     assert.match(pageSource, /看全部曲線/);
     assert.match(pageSource, /查看詳細點位/);
+    assert.match(
+      pageSource,
+      /const \[chartMode, setChartMode\] = useState\("overview"\)/,
+    );
     assert.match(pageSource, /aria-pressed=\{chartMode === "overview"\}/);
     assert.match(pageSource, /activePointDate/);
     assert.match(pageSource, /activePointDate === point\.date/);

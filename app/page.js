@@ -1278,7 +1278,7 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
 
 function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
   const [activePointDate, setActivePointDate] = useState(null);
-  const [chartMode, setChartMode] = useState("detail");
+  const [chartMode, setChartMode] = useState("overview");
   const chartScrollRef = useRef(null);
   const chart = createBenchmarkDrawdownChart(
     benchmarkDrawdown?.history,
