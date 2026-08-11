@@ -40,6 +40,13 @@ export function getTickerBadgeText(normalizedTicker) {
   return TICKER_BADGES[normalizedTicker] || String(normalizedTicker || "?").slice(0, 3);
 }
 
+export function getTickerDisplayText(normalizedTicker) {
+  return String(normalizedTicker || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\.(?:TW|TWO)$/, "");
+}
+
 export function getTickerPlaceholder(assetType) {
   return TICKER_PLACEHOLDERS[assetType] || "輸入股票或 ETF 代號";
 }
@@ -80,7 +87,7 @@ export function createOperationListText(recommendations) {
     .filter((item) => item.action !== "none" && Math.abs(item.tradeAmountTwd) > 0.5)
     .map((item) => {
       const shares = getEstimatedShares(item.tradeAmountTwd, item.priceTwd);
-      return `${item.normalizedTicker} ${getActionText(item.action)} ${formatTwdText(
+      return `${getTickerDisplayText(item.normalizedTicker)} ${getActionText(item.action)} ${formatTwdText(
         Math.abs(item.tradeAmountTwd),
       )}，約 ${shares.toLocaleString("zh-TW")} 股`;
     });

@@ -5,6 +5,7 @@ import {
   createOperationListText,
   getOperationSummary,
   getPositionDisplayName,
+  getTickerDisplayText,
   getTickerPlaceholder,
   getTickerBadgeText,
 } from "../src/lib/presentation.js";
@@ -50,6 +51,13 @@ describe("presentation helpers", () => {
     assert.equal(getTickerBadgeText("QLD"), "QLD");
   });
 
+  it("formats normalized tickers for user-facing text", () => {
+    assert.equal(getTickerDisplayText("00631L.TW"), "00631L");
+    assert.equal(getTickerDisplayText("00864B.TWO"), "00864B");
+    assert.equal(getTickerDisplayText(" qld "), "QLD");
+    assert.equal(getTickerDisplayText(), "");
+  });
+
   it("creates a copyable operation list from recommendations", () => {
     const text = createOperationListText([
       {
@@ -76,7 +84,7 @@ describe("presentation helpers", () => {
       text,
       [
         "JJ Invest System 操作清單",
-        "00631L.TW 賣出 NT$10,000，約 250 股",
+        "00631L 賣出 NT$10,000，約 250 股",
         "QLD 買入 NT$18,500，約 6 股",
       ].join("\n"),
     );
