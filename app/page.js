@@ -479,6 +479,7 @@ export default function Home() {
         precision: rebalancePrecision,
         cashTwd: calculation.realCashTwd,
         minimumCashTwd: targetRealCashTwd + excludedCashEquivalentReserveTwd,
+        cashTargetStrategy: formState.cashEquivalentMode === "custom" ? "nearest" : "floor",
       });
       return {
         ...stockResult,

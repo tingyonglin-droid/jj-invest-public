@@ -49,6 +49,7 @@ export function createFundedRebalanceRecommendations({
   precision = "shares",
   cashTwd,
   minimumCashTwd = 0,
+  cashTargetStrategy = "floor",
 }) {
   const appliedDeltas = new Map(
     recommendations.map((recommendation) => [
@@ -61,8 +62,9 @@ export function createFundedRebalanceRecommendations({
       sum + toNumber(appliedDeltas.get(recommendation.id)) * toNumber(recommendation.priceTwd),
     0,
   );
+  let projectedCashTwd = toNumber(cashTwd) - netTradeCost;
   let deficit = roundCash(
-    Math.max(toNumber(minimumCashTwd) - (toNumber(cashTwd) - netTradeCost), 0),
+    Math.max(toNumber(minimumCashTwd) - projectedCashTwd, 0),
   );
 
   const buys = recommendations
@@ -89,12 +91,32 @@ export function createFundedRebalanceRecommendations({
     }
     const currentDelta = toNumber(appliedDeltas.get(recommendation.id));
     const availableUnits = Math.floor(currentDelta / shareUnit);
-    const unitsToRemove = Math.min(availableUnits, Math.ceil(deficit / unitCost));
+    let unitsToRemove = Math.min(availableUnits, Math.ceil(deficit / unitCost));
+
+    if (
+      cashTargetStrategy === "nearest" &&
+      recommendation.assetType === "cashEquivalent"
+    ) {
+      unitsToRemove = 0;
+      while (unitsToRemove < availableUnits && projectedCashTwd < toNumber(minimumCashTwd)) {
+        const candidateCashTwd = projectedCashTwd + unitCost;
+        const candidateIsCloser =
+          Math.abs(toNumber(minimumCashTwd) - candidateCashTwd) <
+          Math.abs(toNumber(minimumCashTwd) - projectedCashTwd);
+        if (projectedCashTwd >= 0 && !candidateIsCloser) {
+          break;
+        }
+        unitsToRemove += 1;
+        projectedCashTwd = candidateCashTwd;
+      }
+    } else {
+      projectedCashTwd += unitsToRemove * unitCost;
+    }
     appliedDeltas.set(
       recommendation.id,
       currentDelta - unitsToRemove * shareUnit,
     );
-    deficit = roundCash(Math.max(deficit - unitsToRemove * unitCost, 0));
+    deficit = roundCash(Math.max(toNumber(minimumCashTwd) - projectedCashTwd, 0));
   }
 
   return recommendations.map((recommendation) => ({

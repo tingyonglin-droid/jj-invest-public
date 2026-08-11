@@ -25,6 +25,28 @@ const recommendations = [
 ];
 
 describe("apply rebalance", () => {
+  it("keeps the closer cash-equivalent lot in custom allocation mode", () => {
+    const funded = createFundedRebalanceRecommendations({
+      cashTwd: 148670,
+      minimumCashTwd: 100000,
+      cashTargetStrategy: "nearest",
+      precision: "lots",
+      recommendations: [
+        {
+          id: "bond",
+          normalizedTicker: "00865B.TW",
+          shares: 1000,
+          assetType: "cashEquivalent",
+          tradeAmountTwd: 50640,
+          priceTwd: 49.36,
+        },
+      ],
+    });
+
+    assert.equal(getAppliedRebalanceShareDelta(funded[0], "lots"), 1000);
+    assert.equal(funded[0].tradeAmountTwd, 49360);
+  });
+
   it("reduces rounded cash-equivalent buys before breaching the real-cash reserve", () => {
     const funded = createFundedRebalanceRecommendations({
       cashTwd: 1000000,
