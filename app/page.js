@@ -30,6 +30,10 @@ import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { createBetaSummary } from "../src/lib/beta-summary.js";
 import { calculateCashTwdValue } from "../src/lib/cash.js";
 import {
+  getCashEquivalentTargetStatus,
+  getCashSleeveTargets,
+} from "../src/lib/cash-equivalents.js";
+import {
   addHistoryPerformanceAdjustment,
   createHistoryChartModel,
   createHistorySnapshot,
@@ -94,6 +98,9 @@ const DEFAULT_STATE = {
   ],
   cashTwd: 0,
   cashUsd: 0,
+  cashEquivalentPositions: [],
+  cashEquivalentMode: "auto",
+  realCashTargetPct: 10,
   leveragedTargetPct: 60,
   originalTargetPct: 0,
   tolerancePct: 10,
@@ -217,6 +224,13 @@ function normalizeStoredState(state) {
     ...state,
     cashTwd: parseIntegerInput(state.cashTwd),
     cashUsd: parseIntegerInput(state.cashUsd ?? 0),
+    cashEquivalentMode: state.cashEquivalentMode === "custom" ? "custom" : "auto",
+    realCashTargetPct: parseNumericInput(state.realCashTargetPct ?? 10),
+    cashEquivalentPositions: (state.cashEquivalentPositions || []).map((position) => ({
+      ...position,
+      shares: parseIntegerInput(position.shares),
+      targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
+    })),
     originalTargetPct: parseNumericInput(state.originalTargetPct ?? DEFAULT_STATE.originalTargetPct),
     allocationModes: {
       leveraged: modes.leveraged === "custom" ? "custom" : "auto",
@@ -350,10 +364,10 @@ export default function Home() {
 
   const tickers = useMemo(
     () =>
-      formState.positions
+      [...formState.positions, ...formState.cashEquivalentPositions]
         .map((position) => position.tickerInput)
         .filter((ticker) => String(ticker || "").trim()),
-    [formState.positions],
+    [formState.positions, formState.cashEquivalentPositions],
   );
 
   const isLocalPreview =
@@ -371,12 +385,15 @@ export default function Home() {
 
       return calculatePortfolio({
         positions: formState.positions,
+        cashEquivalentPositions: formState.cashEquivalentPositions,
         quotes: quoteResult.quotes,
         cashTwd: cashValueTwd,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
         allocationModes: formState.allocationModes,
+        cashEquivalentMode: formState.cashEquivalentMode,
+        realCashTargetPct: formState.realCashTargetPct,
       });
     },
     [formState, quoteResult],
@@ -400,8 +417,8 @@ export default function Home() {
   const rebalanceTargetBeta =
     rebalanceTargetBetaOverride === "" ? calculation.targetBeta : rebalanceTargetBetaOverride;
   const operationRebalance = useMemo(
-    () =>
-      createOperationRebalance({
+    () => {
+      const stockResult = createOperationRebalance({
         recommendations: calculation.recommendations,
         selectedIds: selectedRebalanceIds,
         totalAssetsTwd: calculation.totalAssetsTwd,
@@ -409,7 +426,45 @@ export default function Home() {
         originalTargetRatio: calculation.targetOriginalRatio,
         precision: rebalancePrecision,
         allocationModes: formState.allocationModes,
-      }),
+      });
+      const originalRatio = Number(calculation.targetOriginalRatio) || 0;
+      const leveragedRatio = Math.max((Number(stockResult.correctedTargetBeta) - originalRatio) / 2, 0);
+      const targetCashSleeveValueTwd = calculation.totalAssetsTwd * Math.max(
+        1 - leveragedRatio - originalRatio,
+        0,
+      );
+      const cashTargets = getCashSleeveTargets({
+        mode: formState.cashEquivalentMode,
+        positions: formState.cashEquivalentPositions,
+        realCashTargetPct: formState.realCashTargetPct,
+      });
+      const cashEquivalentRecommendations = calculation.cashEquivalentRecommendations.map((item) => {
+        const targetValueTwd = targetCashSleeveValueTwd * Number(
+          cashTargets.positionRatios.get(item.id) || 0,
+        );
+        const tradeAmountTwd = targetValueTwd - item.currentValueTwd;
+        return {
+          ...item,
+          targetValueTwd,
+          tradeAmountTwd,
+          action: tradeAmountTwd > 0.5 ? "buy" : tradeAmountTwd < -0.5 ? "sell" : "none",
+          isSelected: true,
+          currentSleeveWeight: calculation.cashSleeveValueTwd > 0
+            ? item.currentValueTwd / calculation.cashSleeveValueTwd
+            : 0,
+          targetSleeveWeight: Number(cashTargets.positionRatios.get(item.id) || 0),
+          allocationMode: formState.cashEquivalentMode,
+          afterSleeveWeight: targetCashSleeveValueTwd > 0
+            ? targetValueTwd / targetCashSleeveValueTwd
+            : 0,
+        };
+      });
+      return {
+        ...stockResult,
+        recommendations: [...stockResult.recommendations, ...cashEquivalentRecommendations],
+        targetRealCashTwd: targetCashSleeveValueTwd * cashTargets.realCashRatio,
+      };
+    },
     [
       calculation.recommendations,
       calculation.targetOriginalRatio,
@@ -418,6 +473,11 @@ export default function Home() {
       rebalancePrecision,
       selectedRebalanceIds,
       formState.allocationModes,
+      formState.cashEquivalentMode,
+      formState.cashEquivalentPositions,
+      formState.realCashTargetPct,
+      calculation.cashEquivalentRecommendations,
+      calculation.cashSleeveValueTwd,
     ],
   );
   const appliedRebalanceSummary = useMemo(
@@ -455,12 +515,15 @@ export default function Home() {
       });
       const nextCalculation = calculatePortfolio({
         positions: formState.positions,
+        cashEquivalentPositions: formState.cashEquivalentPositions,
         quotes: payload.quotes,
         cashTwd: nextCashValueTwd,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
         allocationModes: formState.allocationModes,
+        cashEquivalentMode: formState.cashEquivalentMode,
+        realCashTargetPct: formState.realCashTargetPct,
       });
       setQuoteResult(payload);
       setLastUpdatedAt(new Date());
@@ -691,6 +754,12 @@ export default function Home() {
 
   function updateSetting(field, value) {
     setFormState((current) => {
+      if (field === "cashEquivalentMode") {
+        return {
+          ...current,
+          cashEquivalentMode: value === "custom" ? "custom" : "auto",
+        };
+      }
       const isCashField = field === "cashTwd" || field === "cashUsd";
       const nextValue = isCashField ? parseIntegerInput(value) : parseNumericInput(value);
 
@@ -735,6 +804,41 @@ export default function Home() {
               [field]: field === "tickerInput" ? value : parseNumericInput(value),
             }
           : position,
+      ),
+    }));
+  }
+
+  function updateCashEquivalentPosition(id, field, value) {
+    setFormState((current) => ({
+      ...current,
+      cashEquivalentPositions: current.cashEquivalentPositions.map((position) =>
+        position.id === id
+          ? { ...position, [field]: field === "tickerInput" ? value : parseNumericInput(value) }
+          : position,
+      ),
+    }));
+  }
+
+  function addCashEquivalentPosition() {
+    setFormState((current) => ({
+      ...current,
+      cashEquivalentPositions: [
+        ...current.cashEquivalentPositions,
+        {
+          id: `cash-equivalent-${Date.now()}`,
+          tickerInput: "",
+          shares: 0,
+          targetWeightPct: 0,
+        },
+      ],
+    }));
+  }
+
+  function removeCashEquivalentPosition(id) {
+    setFormState((current) => ({
+      ...current,
+      cashEquivalentPositions: current.cashEquivalentPositions.filter(
+        (position) => position.id !== id,
       ),
     }));
   }
@@ -844,6 +948,7 @@ export default function Home() {
       });
       const result = applyRebalanceToState({
         positions: current.positions,
+        cashEquivalentPositions: current.cashEquivalentPositions,
         cashTwd: currentCashTwd,
         recommendations: operationRebalance.recommendations,
         precision: rebalancePrecision,
@@ -852,6 +957,7 @@ export default function Home() {
       return {
         ...current,
         positions: result.positions,
+        cashEquivalentPositions: result.cashEquivalentPositions,
         cashTwd: result.cashTwd - calculateCashTwdValue({
           cashTwd: 0,
           cashUsd: current.cashUsd,
@@ -1110,11 +1216,14 @@ export default function Home() {
             fx={quoteResult.fx}
             historyCount={historyRecords.length}
             onAddPosition={addPosition}
+            onAddCashEquivalentPosition={addCashEquivalentPosition}
             onExportBackup={handleExportBackup}
             onImportBackup={handleImportBackup}
             onRemovePosition={removePosition}
+            onRemoveCashEquivalentPosition={removeCashEquivalentPosition}
             onSetCashChangeReason={setCashChangeReason}
             onUpdatePosition={updatePosition}
+            onUpdateCashEquivalentPosition={updateCashEquivalentPosition}
             onUpdateAllocationMode={updateAllocationMode}
             onUpdateSetting={updateSetting}
             cashChangeReason={cashChangeReason}
@@ -1624,8 +1733,9 @@ function GlossaryDialog({ topic, onClose }) {
 
               <article className="glossaryItem">
                 <span>現金</span>
-                <p>現金是台幣現金與美金現金換算成台幣後的加總。</p>
-                <p>資產配置比例會把正二、原形與現金一起納入總資產計算。</p>
+                <p>現金桶是台幣現金、美金現金換算台幣，以及類現金 ETF 市值的加總。</p>
+                <p>類現金 ETF 的 Beta 以 0 計算，會參與現金桶與再平衡，但仍有價格波動。</p>
+                <p>資產配置比例會把正二、原形與現金＋類現金一起納入總資產計算。</p>
               </article>
             </>
           )}
@@ -1646,8 +1756,8 @@ function AllocationCard({ calculation, onOpenGlossary }) {
     <section className="appCard allocationCard">
       <OverviewCardHeader
         title="資產配置比例"
-        subtitle="正二、原形與現金配置"
-        infoLabel="查看正二、原形與現金說明"
+        subtitle="正二、原形與現金＋類現金配置"
+        infoLabel="查看正二、原形與現金＋類現金說明"
         onInfo={onOpenGlossary}
       />
       <div className="allocationTotal">
@@ -1676,7 +1786,7 @@ function AllocationCard({ calculation, onOpenGlossary }) {
         />
         <AllocationMetric
           color="blue"
-          label="現金"
+          label="現金＋類現金"
           current={calculation.cashRatio}
           target={calculation.afterCashRatio}
           valueTwd={cashValueTwd}
@@ -2113,6 +2223,10 @@ function OperationsView({
           <strong>{formatNetTradeAmount(appliedSummary.originalNetAmountTwd)}</strong>
         </div>
         <div>
+          <span>類現金 ETF</span>
+          <strong>{formatNetTradeAmount(appliedSummary.cashEquivalentNetAmountTwd)}</strong>
+        </div>
+        <div>
           <span>現金</span>
           <strong>{formatCashDelta(appliedSummary.cashDeltaTwd)}</strong>
         </div>
@@ -2240,10 +2354,13 @@ function getAppliedAfterBeta({ recommendations, totalAssetsTwd, precision }) {
 
 function HoldingList({ recommendations, onToggleSelection, precision, totalAssetsTwd }) {
   const leveragedRecommendations = recommendations.filter(
-    (item) => getHoldingAssetType(item.assetBeta) === "leveraged",
+    (item) => item.assetType !== "cashEquivalent" && getHoldingAssetType(item.assetBeta) === "leveraged",
   );
   const originalRecommendations = recommendations.filter(
-    (item) => getHoldingAssetType(item.assetBeta) === "original",
+    (item) => item.assetType !== "cashEquivalent" && getHoldingAssetType(item.assetBeta) === "original",
+  );
+  const cashEquivalentRecommendations = recommendations.filter(
+    (item) => item.assetType === "cashEquivalent",
   );
 
   return (
@@ -2257,6 +2374,16 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
           title="正二再平衡清單"
           totalAssetsTwd={totalAssetsTwd}
         />
+        {cashEquivalentRecommendations.length > 0 && (
+          <HoldingGroup
+            items={cashEquivalentRecommendations}
+            onToggleSelection={() => {}}
+            precision={precision}
+            tone="cash"
+            title="類現金再平衡清單"
+            totalAssetsTwd={totalAssetsTwd}
+          />
+        )}
         <HoldingGroup
           items={originalRecommendations}
           onToggleSelection={onToggleSelection}
@@ -2511,11 +2638,14 @@ function SettingsAccordions({
   historyCount,
   initialPage,
   onAddPosition,
+  onAddCashEquivalentPosition,
   onExportBackup,
   onImportBackup,
   onRemovePosition,
+  onRemoveCashEquivalentPosition,
   onSetCashChangeReason,
   onUpdatePosition,
+  onUpdateCashEquivalentPosition,
   onUpdateSetting,
   onUpdateAllocationMode,
 }) {
@@ -2523,6 +2653,11 @@ function SettingsAccordions({
   const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
   const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
   const betaGuardIsValid = calculation.errors.length === 0;
+  const cashEquivalentStatus = getCashEquivalentTargetStatus({
+    mode: formState.cashEquivalentMode,
+    positions: formState.cashEquivalentPositions,
+    realCashTargetPct: formState.realCashTargetPct,
+  });
   const [activeSettingsPage, setActiveSettingsPage] = useState(initialPage);
 
   return (
@@ -2632,6 +2767,94 @@ function SettingsAccordions({
                 </label>
               </div>
               <p className="hint">美金現金會用最新 USD/TWD 匯率換算，與新台幣相加後顯示總現金市值。</p>
+              <section className={`positionSection cashEquivalentSection ${cashEquivalentStatus.isValid ? "ok" : "error"}`}>
+                <div className="positionSectionHeader">
+                  <div>
+                    <strong>類現金標的</strong>
+                    <span>{formState.cashEquivalentPositions.length} 筆 ETF</span>
+                  </div>
+                  {formState.cashEquivalentMode === "custom" && (
+                    <em>合計 {formatNumber(cashEquivalentStatus.totalPct)}% / 100%</em>
+                  )}
+                </div>
+                <div className="allocationModeControl" role="radiogroup" aria-label="類現金配置方式">
+                  <span>配置方式</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={formState.cashEquivalentMode === "auto" ? "active" : ""}
+                      onClick={() => onUpdateSetting("cashEquivalentMode", "auto")}
+                    >
+                      自動配置
+                    </button>
+                    <button
+                      type="button"
+                      className={formState.cashEquivalentMode === "custom" ? "active" : ""}
+                      onClick={() => onUpdateSetting("cashEquivalentMode", "custom")}
+                    >
+                      自訂比例
+                    </button>
+                  </div>
+                </div>
+                <label>
+                  <span>真實現金保留比例 %（占現金＋類現金部位）</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={formState.realCashTargetPct}
+                    onChange={(event) => onUpdateSetting("realCashTargetPct", event.target.value)}
+                  />
+                </label>
+                {formState.cashEquivalentPositions.map((position, index) => (
+                  <div className="positionEditor cashEquivalentEditor" key={position.id}>
+                    <div className="positionTitle">
+                      <strong>類現金 {index + 1}</strong>
+                      <button type="button" className="textButton" onClick={() => onRemoveCashEquivalentPosition(position.id)}>移除</button>
+                    </div>
+                    <label>
+                      <span>代號</span>
+                      <input
+                        value={position.tickerInput}
+                        placeholder="00679B 或 SGOV"
+                        onChange={(event) => onUpdateCashEquivalentPosition(position.id, "tickerInput", event.target.value)}
+                      />
+                    </label>
+                    {formState.cashEquivalentMode === "custom" && (
+                      <label>
+                        <span>現金桶內目標比例 %</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={position.targetWeightPct}
+                          onChange={(event) => onUpdateCashEquivalentPosition(position.id, "targetWeightPct", event.target.value)}
+                        />
+                      </label>
+                    )}
+                    <label>
+                      <span>股數</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={position.shares}
+                        onChange={(event) => onUpdateCashEquivalentPosition(position.id, "shares", event.target.value)}
+                      />
+                    </label>
+                    <p className="hint">正規化代號：{normalizeTicker(position.tickerInput) || "尚未輸入"}</p>
+                  </div>
+                ))}
+                {!cashEquivalentStatus.isValid && (
+                  <p className="fieldError">真實現金與類現金標的目標比例合計必須等於 100%。</p>
+                )}
+                <p className="hint">類現金 ETF 仍有價格波動，並非保本現金。</p>
+                <button type="button" className="secondaryButton fullWidth" onClick={onAddCashEquivalentPosition}>
+                  新增類現金標的
+                </button>
+              </section>
             </div>
           )}
 

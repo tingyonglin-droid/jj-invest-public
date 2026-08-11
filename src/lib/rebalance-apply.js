@@ -53,9 +53,11 @@ export function getAppliedRebalanceSummary({ recommendations, precision = "share
       }
 
       const appliedAmountTwd = appliedDeltaShares * toNumber(recommendation.priceTwd);
-      const sleeveKey = toNumber(recommendation.assetBeta) >= 1.5
-        ? "leveragedNetAmountTwd"
-        : "originalNetAmountTwd";
+      const sleeveKey = recommendation.assetType === "cashEquivalent"
+        ? "cashEquivalentNetAmountTwd"
+        : toNumber(recommendation.assetBeta) >= 1.5
+          ? "leveragedNetAmountTwd"
+          : "originalNetAmountTwd";
 
       return {
         ...summary,
@@ -71,6 +73,7 @@ export function getAppliedRebalanceSummary({ recommendations, precision = "share
       totalAmountTwd: 0,
       leveragedNetAmountTwd: 0,
       originalNetAmountTwd: 0,
+      cashEquivalentNetAmountTwd: 0,
     },
   );
 
@@ -78,19 +81,30 @@ export function getAppliedRebalanceSummary({ recommendations, precision = "share
     ...summary,
     leveragedNetAmountTwd: roundCash(summary.leveragedNetAmountTwd),
     originalNetAmountTwd: roundCash(summary.originalNetAmountTwd),
+    cashEquivalentNetAmountTwd: roundCash(summary.cashEquivalentNetAmountTwd),
     cashDeltaTwd: roundCash(
-      -(summary.leveragedNetAmountTwd + summary.originalNetAmountTwd),
+      -(
+        summary.leveragedNetAmountTwd +
+        summary.originalNetAmountTwd +
+        summary.cashEquivalentNetAmountTwd
+      ),
     ),
   };
 }
 
-export function applyRebalanceToState({ positions, cashTwd, recommendations, precision }) {
+export function applyRebalanceToState({
+  positions,
+  cashEquivalentPositions = [],
+  cashTwd,
+  recommendations,
+  precision,
+}) {
   const recommendationById = new Map(
     recommendations.map((recommendation) => [recommendation.id, recommendation]),
   );
   let cashDeltaTwd = 0;
 
-  const nextPositions = positions.map((position) => {
+  const applyPositions = (sourcePositions) => sourcePositions.map((position) => {
     const recommendation = recommendationById.get(position.id);
     if (!recommendation) {
       return position;
@@ -113,8 +127,12 @@ export function applyRebalanceToState({ positions, cashTwd, recommendations, pre
     };
   });
 
+  const nextPositions = applyPositions(positions);
+  const nextCashEquivalentPositions = applyPositions(cashEquivalentPositions);
+
   return {
     positions: nextPositions,
+    cashEquivalentPositions: nextCashEquivalentPositions,
     cashTwd: roundCash(toNumber(cashTwd) - cashDeltaTwd),
   };
 }

@@ -22,6 +22,9 @@ const settings = {
   tolerancePct: 10,
   originalTargetPct: 0,
   allocationModes: { leveraged: "custom", original: "auto" },
+  cashEquivalentPositions: [],
+  cashEquivalentMode: "auto",
+  realCashTargetPct: 10,
 };
 
 describe("rebalance restore points", () => {

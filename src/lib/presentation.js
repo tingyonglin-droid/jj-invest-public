@@ -25,6 +25,9 @@ export function getPositionDisplayName(normalizedTicker, assetBeta = 2) {
     return TICKER_NAMES[normalizedTicker];
   }
 
+  if (Number(assetBeta) === 0) {
+    return "類現金標的";
+  }
   return Number(assetBeta) === 1 ? "原形標的" : "正二標的";
 }
 
