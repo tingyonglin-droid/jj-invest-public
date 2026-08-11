@@ -26,29 +26,42 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /0050 股價/);
     assert.match(pageSource, /className="marketLevelChart"[^>]*role="group"/);
     assert.doesNotMatch(pageSource, /className="marketLevelChart"[^>]*role="img"/);
-    assert.match(pageSource, /看全部曲線/);
-    assert.match(pageSource, /看詳細點位/);
+    assert.doesNotMatch(pageSource, /看全部曲線/);
+    assert.doesNotMatch(pageSource, /看詳細點位/);
     assert.match(
       pageSource,
-      /const \[chartMode, setChartMode\] = useState\("overview"\)/,
+      /const \[chartRange, setChartRange\] = useState\("1M"\)/,
     );
-    assert.match(pageSource, /aria-pressed=\{chartMode === "overview"\}/);
+    assert.match(pageSource, /\["1M", "3M", "6M", "1Y"\]/);
+    assert.match(pageSource, /aria-pressed=\{chartRange === range\}/);
+    assert.match(pageSource, /filterBenchmarkHistoryByRange/);
     assert.match(pageSource, /activePointDate/);
     assert.match(pageSource, /activePointDate === point\.date/);
     assert.match(pageSource, /getNearestMarketPointIndex/);
-    assert.match(pageSource, /marketLevelChartWrap.*chartMode/);
+    assert.match(pageSource, /className="marketLevelChartWrap"/);
     assert.match(pageSource, /x=\{chart\.bandInset\}/);
     assert.match(pageSource, /width=\{chart\.width - chart\.bandInset \* 2\}/);
-    assert.match(pageSource, /className="marketBandName normal" x=\{chart\.edgeLabelInset\}/);
+    assert.match(pageSource, /chart\.bands\.map\(\(band\) =>/);
+    assert.match(pageSource, /className=\{`marketBandName \$\{band\.level\}`\}/);
     assert.match(
       pageSource,
       /className="marketThresholdRatio" x=\{chart\.edgeLabelInset\} y=\{threshold\.y \+ 20\}/,
     );
     assert.match(pageSource, /<OverviewCardHeader[\s\S]*?title="市場水位"/);
-    assert.match(pageSource, /action=\{[\s\S]*?marketLevelViewButton/);
+    assert.doesNotMatch(pageSource, /marketLevelViewButton/);
     assert.match(
       pageSource,
-      /marketLevelCurrentStatus[\s\S]*?formatSignedPercent\(benchmarkDrawdown\.drawdownRatio\)[\s\S]*?marketLevelInlineStatus/,
+      /marketLevelDrawdownSummary[\s\S]*?formatSignedPercent\(benchmarkDrawdown\.drawdownRatio\)[\s\S]*?levelLabel/,
+    );
+    assert.match(pageSource, /目前價格（\{benchmarkDrawdown\.currentSource === "live" \? "即時" : "收盤"\}）/);
+    assert.match(pageSource, /歷史高點（收盤）/);
+    assert.match(
+      cssSource,
+      /\.marketLevelSummaries\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s,
+    );
+    assert.match(
+      cssSource,
+      /\.marketLevelSummaryLabel\s*\{[^}]*white-space:\s*nowrap;/s,
     );
     assert.doesNotMatch(
       pageSource,
@@ -59,20 +72,14 @@ describe("benchmark drawdown UI", () => {
     assert.match(pageSource, /股災區間/);
     assert.doesNotMatch(pageSource, /風險區間/);
     assert.match(cssSource, /\.overviewCardAction[\s\S]*height:\s*32px/);
-    assert.match(
-      cssSource,
-      /\.marketLevelChartWrap\.overview \.marketBandName,[\s\S]*?font-size:\s*18px/,
-    );
-    assert.match(
-      cssSource,
-      /\.marketLevelChartWrap\.overview \.marketPointDate\s*\{[^}]*font-size:\s*14px;/s,
-    );
+    assert.match(cssSource, /\.marketLevelRangeControls/);
     assert.match(cssSource, /\.marketPoint\s*\{[^}]*r:\s*6px;/s);
+    assert.doesNotMatch(pageSource, /marketPointPercent/);
+    assert.match(cssSource, /\.marketPoint:not\(\.active\):not\(\.latest\)/);
     assert.match(
       cssSource,
-      /\.marketLevelChartWrap\.overview \.marketPoint\s*\{[^}]*r:\s*8px;/s,
+      /@media \(max-width: 760px\)[\s\S]*?\.marketPointTooltip text\s*\{[^}]*font-size:\s*13px;/,
     );
-    assert.match(pageSource, /className="marketPointPercent"[\s\S]*?y=\{point\.percentLabelY\}/);
     assert.match(pageSource, /className="marketPointDate"[\s\S]*?y=\{chart\.dateLabelY\}/);
     assert.doesNotMatch(cssSource, /\.marketLevelChartToolbar/);
   });

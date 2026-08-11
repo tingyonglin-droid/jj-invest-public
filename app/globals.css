@@ -527,24 +527,27 @@ button.betaAction {
 }
 
 .marketLevelHeader {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(340px, auto);
-  gap: 24px;
-  align-items: start;
+  display: block;
   padding: 12px var(--app-card-inline-padding) 0;
 }
 
 .marketLevelSummaries {
   display: grid;
-  grid-template-columns: repeat(2, minmax(145px, 1fr));
-  min-width: 340px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+  padding: 12px 0;
+  border-radius: 14px;
+  background: rgba(247, 249, 250, 0.82);
 }
 
 .marketLevelSummaries > div {
   display: grid;
+  grid-template-rows: minmax(18px, auto) auto minmax(16px, auto);
   gap: 3px;
   justify-items: center;
-  padding: 0 18px;
+  align-items: center;
+  min-width: 0;
+  padding: 0 8px;
   text-align: center;
 }
 
@@ -552,91 +555,106 @@ button.betaAction {
   border-left: 1px solid rgba(154, 164, 177, 0.35);
 }
 
-.marketLevelSummaries span,
-.marketLevelSummaries time {
+.marketLevelSummaryLabel {
   color: var(--muted-strong);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 720;
+  white-space: nowrap;
 }
 
 .marketLevelSummaries strong {
   color: var(--text);
-  font-size: clamp(24px, 3vw, 34px);
+  font-size: clamp(22px, 3vw, 30px);
   font-weight: 820;
   line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
 
-.marketLevelSummaries b {
+.marketLevelDrawdownSummary strong,
+.marketLevelDrawdownSummary .marketLevelSummaryMeta {
   color: var(--primary-dark);
-  font-size: 20px;
-  line-height: 1.1;
 }
 
-.marketLevelCurrentStatus {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 3px;
+.marketLevelSummaryMeta {
+  color: var(--muted-strong);
+  font-size: 11px;
+  font-weight: 720;
   white-space: nowrap;
 }
 
-.marketLevelSummaries .marketLevelInlineStatus {
-  color: var(--primary-dark);
+.marketLevelDrawdownSummary .marketLevelSummaryMeta.prepare {
+  color: var(--warning);
+}
+
+.marketLevelDrawdownSummary .marketLevelSummaryMeta.deep {
+  color: var(--danger);
+}
+
+.marketLevelCard.prepare .marketLevelDrawdownSummary strong {
+  color: var(--warning);
+}
+
+.marketLevelCard.deep .marketLevelDrawdownSummary strong {
+  color: var(--danger);
+}
+
+.marketLevelRangeControls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px var(--app-card-inline-padding);
+  border-top: 1px solid rgba(154, 164, 177, 0.16);
+}
+
+.marketLevelRangeControls > span {
+  color: var(--muted);
   font-size: 12px;
-  font-weight: 760;
+  font-weight: 700;
 }
 
-.marketLevelSummaries .marketLevelInlineStatus.prepare {
-  color: var(--warning);
+.marketLevelRangeControls button {
+  min-width: 42px;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 9px;
+  background: rgba(235, 239, 242, 0.78);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-.marketLevelSummaries .marketLevelInlineStatus.deep {
-  color: var(--danger);
+.marketLevelRangeControls button[aria-pressed="true"] {
+  background: rgba(218, 241, 223, 0.9);
+  color: var(--primary-dark);
 }
 
-.marketLevelCard.prepare .marketLevelSummaries b {
-  color: var(--warning);
+.marketLevelRangeControls button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }
 
-.marketLevelCard.deep .marketLevelSummaries b {
-  color: var(--danger);
+.marketLevelRangeDates {
+  margin-left: auto;
+  color: var(--muted-strong);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .marketLevelChartWrap {
   min-width: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   overscroll-behavior-inline: contain;
 }
 
-.marketLevelViewButton {
-  flex: 0 0 auto;
-  border: 0;
-  background: rgba(232, 247, 237, 0.86);
-  color: #176b49;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.marketLevelViewButton:hover,
-.marketLevelViewButton:focus-visible,
-.marketLevelViewButton[aria-pressed="true"] {
-  background: #d9f0e1;
-  outline: none;
-}
-
-.marketLevelChartWrap.overview {
-  overflow-x: hidden;
-}
-
-.marketLevelChartWrap.overview .marketLevelChart {
-  width: 100%;
-}
-
 .marketLevelChart {
   display: block;
-  width: auto;
+  width: 100%;
   min-width: 100%;
   max-width: none;
   height: auto;
@@ -697,6 +715,21 @@ button.betaAction {
 .marketPointPercent {
   font-size: 13px;
   font-weight: 820;
+  paint-order: stroke fill;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.marketPointPercent.normal {
+  stroke: #e5f4e8;
+}
+
+.marketPointPercent.prepare {
+  stroke: #ffedc9;
+}
+
+.marketPointPercent.deep {
+  stroke: #ffdddd;
 }
 
 .marketPointDate {
@@ -719,6 +752,10 @@ button.betaAction {
   stroke-width: 2;
   transition: r 150ms ease, stroke-width 150ms ease;
   touch-action: manipulation;
+}
+
+.marketPoint:not(.active):not(.latest) {
+  opacity: 0;
 }
 
 .marketPointHitArea {
@@ -4111,8 +4148,6 @@ select {
   }
 
   .marketLevelHeader {
-    grid-template-columns: 1fr;
-    gap: 4px;
     padding: 8px var(--app-card-inline-padding) 0;
   }
 
@@ -4121,51 +4156,30 @@ select {
   }
 
   .marketLevelSummaries > div {
-    padding: 0 10px;
+    padding: 0 4px;
   }
 
   .marketLevelChart {
     min-height: 245px;
-    margin-top: -10px;
-  }
-
-  .marketLevelViewButton {
-    padding-inline: 12px;
-    font-size: 12px;
-  }
-
-  .marketLevelChartWrap.overview .marketBandName,
-  .marketLevelChartWrap.overview .marketThresholdRatio,
-  .marketLevelChartWrap.overview .marketThresholdPrice,
-  .marketLevelChartWrap.overview .marketPointPercent {
-    font-size: 18px;
-  }
-
-  .marketLevelChartWrap.overview .marketPointDate {
-    font-size: 14px;
-  }
-
-  .marketLevelChartWrap.overview .marketPointTooltip text {
-    font-size: 28px;
-  }
-
-  .marketLevelChartWrap.overview .marketPoint {
-    r: 8px;
+    margin-top: 0;
   }
 
   .marketBandName,
   .marketThresholdRatio,
-  .marketThresholdPrice,
-  .marketPointPercent {
-    font-size: 11px;
+  .marketThresholdPrice {
+    font-size: 18px;
   }
 
   .marketPointDate {
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .marketPointTooltip text {
-    font-size: 10px;
+    font-size: 13px;
+  }
+
+  .marketPoint {
+    r: 8px;
   }
 
   .marketLevelLegend {
@@ -4187,13 +4201,31 @@ select {
 }
 
 @media (max-width: 480px) {
-  .marketLevelSummaries span,
-  .marketLevelSummaries time {
+  .marketLevelSummaryLabel,
+  .marketLevelSummaryMeta {
     font-size: 10px;
   }
 
   .marketLevelSummaries strong {
     font-size: 22px;
+  }
+
+  .marketLevelRangeControls {
+    gap: 5px;
+    padding-inline: 14px;
+  }
+
+  .marketLevelRangeControls > span {
+    font-size: 11px;
+  }
+
+  .marketLevelRangeControls button {
+    min-width: 38px;
+    padding-inline: 7px;
+  }
+
+  .marketLevelRangeDates {
+    font-size: 10px;
   }
 
   .marketLevelSummaries b {

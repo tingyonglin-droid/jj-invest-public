@@ -72,15 +72,12 @@ describe("overview card header", () => {
     );
   });
 
-  it("removes the visible market card and action borders", () => {
+  it("removes the visible market card border and retired market action", () => {
     assert.match(
       cssSource,
       /\.marketLevelCard\s*\{[^}]*border-color:\s*transparent;/s,
     );
-    assert.match(
-      cssSource,
-      /\.marketLevelViewButton\s*\{[^}]*border:\s*0;/s,
-    );
+    assert.doesNotMatch(cssSource, /\.marketLevelViewButton/);
   });
 
   it("uses the same inline inset for every overview card header", () => {

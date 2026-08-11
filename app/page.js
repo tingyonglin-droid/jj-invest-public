@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { OverviewCardHeader } from "../src/components/overview-card-header.js";
 import {
@@ -15,7 +15,7 @@ import {
 import { createBenchmarkDrawdown } from "../src/lib/benchmark-drawdown.js";
 import {
   createBenchmarkDrawdownChart,
-  getMarketChartScrollLeft,
+  filterBenchmarkHistoryByRange,
   getMarketLevelLabel,
   getNearestMarketPointIndex,
 } from "../src/lib/benchmark-drawdown-chart.js";
@@ -1278,20 +1278,17 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
 
 function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
   const [activePointDate, setActivePointDate] = useState(null);
-  const [chartMode, setChartMode] = useState("overview");
-  const chartScrollRef = useRef(null);
-  const chart = createBenchmarkDrawdownChart(
-    benchmarkDrawdown?.history,
-    benchmarkDrawdown?.highPrice,
-    { mode: chartMode },
+  const [chartRange, setChartRange] = useState("1M");
+  const chartHistory = filterBenchmarkHistoryByRange(
+    benchmarkDrawdown?.fullHistory,
+    benchmarkDrawdown?.currentDate,
+    chartRange,
   );
-
-  useEffect(() => {
-    const element = chartScrollRef.current;
-    if (element) {
-      element.scrollLeft = getMarketChartScrollLeft(element.scrollWidth, chart.mode);
-    }
-  }, [chart.mode, chart.scrollKey, chart.width]);
+  const chart = createBenchmarkDrawdownChart(
+    chartHistory,
+    benchmarkDrawdown?.highPrice,
+    { mode: "overview" },
+  );
 
   if (!benchmarkDrawdown) {
     return null;
@@ -1308,6 +1305,8 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
   const tooltipTop = activePoint ? Math.min(246, Math.max(50, activePoint.y - 104)) : 0;
   const tooltipTextX = tooltipLeft + 12;
   const levelLabel = getMarketLevelLabel(benchmarkDrawdown.level);
+  const rangeStartDate = chart.points[0]?.date || benchmarkDrawdown.currentDate;
+  const formatRangeDate = (date) => (chartRange === "1Y" ? date.slice(2) : date.slice(5)).replaceAll("-", "/");
 
   function activatePoint(event, index) {
     event.stopPropagation();
@@ -1322,16 +1321,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
     }
   }
 
-  function toggleChartMode() {
-    setActivePointDate(null);
-    setChartMode((current) => current === "detail" ? "overview" : "detail");
-  }
-
   function handleChartClick(event) {
-    if (chartMode !== "overview") {
-      setActivePointDate(null);
-      return;
-    }
     const bounds = event.currentTarget.getBoundingClientRect();
     if (bounds.width <= 0) {
       return;
@@ -1352,55 +1342,75 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
           subtitle="0050 距歷史高點"
           infoLabel="查看 0050 距收盤高點說明"
           onInfo={onOpenGlossary}
-          action={
-            <button
-              type="button"
-              className="marketLevelViewButton"
-              aria-pressed={chartMode === "overview"}
-              onClick={toggleChartMode}
-            >
-              {chartMode === "overview" ? "看詳細點位" : "看全部曲線"}
-            </button>
-          }
         />
 
         <div className="marketLevelSummaries">
-          <div>
-            <span>歷史高點（收盤）</span>
-            <strong>{formatNumber(benchmarkDrawdown.highPrice, 2)}</strong>
-            <time dateTime={benchmarkDrawdown.highDate}>{benchmarkDrawdown.highDate}</time>
+          <div className="marketLevelDrawdownSummary">
+            <span className="marketLevelSummaryLabel">距歷史高點</span>
+            <strong>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</strong>
+            <span className={`marketLevelSummaryMeta ${benchmarkDrawdown.level}`}>{levelLabel}</span>
           </div>
-          <div className="marketLevelCurrent">
-            <span>目前（{benchmarkDrawdown.currentSource === "live" ? "即時" : "收盤"}）</span>
+          <div>
+            <span className="marketLevelSummaryLabel">目前價格（{benchmarkDrawdown.currentSource === "live" ? "即時" : "收盤"}）</span>
             <strong>{formatNumber(benchmarkDrawdown.currentPrice, 2)}</strong>
-            <div className="marketLevelCurrentStatus">
-              <b>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</b>
-              <span className={`marketLevelInlineStatus ${benchmarkDrawdown.level}`}>
-                （{levelLabel}）
-              </span>
-            </div>
-            <time dateTime={benchmarkDrawdown.currentDate}>{benchmarkDrawdown.currentDate}</time>
+            <time className="marketLevelSummaryMeta" dateTime={benchmarkDrawdown.currentDate}>{benchmarkDrawdown.currentDate}</time>
+          </div>
+          <div>
+            <span className="marketLevelSummaryLabel">歷史高點（收盤）</span>
+            <strong>{formatNumber(benchmarkDrawdown.highPrice, 2)}</strong>
+            <time className="marketLevelSummaryMeta" dateTime={benchmarkDrawdown.highDate}>{benchmarkDrawdown.highDate}</time>
           </div>
         </div>
       </div>
 
-      <div className={`marketLevelChartWrap ${chartMode}`} ref={chartScrollRef}>
+      <div className="marketLevelRangeControls" aria-label="市場水位顯示期間">
+        <span>Zoom</span>
+        {["1M", "3M", "6M", "1Y"].map((range) => (
+          <button
+            type="button"
+            key={range}
+            aria-pressed={chartRange === range}
+            onClick={() => {
+              setChartRange(range);
+              setActivePointDate(null);
+            }}
+          >
+            {range}
+          </button>
+        ))}
+        <time className="marketLevelRangeDates">
+          {formatRangeDate(rangeStartDate)}－{formatRangeDate(benchmarkDrawdown.currentDate)}
+        </time>
+      </div>
+
+      <div className="marketLevelChartWrap">
         <svg
           className="marketLevelChart"
           width={chart.width}
           height={chart.height}
           viewBox={chart.viewBox}
           role="group"
-          aria-label="0050 自最新歷史最高收盤價以來的市場水位走勢圖"
+          aria-label={`0050 最近 ${chartRange} 的市場水位走勢圖`}
           onClick={handleChartClick}
         >
-          <rect className="marketBand normal" x={chart.bandInset} y="40" width={chart.width - chart.bandInset * 2} height="100" />
-          <rect className="marketBand prepare" x={chart.bandInset} y="140" width={chart.width - chart.bandInset * 2} height="100" />
-          <rect className="marketBand deep" x={chart.bandInset} y="240" width={chart.width - chart.bandInset * 2} height="100" />
-
-          <text className="marketBandName normal" x={chart.edgeLabelInset} y="94">正常</text>
-          <text className="marketBandName prepare" x={chart.edgeLabelInset} y="194">觀察</text>
-          <text className="marketBandName deep" x={chart.edgeLabelInset} y="294">股災</text>
+          {chart.bands.map((band) => (
+            <g key={band.level}>
+              <rect
+                className={`marketBand ${band.level}`}
+                x={chart.bandInset}
+                y={band.top}
+                width={chart.width - chart.bandInset * 2}
+                height={band.bottom - band.top}
+              />
+              <text
+                className={`marketBandName ${band.level}`}
+                x={chart.edgeLabelInset}
+                y={(band.top + band.bottom) / 2 + 4}
+              >
+                {band.level === "normal" ? "正常" : band.level === "prepare" ? "觀察" : "股災"}
+              </text>
+            </g>
+          ))}
 
           {chart.thresholds.map((threshold) => (
             <g key={threshold.ratio}>
@@ -1420,6 +1430,16 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
             </g>
           ))}
 
+          {chart.scaleMin < -0.3 && (
+            <text
+              className="marketThresholdRatio marketScaleFloor"
+              x={chart.edgeLabelInset}
+              y={chart.scaleFloor.y - 8}
+            >
+              {formatSignedPercent(chart.scaleFloor.ratio)}
+            </text>
+          )}
+
           <polyline className="marketTrendLine" points={chart.linePoints} />
 
           {chart.points.map((point, index) => {
@@ -1427,11 +1447,6 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
             const isActive = activePointDate === point.date;
             return (
               <g key={point.date}>
-                {point.showPercentLabel && (
-                  <text className="marketPointPercent" x={point.x} y={point.percentLabelY} textAnchor="middle">
-                    {formatSignedPercent(point.drawdownRatio)}
-                  </text>
-                )}
                 <circle
                   className="marketPointHitArea"
                   cx={point.x}
@@ -1445,7 +1460,7 @@ function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
                   onKeyDown={(event) => handlePointKeyDown(event, index)}
                 />
                 <circle
-                  className={`marketPoint ${point.level}${isActive ? " active" : ""}`}
+                  className={`marketPoint ${point.level}${isActive ? " active" : ""}${index === chart.points.length - 1 ? " latest" : ""}`}
                   cx={point.x}
                   cy={point.y}
                   r="8"

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   createBenchmarkDrawdownChart,
+  filterBenchmarkHistoryByRange,
   getNearestMarketPointIndex,
   getMarketLevelLabel,
   toggleActiveMarketPoint,
@@ -10,6 +11,22 @@ import {
 import * as benchmarkChart from "../src/lib/benchmark-drawdown-chart.js";
 
 describe("benchmark drawdown chart", () => {
+  it("filters market history into 1M, 3M, 6M, and 1Y windows ending on the current date", () => {
+    const history = [
+      { date: "2025-08-08", price: 80 },
+      { date: "2025-08-11", price: 81 },
+      { date: "2026-02-10", price: 90 },
+      { date: "2026-05-11", price: 95 },
+      { date: "2026-07-10", price: 100 },
+      { date: "2026-08-10", price: 104 },
+    ];
+
+    assert.deepEqual(filterBenchmarkHistoryByRange(history, "2026-08-10", "1M").map(({ date }) => date), ["2026-07-10", "2026-08-10"]);
+    assert.deepEqual(filterBenchmarkHistoryByRange(history, "2026-08-10", "3M").map(({ date }) => date), ["2026-05-11", "2026-07-10", "2026-08-10"]);
+    assert.deepEqual(filterBenchmarkHistoryByRange(history, "2026-08-10", "6M").map(({ date }) => date), ["2026-02-10", "2026-05-11", "2026-07-10", "2026-08-10"]);
+    assert.deepEqual(filterBenchmarkHistoryByRange(history, "2026-08-10", "1Y").map(({ date }) => date), ["2025-08-11", "2026-02-10", "2026-05-11", "2026-07-10", "2026-08-10"]);
+  });
+
   it("maps drawdown boundaries into a fixed comparable vertical scale", () => {
     const model = createBenchmarkDrawdownChart(
       [
@@ -24,14 +41,14 @@ describe("benchmark drawdown chart", () => {
     assert.deepEqual(model.points.map(({ y }) => y), [40, 140, 240, 340]);
     assert.deepEqual(
       model.points.map(({ percentLabelY }) => percentLabelY),
-      [58, 158, 258, 336],
+      [71.42, 171.42, 271.42, 336],
     );
     assert.equal(model.points[0].x, 92);
     assert.equal(model.points.at(-1).x, 718);
     assert.equal(model.linePoints, "92,40 300.67,140 509.33,240 718,340");
   });
 
-  it("clamps only visual positions and calculates literal threshold prices", () => {
+  it("extends the vertical scale by ten-percent steps for drawdowns below thirty percent", () => {
     const model = createBenchmarkDrawdownChart(
       [
         { date: "2026-07-31", price: 112, drawdownRatio: 0.02, level: "normal" },
@@ -40,12 +57,19 @@ describe("benchmark drawdown chart", () => {
       111.15,
     );
 
-    assert.deepEqual(model.points.map(({ y }) => y), [40, 340]);
+    assert.equal(model.scaleMin, -0.5);
+    assert.deepEqual(model.points.map(({ y }) => y), [40, 292]);
     assert.deepEqual(model.thresholds, [
       { ratio: 0, y: 40, price: 111.15 },
-      { ratio: -0.1, y: 140, price: 100.04 },
-      { ratio: -0.2, y: 240, price: 88.92 },
+      { ratio: -0.1, y: 100, price: 100.04 },
+      { ratio: -0.2, y: 160, price: 88.92 },
     ]);
+    assert.deepEqual(model.bands, [
+      { level: "normal", top: 40, bottom: 100 },
+      { level: "prepare", top: 100, bottom: 160 },
+      { level: "deep", top: 160, bottom: 340 },
+    ]);
+    assert.deepEqual(model.scaleFloor, { ratio: -0.5, y: 340 });
   });
 
   it("keeps edge tooltips inside the plot and spaces seven points evenly", () => {
@@ -63,6 +87,18 @@ describe("benchmark drawdown chart", () => {
     assert.equal(model.points[3].tooltipAnchor, "middle");
     assert.equal(model.points.at(-1).tooltipAnchor, "end");
     assert.equal(model.points.at(-1).tooltipX, 706);
+  });
+
+  it("moves percentage labels farther from descending lines while keeping them inside their band", () => {
+    const model = createBenchmarkDrawdownChart([
+      { date: "2026-08-03", price: 96, drawdownRatio: -0.04, level: "normal" },
+      { date: "2026-08-04", price: 96, drawdownRatio: -0.04, level: "normal" },
+      { date: "2026-08-05", price: 90.1, drawdownRatio: -0.099, level: "normal" },
+    ], 100);
+
+    assert.equal(model.points[0].percentLabelY, 98);
+    assert.ok(model.points[1].percentLabelY > model.points[0].percentLabelY);
+    assert.equal(model.points[2].percentLabelY, 136);
   });
 
   it("grows wide charts without dropping trading dates", () => {

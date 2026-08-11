@@ -19,11 +19,49 @@ describe("benchmark drawdown", () => {
       drawdownRatio: -0.061207,
       level: "normal",
       currentSource: "close",
+      fullHistory: [
+        { date: "2026-06-19", price: 250, drawdownRatio: 0, level: "normal" },
+        { date: "2026-06-23", price: 260.1, drawdownRatio: 0, level: "normal" },
+        { date: "2026-07-23", price: 244.18, drawdownRatio: -0.061207, level: "normal" },
+      ],
       history: [
         { date: "2026-06-23", price: 260.1, drawdownRatio: 0, level: "normal" },
         { date: "2026-07-23", price: 244.18, drawdownRatio: -0.061207, level: "normal" },
       ],
     });
+  });
+
+  it("calculates each historical point from the highest close available on that date", () => {
+    const drawdown = createBenchmarkDrawdown([
+      { date: "2025-08-11", price: 50 },
+      { date: "2025-08-12", price: 45 },
+      { date: "2026-06-22", price: 100 },
+      { date: "2026-08-10", price: 70 },
+    ]);
+
+    assert.deepEqual(
+      drawdown.fullHistory.map(({ date, drawdownRatio }) => ({ date, drawdownRatio })),
+      [
+        { date: "2025-08-11", drawdownRatio: 0 },
+        { date: "2025-08-12", drawdownRatio: -0.1 },
+        { date: "2026-06-22", drawdownRatio: 0 },
+        { date: "2026-08-10", drawdownRatio: -0.3 },
+      ],
+    );
+  });
+
+  it("normalizes an unadjusted four-for-one split segment before finding historical highs", () => {
+    const drawdown = createBenchmarkDrawdown([
+      { date: "2011-01-28", price: 63 },
+      { date: "2013-12-31", price: 58.7 },
+      { date: "2014-01-02", price: 14.6375 },
+      { date: "2025-08-13", price: 53.35 },
+      { date: "2025-08-19", price: 53.2 },
+    ]);
+
+    assert.equal(drawdown.fullHistory[0].price, 15.75);
+    assert.equal(drawdown.fullHistory[1].price, 14.675);
+    assert.equal(drawdown.fullHistory.at(-1).drawdownRatio, -0.002812);
   });
 
   it("uses live 0050 quote as the current market level when available", () => {
@@ -46,6 +84,12 @@ describe("benchmark drawdown", () => {
       drawdownRatio: -0.06,
       level: "normal",
       currentSource: "live",
+      fullHistory: [
+        { date: "2026-06-19", price: 250, drawdownRatio: 0, level: "normal" },
+        { date: "2026-06-23", price: 260, drawdownRatio: 0, level: "normal" },
+        { date: "2026-07-23", price: 258, drawdownRatio: -0.007692, level: "normal" },
+        { date: "2026-07-24", price: 244.4, drawdownRatio: -0.06, level: "normal" },
+      ],
       history: [
         { date: "2026-06-23", price: 260, drawdownRatio: 0, level: "normal" },
         { date: "2026-07-23", price: 258, drawdownRatio: -0.007692, level: "normal" },
