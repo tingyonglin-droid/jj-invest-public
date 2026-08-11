@@ -34,7 +34,7 @@ describe("overview action UI", () => {
   it("keeps the beta target label clear of the summary tiles", () => {
     assert.match(
       cssSource,
-      /\.betaRail\s*\{[^}]*margin-top:\s*34px;/s,
+      /\.betaRail\s*\{[^}]*margin-top:\s*40px;/s,
     );
   });
 });
