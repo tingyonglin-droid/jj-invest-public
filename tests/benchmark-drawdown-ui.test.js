@@ -73,6 +73,10 @@ describe("benchmark drawdown UI", () => {
     assert.doesNotMatch(pageSource, /風險區間/);
     assert.match(cssSource, /\.overviewCardAction[\s\S]*height:\s*32px/);
     assert.match(cssSource, /\.marketLevelRangeControls/);
+    assert.match(
+      cssSource,
+      /\.marketLevelRangeControls\s*\{[^}]*margin-top:\s*6px;/s,
+    );
     assert.match(cssSource, /\.marketPoint\s*\{[^}]*r:\s*6px;/s);
     assert.doesNotMatch(pageSource, /marketPointPercent/);
     assert.match(cssSource, /\.marketPoint:not\(\.active\):not\(\.latest\)/);

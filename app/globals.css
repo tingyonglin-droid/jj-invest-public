@@ -617,6 +617,7 @@ button.betaAction {
   display: flex;
   align-items: center;
   gap: 7px;
+  margin-top: 6px;
   padding: 10px var(--app-card-inline-padding);
   border-top: 1px solid rgba(154, 164, 177, 0.16);
 }
