@@ -2,7 +2,7 @@
 
 > 本文件由 `src/data/supported-tickers.json` 自動產生。App 的標的名稱也直接讀取同一份 JSON。
 
-目前共 20 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
+目前共 53 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
 
 ## 正二
 
@@ -15,6 +15,9 @@
 | SSO | ProShares Ultra S&P500 | US | SSO | Yahoo Finance | 2026-08-11 |
 | QLD | ProShares Ultra QQQ | US | QLD | Yahoo Finance | 2026-08-11 |
 | USD | ProShares Ultra Semiconductors | US | USD | Yahoo Finance | 2026-08-11 |
+| 00647L | 元大S&P500正2 | TWSE | 00647L.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00670L | 富邦NASDAQ正2 | TWSE | 00670L.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| SPUU | Direxion Daily S&P 500 Bull 2X ETF | US | SPUU | Yahoo Finance | 2026-08-11 |
 
 ## 原形
 
@@ -28,6 +31,32 @@
 | QQQ | Invesco QQQ Trust ETF | US | QQQ | Yahoo Finance | 2026-08-11 |
 | SMH | VanEck Semiconductor ETF | US | SMH | Yahoo Finance | 2026-08-11 |
 | SOXX | iShares Semiconductor ETF | US | SOXX | Yahoo Finance | 2026-08-11 |
+| 0051 | 元大中型100 | TWSE | 0051.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 0052 | 富邦科技 | TWSE | 0052.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 0053 | 元大電子 | TWSE | 0053.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 0057 | 富邦摩台 | TWSE | 0057.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 006203 | 元大MSCI台灣 | TWSE | 006203.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 006204 | 永豐臺灣加權 | TWSE | 006204.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00646 | 元大S&P500 | TWSE | 00646.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00661 | 元大日經225 | TWSE | 00661.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00668 | 國泰美國道瓊 | TWSE | 00668.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00692 | 富邦公司治理 | TWSE | 00692.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00733 | 富邦臺灣中小 | TWSE | 00733.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00757 | 統一FANG+ | TWSE | 00757.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00830 | 國泰費城半導體 | TWSE | 00830.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00850 | 元大臺灣ESG永續 | TWSE | 00850.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00881 | 國泰台灣科技龍頭 | TWSE | 00881.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00891 | 中信關鍵半導體 | TWSE | 00891.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00892 | 富邦台灣半導體 | TWSE | 00892.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00922 | 國泰台灣領袖50 | TWSE | 00922.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00923 | 群益台ESG低碳50 | TWSE | 00923.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00924 | 復華S&P500成長 | TWSE | 00924.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00935 | 野村臺灣新科技50 | TWSE | 00935.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| SPY | SPDR S&P 500 ETF Trust | US | SPY | Yahoo Finance | 2026-08-11 |
+| IVV | iShares Core S&P 500 ETF | US | IVV | Yahoo Finance | 2026-08-11 |
+| VTI | Vanguard Total Stock Market ETF | US | VTI | Yahoo Finance | 2026-08-11 |
+| VT | Vanguard Total World Stock ETF | US | VT | Yahoo Finance | 2026-08-11 |
+| QQQM | Invesco NASDAQ 100 ETF | US | QQQM | Yahoo Finance | 2026-08-11 |
 
 ## 類現金
 
@@ -38,6 +67,10 @@
 | 00859B | 群益0-1年美債 | TPEx | 00859B.TW、00859B.TWO | TPEx → Yahoo Finance | 2026-08-11 |
 | SGOV | iShares 0-3 Month Treasury Bond ETF | US | SGOV | Yahoo Finance | 2026-08-11 |
 | BSV | Vanguard Short-Term Bond ETF | US | BSV | Yahoo Finance | 2026-08-11 |
+| SHV | iShares 0-1 Year Treasury Bond ETF | US | SHV | Yahoo Finance | 2026-08-11 |
+| BIL | State Street SPDR Bloomberg 1-3 Month T-Bill ETF | US | BIL | Yahoo Finance | 2026-08-11 |
+| USFR | WisdomTree Floating Rate Treasury Fund | US | USFR | Yahoo Finance | 2026-08-11 |
+| TFLO | iShares Treasury Floating Rate Bond ETF | US | TFLO | Yahoo Finance | 2026-08-11 |
 
 ## 新增或編輯標的
 
