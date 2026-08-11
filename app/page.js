@@ -405,8 +405,11 @@ export default function Home() {
   const betaRail = createBetaRailModel(calculation);
   const overviewAction = createOverviewAction(calculation);
   const recommendationIds = useMemo(
-    () => calculation.recommendations.map((item) => String(item.id)),
-    [calculation.recommendations],
+    () => [
+      ...calculation.recommendations,
+      ...calculation.cashEquivalentRecommendations,
+    ].map((item) => String(item.id)),
+    [calculation.recommendations, calculation.cashEquivalentRecommendations],
   );
   const selectedRebalanceIds = useMemo(
     () => {
@@ -444,12 +447,18 @@ export default function Home() {
           cashTargets.positionRatios.get(item.id) || 0,
         );
         const tradeAmountTwd = targetValueTwd - item.currentValueTwd;
+        const isSelected = selectedRebalanceIds.includes(String(item.id));
         return {
           ...item,
           targetValueTwd,
-          tradeAmountTwd,
-          action: tradeAmountTwd > 0.5 ? "buy" : tradeAmountTwd < -0.5 ? "sell" : "none",
-          isSelected: true,
+          desiredTradeAmountTwd: tradeAmountTwd,
+          tradeAmountTwd: isSelected ? tradeAmountTwd : 0,
+          action: isSelected && tradeAmountTwd > 0.5
+            ? "buy"
+            : isSelected && tradeAmountTwd < -0.5
+              ? "sell"
+              : "none",
+          isSelected,
           currentSleeveWeight: calculation.cashSleeveValueTwd > 0
             ? item.currentValueTwd / calculation.cashSleeveValueTwd
             : 0,
@@ -461,11 +470,15 @@ export default function Home() {
         };
       });
       const targetRealCashTwd = targetCashSleeveValueTwd * cashTargets.realCashRatio;
+      const excludedCashEquivalentReserveTwd = cashEquivalentRecommendations.reduce(
+        (sum, item) => sum + (!item.isSelected ? Math.max(item.desiredTradeAmountTwd, 0) : 0),
+        0,
+      );
       const fundedRecommendations = createFundedRebalanceRecommendations({
         recommendations: [...stockResult.recommendations, ...cashEquivalentRecommendations],
         precision: rebalancePrecision,
         cashTwd: calculation.realCashTwd,
-        minimumCashTwd: targetRealCashTwd,
+        minimumCashTwd: targetRealCashTwd + excludedCashEquivalentReserveTwd,
       });
       return {
         ...stockResult,
@@ -2383,16 +2396,6 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
           title="正二再平衡清單"
           totalAssetsTwd={totalAssetsTwd}
         />
-        {cashEquivalentRecommendations.length > 0 && (
-          <HoldingGroup
-            items={cashEquivalentRecommendations}
-            onToggleSelection={() => {}}
-            precision={precision}
-            tone="cash"
-            title="類現金再平衡清單"
-            totalAssetsTwd={totalAssetsTwd}
-          />
-        )}
         <HoldingGroup
           items={originalRecommendations}
           onToggleSelection={onToggleSelection}
@@ -2401,6 +2404,16 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
           title="原形再平衡清單"
           totalAssetsTwd={totalAssetsTwd}
         />
+        {cashEquivalentRecommendations.length > 0 && (
+          <HoldingGroup
+            items={cashEquivalentRecommendations}
+            onToggleSelection={onToggleSelection}
+            precision={precision}
+            tone="cash"
+            title="類現金再平衡清單"
+            totalAssetsTwd={totalAssetsTwd}
+          />
+        )}
         {recommendations.length === 0 && (
           <div className="emptyState">更新價格後會顯示再平衡操作清單。</div>
         )}

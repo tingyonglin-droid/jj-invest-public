@@ -20,3 +20,19 @@ test("cash-equivalent controls support ticker, shares, and custom targets", () =
   assert.match(page, /position\.shares/);
   assert.match(page, /position\.targetWeightPct/);
 });
+
+test("operation list places cash equivalents after original holdings", () => {
+  assert.match(
+    page,
+    /title="正二再平衡清單"[\s\S]*title="原形再平衡清單"[\s\S]*title="類現金再平衡清單"/,
+  );
+});
+
+test("cash-equivalent operation checkboxes use the shared selection handler", () => {
+  assert.doesNotMatch(page, /cashEquivalentRecommendations[\s\S]*onToggleSelection=\{\(\) => \{\}\}/);
+  assert.match(page, /cashEquivalentRecommendations[\s\S]*onToggleSelection=\{onToggleSelection\}/);
+  assert.match(
+    page,
+    /cashEquivalentRecommendations\.map[\s\S]*const isSelected = selectedRebalanceIds\.includes[\s\S]*isSelected,/,
+  );
+});
