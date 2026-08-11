@@ -64,7 +64,7 @@ test("operations page confirms apply and offers restore after rebalance", async 
   assert.match(page, /parseRebalanceRestorePoint/);
   assert.match(page, /window\.confirm/);
   assert.match(page, /套用再平衡結果/);
-  assert.match(page, /復原上一步/);
+  assert.match(page, />\s*復原\s*<\/button>/);
   assert.doesNotMatch(page, />一鍵再平衡</);
 });
 
@@ -173,10 +173,12 @@ test("rebalance holding cards use warm white interiors and two-line trade advice
 });
 
 test("rebalance apply footer uses the approved compact sizing", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(styles, /\.operationApplyFooter\s*\{[^}]*gap:\s*8px;[^}]*padding:\s*14px;/s);
-  assert.match(styles, /\.operationApplyActions\s*\{[^}]*gap:\s*8px;/s);
+  assert.match(styles, /\.operationApplyActions\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1\.6fr\)\s+minmax\(88px,\s*0\.8fr\);[^}]*gap:\s*8px;/s);
   assert.match(styles, /\.operationApplyActions :is\(\.primaryButton, \.secondaryButton\)\s*\{[^}]*min-height:\s*42px;/s);
-  assert.match(styles, /\.operationRestoreStatus\s*\{[^}]*padding:\s*8px 10px;[^}]*font-size:\s*11px;/s);
+  assert.match(page, />\s*套用再平衡結果\s*<\/button>[\s\S]*?>\s*復原\s*<\/button>/s);
+  assert.match(styles, /\.operationRestoreStatus\s*\{[^}]*padding:\s*0;[^}]*color:\s*var\(--muted\);[^}]*background:\s*transparent;[^}]*font-size:\s*11px;/s);
 });

@@ -2349,7 +2349,7 @@ function OperationsView({
               className="secondaryButton restoreButton"
               onClick={onRestorePreviousRebalance}
             >
-              復原上一步
+              復原
             </button>
           ) : null}
         </div>

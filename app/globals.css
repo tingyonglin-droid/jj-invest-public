@@ -1896,6 +1896,7 @@ button.betaAction {
 
 .operationApplyActions {
   display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(88px, 0.8fr);
   gap: 8px;
 }
 
@@ -1912,10 +1913,9 @@ button.betaAction {
 }
 
 .operationRestoreStatus {
-  border-radius: 14px;
-  padding: 8px 10px;
-  color: var(--primary-dark);
-  background: #e8f6ef;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
   font-size: 11px;
 }
 
