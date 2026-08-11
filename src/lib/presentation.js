@@ -1,15 +1,19 @@
-const TICKER_NAMES = {
-  "0050.TW": "元大台灣50",
-  "006208.TW": "富邦台50",
-  "00631L.TW": "元大台灣50正2",
-  "00685L.TW": "群益台灣加權正2",
-  QLD: "ProShares Ultra QQQ",
-};
+import supportedTickers from "../data/supported-tickers.json" with { type: "json" };
+
+const TICKER_NAMES = Object.fromEntries(
+  supportedTickers.flatMap((item) => item.symbols.map((symbol) => [symbol, item.name])),
+);
 
 const TICKER_BADGES = {
   "00631L.TW": "2x",
   "00685L.TW": "△",
   QLD: "QLD",
+};
+
+const TICKER_PLACEHOLDERS = {
+  leveraged: "00631L / 00685L / SSO / QLD",
+  original: "0050 / 006208 / VOO / QQQ",
+  cashEquivalent: "00865B / 00859B / SGOV / BSV",
 };
 
 const twdNumberFormatter = new Intl.NumberFormat("zh-TW", {
@@ -21,15 +25,23 @@ function formatTwdText(value) {
 }
 
 export function getPositionDisplayName(normalizedTicker, assetBeta = 2) {
-  if (TICKER_NAMES[normalizedTicker]) {
-    return TICKER_NAMES[normalizedTicker];
+  const tickerKey = String(normalizedTicker || "").trim().toUpperCase();
+  if (TICKER_NAMES[tickerKey]) {
+    return TICKER_NAMES[tickerKey];
   }
 
+  if (Number(assetBeta) === 0) {
+    return "類現金標的";
+  }
   return Number(assetBeta) === 1 ? "原形標的" : "正二標的";
 }
 
 export function getTickerBadgeText(normalizedTicker) {
   return TICKER_BADGES[normalizedTicker] || String(normalizedTicker || "?").slice(0, 3);
+}
+
+export function getTickerPlaceholder(assetType) {
+  return TICKER_PLACEHOLDERS[assetType] || "輸入股票或 ETF 代號";
 }
 
 export function getEstimatedShares(tradeAmountTwd, priceTwd) {

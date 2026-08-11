@@ -50,6 +50,16 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
       leveraged: normalizeMode("leveraged"),
       original: normalizeMode("original"),
     },
+    cashEquivalentPositions: Array.isArray(source.cashEquivalentPositions)
+      ? source.cashEquivalentPositions.map((position, index) => ({
+          id: String(position.id || `cash-equivalent-${index + 1}`),
+          tickerInput: String(position.tickerInput || ""),
+          shares: toInteger(position.shares),
+          targetWeightPct: toNumber(position.targetWeightPct),
+        }))
+      : fallback.cashEquivalentPositions || [],
+    cashEquivalentMode: source.cashEquivalentMode === "custom" ? "custom" : "auto",
+    realCashTargetPct: toNumber(source.realCashTargetPct, fallback.realCashTargetPct ?? 10),
     cashTwd: toInteger(source.cashTwd),
     cashUsd: toInteger(source.cashUsd),
     leveragedTargetPct,
