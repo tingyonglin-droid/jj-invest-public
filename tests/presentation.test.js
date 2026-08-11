@@ -14,6 +14,7 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("006208.TW"), "富邦台50");
     assert.equal(getPositionDisplayName("00631L.TW"), "元大台灣50正2");
     assert.equal(getPositionDisplayName("00685L.TW"), "群益台灣加權正2");
+    assert.equal(getPositionDisplayName("00865B.TW", 0), "國泰US短期公債");
     assert.equal(getPositionDisplayName("QLD"), "ProShares Ultra QQQ");
   });
 

@@ -3,6 +3,7 @@ const TICKER_NAMES = {
   "006208.TW": "富邦台50",
   "00631L.TW": "元大台灣50正2",
   "00685L.TW": "群益台灣加權正2",
+  "00865B.TW": "國泰US短期公債",
   QLD: "ProShares Ultra QQQ",
 };
 
