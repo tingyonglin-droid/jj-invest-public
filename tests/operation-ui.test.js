@@ -109,3 +109,16 @@ test("rebalance parameters use compact rows and conventional stepper order", asy
   assert.ok(page.indexOf('value={rebalanceTargetBeta}') < page.indexOf('aria-label="提高再平衡 Beta 0.01"'));
   assert.match(styles, /\.operationParameterRow\s*\{[^}]*grid-template-columns:/s);
 });
+
+test("mobile rebalance precision keeps both choices on one row", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(
+    styles,
+    /@media \(max-width: 480px\)[\s\S]*?\.operationPrecisionField \.precisionControl\s*\{[^}]*grid-template-columns:\s*repeat\(2,/s,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 420px\)[\s\S]*?\.operationPrecisionField\s*\{[^}]*grid-template-columns:/s,
+  );
+});

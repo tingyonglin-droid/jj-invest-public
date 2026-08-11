@@ -472,7 +472,7 @@ button.betaAction {
 .betaRail {
   position: relative;
   height: 16px;
-  margin-top: 26px;
+  margin-top: 34px;
   border-radius: 999px;
   overflow: visible;
   background: linear-gradient(
@@ -1826,9 +1826,14 @@ button.betaAction {
     grid-template-columns: 1fr;
   }
 
+  .operationPrecisionField {
+    grid-template-columns: minmax(112px, 0.8fr) minmax(0, 1.4fr);
+  }
+
   .operationBetaStepper,
   .operationPrecisionField .precisionControl {
     justify-self: stretch;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .operationBetaStepper {
@@ -1836,7 +1841,7 @@ button.betaAction {
   }
 
   .operationPrecisionField p {
-    grid-column: 1;
+    grid-column: 2;
   }
 }
 
@@ -3560,6 +3565,10 @@ select {
 
   .precisionControl {
     grid-template-columns: 1fr;
+  }
+
+  .operationPrecisionField .precisionControl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .allocationTotal {
