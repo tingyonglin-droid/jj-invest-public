@@ -11,6 +11,7 @@ const TICKER_NAMES = {
   "00864B.TW": "中信美國公債0-1",
   "00864B.TWO": "中信美國公債0-1",
   "00865B.TW": "國泰US短期公債",
+  "009816.TW": "凱基台灣TOP50",
   SSO: "ProShares Ultra S&P500",
   VOO: "Vanguard S&P 500 ETF",
   QQQ: "Invesco QQQ Trust ETF",

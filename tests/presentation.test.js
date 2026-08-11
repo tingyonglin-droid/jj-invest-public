@@ -23,6 +23,7 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("00864B.TW", 0), "中信美國公債0-1");
     assert.equal(getPositionDisplayName("00864B.TWO", 0), "中信美國公債0-1");
     assert.equal(getPositionDisplayName("00662.TW", 1), "富邦NASDAQ");
+    assert.equal(getPositionDisplayName("009816.TW", 1), "凱基台灣TOP50");
     assert.equal(getPositionDisplayName("SSO", 2), "ProShares Ultra S&P500");
     assert.equal(getPositionDisplayName("VOO", 1), "Vanguard S&P 500 ETF");
     assert.equal(getPositionDisplayName("QQQ", 1), "Invesco QQQ Trust ETF");
