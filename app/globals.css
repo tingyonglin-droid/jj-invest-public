@@ -8,9 +8,9 @@
   --line: #dedad4;
   --primary: #78867d;
   --primary-dark: #5f6c64;
-  --asset-leveraged: #9b8aa1;
-  --asset-original: #87988a;
-  --asset-cash: #8797a4;
+  --asset-leveraged: #967c9d;
+  --asset-original: #78917e;
+  --asset-cash: #7891a5;
   --asset-leveraged-soft: #f5f2f5;
   --asset-original-soft: #f2f4f1;
   --asset-cash-soft: #f2f4f5;
@@ -1145,6 +1145,10 @@ button.betaAction {
 .allocationOriginal,
 .allocationCash {
   transition: width 260ms ease;
+}
+
+.allocationBar > span + span {
+  box-shadow: inset 2px 0 0 var(--card);
 }
 
 .allocationLeveraged {
