@@ -15,6 +15,8 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("006208.TW"), "富邦台50");
     assert.equal(getPositionDisplayName("00631L.TW"), "元大台灣50正2");
     assert.equal(getPositionDisplayName("00685L.TW"), "群益台灣加權正2");
+    assert.equal(getPositionDisplayName("00663L.TW", 2), "國泰台灣加權正2");
+    assert.equal(getPositionDisplayName("00675L.TW", 2), "富邦台灣加權正2");
     assert.equal(getPositionDisplayName("00865B.TW", 0), "國泰US短期公債");
     assert.equal(getPositionDisplayName("00859B.TW", 0), "群益0-1年美債");
     assert.equal(getPositionDisplayName("00859B.TWO", 0), "群益0-1年美債");
