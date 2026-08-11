@@ -13,6 +13,12 @@ const TICKER_BADGES = {
   QLD: "QLD",
 };
 
+const TICKER_PLACEHOLDERS = {
+  leveraged: "00631L / 00685L / SSO / QLD",
+  original: "0050 / 006208 / VOO / QQQ",
+  cashEquivalent: "00865B / 00859B / SGOV / BSV",
+};
+
 const twdNumberFormatter = new Intl.NumberFormat("zh-TW", {
   maximumFractionDigits: 0,
 });
@@ -34,6 +40,10 @@ export function getPositionDisplayName(normalizedTicker, assetBeta = 2) {
 
 export function getTickerBadgeText(normalizedTicker) {
   return TICKER_BADGES[normalizedTicker] || String(normalizedTicker || "?").slice(0, 3);
+}
+
+export function getTickerPlaceholder(assetType) {
+  return TICKER_PLACEHOLDERS[assetType] || "輸入股票或 ETF 代號";
 }
 
 export function getEstimatedShares(tradeAmountTwd, priceTwd) {

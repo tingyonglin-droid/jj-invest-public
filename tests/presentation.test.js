@@ -5,6 +5,7 @@ import {
   createOperationListText,
   getOperationSummary,
   getPositionDisplayName,
+  getTickerPlaceholder,
   getTickerBadgeText,
 } from "../src/lib/presentation.js";
 
@@ -21,6 +22,12 @@ describe("presentation helpers", () => {
   it("falls back to generic asset labels by asset beta", () => {
     assert.equal(getPositionDisplayName("2330.TW", 1), "原形標的");
     assert.equal(getPositionDisplayName("2330.TW", 2), "正二標的");
+  });
+
+  it("shows asset-specific ticker examples in settings", () => {
+    assert.equal(getTickerPlaceholder("leveraged"), "00631L / 00685L / SSO / QLD");
+    assert.equal(getTickerPlaceholder("original"), "0050 / 006208 / VOO / QQQ");
+    assert.equal(getTickerPlaceholder("cashEquivalent"), "00865B / 00859B / SGOV / BSV");
   });
 
   it("creates compact badge text from tickers", () => {

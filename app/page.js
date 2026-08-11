@@ -79,6 +79,7 @@ import {
   getEstimatedShares,
   getPositionDisplayName,
   getTickerBadgeText,
+  getTickerPlaceholder,
 } from "../src/lib/presentation.js";
 
 const STORAGE_KEY = "jj-invest-public-overview-v1";
@@ -2605,7 +2606,7 @@ function PositionSection({
                 onChange={(event) =>
                   onUpdatePosition(position.id, "tickerInput", event.target.value)
                 }
-                placeholder="00631L 或 QLD"
+                placeholder={getTickerPlaceholder(assetType)}
               />
             </label>
             {mode === "custom" && (
@@ -2845,7 +2846,7 @@ function SettingsAccordions({
                       <span>代號</span>
                       <input
                         value={position.tickerInput}
-                        placeholder="00679B 或 SGOV"
+                        placeholder={getTickerPlaceholder("cashEquivalent")}
                         onChange={(event) => onUpdateCashEquivalentPosition(position.id, "tickerInput", event.target.value)}
                       />
                     </label>
