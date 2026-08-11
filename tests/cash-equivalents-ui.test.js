@@ -14,6 +14,12 @@ test("cash settings expose automatic and custom cash-equivalent allocation", () 
   assert.match(page, /類現金 ETF 仍有價格波動，並非保本現金/);
 });
 
+test("cash and cash-equivalent settings render as separate sibling cards", () => {
+  assert.match(page, /className="positionEditor cashEditor" aria-label="現金設定"/);
+  assert.match(page, /className=\{`positionEditor cashEquivalentCard/);
+  assert.match(page, /aria-label="類現金設定"/);
+});
+
 test("cash-equivalent controls support ticker, shares, and custom targets", () => {
   assert.match(page, /onUpdateCashEquivalentPosition/);
   assert.match(page, /position\.tickerInput/);

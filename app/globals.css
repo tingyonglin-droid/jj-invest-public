@@ -2533,9 +2533,10 @@ button.betaAction {
 .cashEquivalentSection {
   display: grid;
   gap: 14px;
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(154, 164, 177, 0.24);
+}
+
+.cashEquivalentCard {
+  border-color: rgba(154, 164, 177, 0.38);
 }
 
 .cashEquivalentEditor {
@@ -2545,7 +2546,7 @@ button.betaAction {
 }
 
 .cashEquivalentSection.error {
-  border-top-color: rgba(190, 59, 59, 0.4);
+  border-color: rgba(190, 59, 59, 0.4);
 }
 
 .betaParameterGroup {

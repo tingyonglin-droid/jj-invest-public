@@ -2720,7 +2720,8 @@ function SettingsAccordions({
             </div>
           ) : null}
           {activeSettingsPage === "cash" && (
-            <div className="positionEditor cashEditor">
+            <>
+              <div className="positionEditor cashEditor" aria-label="現金設定">
               <div className="positionTitle">
                 <strong>現金</strong>
               </div>
@@ -2789,7 +2790,11 @@ function SettingsAccordions({
                 </label>
               </div>
               <p className="hint">美金現金會用最新 USD/TWD 匯率換算，與新台幣相加後顯示總現金市值。</p>
-              <section className={`positionSection cashEquivalentSection ${cashEquivalentStatus.isValid ? "ok" : "error"}`}>
+              </div>
+              <section
+                className={`positionEditor cashEquivalentCard cashEquivalentSection ${cashEquivalentStatus.isValid ? "ok" : "error"}`}
+                aria-label="類現金設定"
+              >
                 <div className="positionSectionHeader">
                   <div>
                     <strong>類現金標的</strong>
@@ -2877,7 +2882,7 @@ function SettingsAccordions({
                   新增類現金標的
                 </button>
               </section>
-            </div>
+            </>
           )}
 
           {activeSettingsPage === "positions" && (
