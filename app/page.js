@@ -58,6 +58,7 @@ import {
   createFundedRebalanceRecommendations,
   getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
+  getCashSleeveValueAfterStockTrades,
 } from "../src/lib/rebalance-apply.js";
 import {
   createRebalanceRestorePoint,
@@ -431,12 +432,11 @@ export default function Home() {
         precision: rebalancePrecision,
         allocationModes: formState.allocationModes,
       });
-      const originalRatio = Number(calculation.targetOriginalRatio) || 0;
-      const leveragedRatio = Math.max((Number(stockResult.correctedTargetBeta) - originalRatio) / 2, 0);
-      const targetCashSleeveValueTwd = calculation.totalAssetsTwd * Math.max(
-        1 - leveragedRatio - originalRatio,
-        0,
-      );
+      const targetCashSleeveValueTwd = getCashSleeveValueAfterStockTrades({
+        recommendations: stockResult.recommendations,
+        totalAssetsTwd: calculation.totalAssetsTwd,
+        precision: rebalancePrecision,
+      });
       const cashTargets = getCashSleeveTargets({
         mode: formState.cashEquivalentMode,
         positions: formState.cashEquivalentPositions,

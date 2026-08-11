@@ -44,6 +44,24 @@ export function getAppliedRebalanceShareDelta(recommendation, precision = "share
   return Math.max(requestedDeltaShares, -currentShares);
 }
 
+export function getCashSleeveValueAfterStockTrades({
+  recommendations,
+  totalAssetsTwd,
+  precision = "shares",
+}) {
+  const appliedStockValueTwd = recommendations.reduce((sum, recommendation) => {
+    const afterValueTwd = Math.max(
+      toNumber(recommendation.currentValueTwd) +
+        getAppliedRebalanceShareDelta(recommendation, precision) *
+          toNumber(recommendation.priceTwd),
+      0,
+    );
+    return sum + afterValueTwd;
+  }, 0);
+
+  return roundCash(Math.max(toNumber(totalAssetsTwd) - appliedStockValueTwd, 0));
+}
+
 export function createFundedRebalanceRecommendations({
   recommendations,
   precision = "shares",

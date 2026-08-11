@@ -5,6 +5,7 @@ import {
   applyRebalanceToState,
   getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
+  getCashSleeveValueAfterStockTrades,
   getRebalanceShareDelta,
   createFundedRebalanceRecommendations,
 } from "../src/lib/rebalance-apply.js";
@@ -25,6 +26,35 @@ const recommendations = [
 ];
 
 describe("apply rebalance", () => {
+  it("derives the cash sleeve from applied stock lots instead of theoretical beta", () => {
+    const cashSleeveValue = getCashSleeveValueAfterStockTrades({
+      totalAssetsTwd: 1000000,
+      precision: "lots",
+      recommendations: [
+        {
+          id: "leveraged",
+          normalizedTicker: "00631L.TW",
+          shares: 0,
+          assetBeta: 2,
+          currentValueTwd: 0,
+          tradeAmountTwd: 383570,
+          priceTwd: 34.87,
+        },
+        {
+          id: "original",
+          normalizedTicker: "0050.TW",
+          shares: 0,
+          assetBeta: 1,
+          currentValueTwd: 0,
+          tradeAmountTwd: 418400,
+          priceTwd: 104.6,
+        },
+      ],
+    });
+
+    assert.equal(cashSleeveValue, 198030);
+  });
+
   it("keeps the closer cash-equivalent lot in custom allocation mode", () => {
     const funded = createFundedRebalanceRecommendations({
       cashTwd: 148670,
