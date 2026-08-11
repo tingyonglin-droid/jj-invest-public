@@ -29,3 +29,14 @@ test("holding settings omit the normalized ticker hint", async () => {
 
   assert.doesNotMatch(page, /正規化代號：/);
 });
+
+test("holding editors use compact two-column fields and asset tones", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(page, /className=\{`positionSection \$\{assetType\}/);
+  assert.match(page, /className="positionEditorPrimaryFields"/);
+  assert.match(page, /className="positionEditorAllocationField"/);
+  assert.match(styles, /\.positionEditorPrimaryFields\s*\{[^}]*grid-template-columns:\s*repeat\(2,/s);
+  assert.match(styles, /@media \(max-width: 420px\)[\s\S]*\.positionEditorPrimaryFields/s);
+});

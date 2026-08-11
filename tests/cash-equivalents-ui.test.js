@@ -15,7 +15,7 @@ test("cash settings expose automatic and custom cash-equivalent allocation", () 
 });
 
 test("cash and cash-equivalent settings render as separate sibling cards", () => {
-  assert.match(page, /className="positionEditor cashEditor" aria-label="現金設定"/);
+  assert.match(page, /className="positionEditor cashEditor cash" aria-label="現金設定"/);
   assert.match(page, /className=\{`positionEditor cashEquivalentCard/);
   assert.match(page, /aria-label="類現金設定"/);
 });
@@ -42,4 +42,11 @@ test("cash-equivalent operation checkboxes use the shared selection handler", ()
     page,
     /cashEquivalentRecommendations\.map[\s\S]*const isSelected = selectedRebalanceIds\.includes[\s\S]*isSelected,/,
   );
+});
+
+test("cash and cash-equivalent editors share compact fields and the cash tone", () => {
+  assert.match(page, /className="positionEditor cashEditor cash"/);
+  assert.match(page, /cashEquivalentCard cash cashEquivalentSection/);
+  assert.match(page, /cashEquivalentEditor[\s\S]*positionEditorPrimaryFields/);
+  assert.match(page, /cashEquivalentEditor[\s\S]*positionEditorAllocationField/);
 });

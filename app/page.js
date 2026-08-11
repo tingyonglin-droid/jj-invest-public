@@ -2256,9 +2256,19 @@ function OperationsView({
         </div>
       </div>
       <div className="operationParameterCard">
-        <label className="operationBetaField">
+        <div className="operationParameterRow operationBetaField">
           <span>再平衡到 Beta</span>
           <div className="operationBetaStepper">
+            <button
+              type="button"
+              aria-label="降低再平衡 Beta 0.01"
+              disabled={Number(rebalanceTargetBeta) <= 0}
+              onClick={() => onTargetBetaChange(
+                adjustOperationTargetBeta(rebalanceTargetBeta, -0.01),
+              )}
+            >
+              −
+            </button>
             <input
               type="number"
               min="0"
@@ -2267,31 +2277,19 @@ function OperationsView({
               value={rebalanceTargetBeta}
               onChange={(event) => onTargetBetaChange(event.target.value)}
             />
-            <div className="operationBetaStepButtons">
-              <button
-                type="button"
-                aria-label="提高再平衡 Beta 0.01"
-                disabled={Number(rebalanceTargetBeta) >= 2}
-                onClick={() => onTargetBetaChange(
-                  adjustOperationTargetBeta(rebalanceTargetBeta, 0.01),
-                )}
-              >
-                ＋
-              </button>
-              <button
-                type="button"
-                aria-label="降低再平衡 Beta 0.01"
-                disabled={Number(rebalanceTargetBeta) <= 0}
-                onClick={() => onTargetBetaChange(
-                  adjustOperationTargetBeta(rebalanceTargetBeta, -0.01),
-                )}
-              >
-                −
-              </button>
-            </div>
+            <button
+              type="button"
+              aria-label="提高再平衡 Beta 0.01"
+              disabled={Number(rebalanceTargetBeta) >= 2}
+              onClick={() => onTargetBetaChange(
+                adjustOperationTargetBeta(rebalanceTargetBeta, 0.01),
+              )}
+            >
+              ＋
+            </button>
           </div>
-        </label>
-        <div className="operationPrecisionField">
+        </div>
+        <div className="operationParameterRow operationPrecisionField">
           <span>台股交易精度</span>
           <div className="precisionControl" aria-label="再平衡精度">
             <label className={precision === "lots" ? "selected" : ""}>
@@ -2566,7 +2564,7 @@ function PositionSection({
 }) {
   const status = getPositionGroupTargetStatus({ mode, positions });
   return (
-    <section className={`positionSection ${status.isValid ? "ok" : "error"}`}>
+    <section className={`positionSection ${assetType} ${status.isValid ? "ok" : "error"}`}>
       <div className="positionSectionHeader">
         <div>
           <strong>{title}</strong>
@@ -2597,18 +2595,31 @@ function PositionSection({
                 移除
               </button>
             </div>
-            <label>
-              <span>代號</span>
-              <input
-                value={position.tickerInput}
-                onChange={(event) =>
-                  onUpdatePosition(position.id, "tickerInput", event.target.value)
-                }
-                placeholder={getTickerPlaceholder(assetType)}
-              />
-            </label>
-            {mode === "custom" && (
+            <div className="positionEditorPrimaryFields">
               <label>
+                <span>代號</span>
+                <input
+                  value={position.tickerInput}
+                  onChange={(event) =>
+                    onUpdatePosition(position.id, "tickerInput", event.target.value)
+                  }
+                  placeholder={getTickerPlaceholder(assetType)}
+                />
+              </label>
+              <label>
+                <span>股數</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={position.shares}
+                  onChange={(event) =>
+                    onUpdatePosition(position.id, "shares", event.target.value)
+                  }
+                />
+              </label>
+            </div>
+            {mode === "custom" && (
+              <label className="positionEditorAllocationField">
                 <span>同類資產內目標比例 %</span>
                 <input
                   type="number"
@@ -2621,17 +2632,6 @@ function PositionSection({
                 />
               </label>
             )}
-            <label>
-              <span>股數</span>
-              <input
-                type="number"
-                min="0"
-                value={position.shares}
-                onChange={(event) =>
-                  onUpdatePosition(position.id, "shares", event.target.value)
-                }
-              />
-            </label>
           </div>
         ))}
         {positions.length === 0 && <div className="emptyState compact">{emptyText}</div>}
@@ -2718,7 +2718,7 @@ function SettingsAccordions({
           ) : null}
           {activeSettingsPage === "cash" && (
             <>
-              <div className="positionEditor cashEditor" aria-label="現金設定">
+              <div className="positionEditor cashEditor cash" aria-label="現金設定">
               <div className="positionTitle">
                 <strong>現金</strong>
               </div>
@@ -2789,7 +2789,7 @@ function SettingsAccordions({
               <p className="hint">美金現金會用最新 USD/TWD 匯率換算，與新台幣相加後顯示總現金市值。</p>
               </div>
               <section
-                className={`positionEditor cashEquivalentCard cashEquivalentSection ${cashEquivalentStatus.isValid ? "ok" : "error"}`}
+                className={`positionEditor cashEquivalentCard cash cashEquivalentSection ${cashEquivalentStatus.isValid ? "ok" : "error"}`}
                 aria-label="類現金設定"
               >
                 <div className="positionSectionHeader">
@@ -2837,16 +2837,28 @@ function SettingsAccordions({
                       <strong>類現金 {index + 1}</strong>
                       <button type="button" className="textButton" onClick={() => onRemoveCashEquivalentPosition(position.id)}>移除</button>
                     </div>
-                    <label>
-                      <span>代號</span>
-                      <input
-                        value={position.tickerInput}
-                        placeholder={getTickerPlaceholder("cashEquivalent")}
-                        onChange={(event) => onUpdateCashEquivalentPosition(position.id, "tickerInput", event.target.value)}
-                      />
-                    </label>
-                    {formState.cashEquivalentMode === "custom" && (
+                    <div className="positionEditorPrimaryFields">
                       <label>
+                        <span>代號</span>
+                        <input
+                          value={position.tickerInput}
+                          placeholder={getTickerPlaceholder("cashEquivalent")}
+                          onChange={(event) => onUpdateCashEquivalentPosition(position.id, "tickerInput", event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        <span>股數</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={position.shares}
+                          onChange={(event) => onUpdateCashEquivalentPosition(position.id, "shares", event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    {formState.cashEquivalentMode === "custom" && (
+                      <label className="positionEditorAllocationField">
                         <span>現金桶內目標比例 %</span>
                         <input
                           type="number"
@@ -2858,16 +2870,6 @@ function SettingsAccordions({
                         />
                       </label>
                     )}
-                    <label>
-                      <span>股數</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={position.shares}
-                        onChange={(event) => onUpdateCashEquivalentPosition(position.id, "shares", event.target.value)}
-                      />
-                    </label>
                   </div>
                 ))}
                 {!cashEquivalentStatus.isValid && (

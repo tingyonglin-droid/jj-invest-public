@@ -98,3 +98,14 @@ test("rebalance rows show simple ticker text without circular badges", async () 
   assert.doesNotMatch(page, /className=\{`tickerBadge/);
   assert.doesNotMatch(styles, /\.tickerBadge/);
 });
+
+test("rebalance parameters use compact rows and conventional stepper order", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(page, /className="operationParameterRow operationBetaField"/);
+  assert.match(page, /className="operationParameterRow operationPrecisionField"/);
+  assert.ok(page.indexOf('aria-label="降低再平衡 Beta 0.01"') < page.indexOf('value={rebalanceTargetBeta}'));
+  assert.ok(page.indexOf('value={rebalanceTargetBeta}') < page.indexOf('aria-label="提高再平衡 Beta 0.01"'));
+  assert.match(styles, /\.operationParameterRow\s*\{[^}]*grid-template-columns:/s);
+});

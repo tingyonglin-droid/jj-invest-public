@@ -1,17 +1,32 @@
 :root {
-  --background: #f6f7f9;
-  --card: #ffffff;
-  --card-soft: #fbfbfc;
-  --text: #111821;
-  --muted: #7b838f;
-  --muted-strong: #5e6672;
-  --line: #eaedf1;
-  --primary: #319b72;
-  --primary-dark: #247856;
-  --purple: #8d55de;
-  --teal: #31a89b;
-  --blue: #5a9ee7;
-  --rail: #f3efe8;
+  --background: #f4f2ef;
+  --card: #fcfbf9;
+  --card-soft: #f7f5f2;
+  --text: #22272b;
+  --muted: #7a7772;
+  --muted-strong: #615f5c;
+  --line: #dedad4;
+  --primary: #78867d;
+  --primary-dark: #5f6c64;
+  --asset-leveraged: #9b8aa1;
+  --asset-original: #87988a;
+  --asset-cash: #8797a4;
+  --asset-leveraged-soft: #f5f2f5;
+  --asset-original-soft: #f2f4f1;
+  --asset-cash-soft: #f2f4f5;
+  --purple: var(--asset-leveraged);
+  --teal: var(--asset-original);
+  --blue: var(--asset-cash);
+  --action-selected: #ddd7cf;
+  --action-selected-border: #bbb2a8;
+  --action-selected-text: #5e5852;
+  --action-add: #ece8e2;
+  --action-remove: #a07779;
+  --action-valid: #78867d;
+  --risk-normal: #dde6dd;
+  --risk-prepare: #e9dfc5;
+  --risk-deep: #e8d1d1;
+  --rail: #ebe7e1;
   --danger: #c1515a;
   --warning: #c58b1a;
   --shadow: 0 14px 40px rgba(17, 24, 33, 0.07);
@@ -384,13 +399,13 @@ button.betaAction {
 }
 
 .betaAction.balanced {
-  color: #216448;
-  background: #e3f2ea;
+  color: #5f6c64;
+  background: #e3e8e3;
 }
 
 .betaAction.rebalance {
-  color: #805200;
-  background: #fff0cf;
+  color: #78683f;
+  background: #e8dfc9;
 }
 
 .betaAction.error {
@@ -463,7 +478,7 @@ button.betaAction {
   background: linear-gradient(
     90deg,
     var(--rail) 0 var(--beta-lower),
-    #dff1eb var(--beta-lower) var(--beta-upper),
+    #dfe5df var(--beta-lower) var(--beta-upper),
     var(--rail) var(--beta-upper) 100%
   );
 }
@@ -491,8 +506,8 @@ button.betaAction {
   max-width: min(128px, 42vw);
   padding: 4px 8px;
   border-radius: 999px;
-  color: #2f7b65;
-  background: #e7f5ef;
+  color: #5f6c64;
+  background: #e3e8e3;
   font-size: 12px;
   font-weight: 760;
   line-height: 1;
@@ -628,8 +643,8 @@ button.betaAction {
 }
 
 .marketLevelRangeControls button[aria-pressed="true"] {
-  background: rgba(218, 241, 223, 0.9);
-  color: var(--primary-dark);
+  background: var(--action-selected);
+  color: var(--action-selected-text);
 }
 
 .marketLevelRangeControls button:focus-visible {
@@ -664,15 +679,15 @@ button.betaAction {
 }
 
 .marketBand.normal {
-  fill: rgba(218, 241, 223, 0.68);
+  fill: var(--risk-normal);
 }
 
 .marketBand.prepare {
-  fill: rgba(255, 231, 184, 0.7);
+  fill: var(--risk-prepare);
 }
 
 .marketBand.deep {
-  fill: rgba(255, 205, 205, 0.68);
+  fill: var(--risk-deep);
 }
 
 .marketBandName {
@@ -681,15 +696,15 @@ button.betaAction {
 }
 
 .marketBandName.normal {
-  fill: #19764f;
+  fill: #637466;
 }
 
 .marketBandName.prepare {
-  fill: #c76d00;
+  fill: #867348;
 }
 
 .marketBandName.deep {
-  fill: #c53b43;
+  fill: #91686a;
 }
 
 .marketThreshold {
@@ -772,15 +787,15 @@ button.betaAction {
 }
 
 .marketPoint.normal {
-  fill: #24875e;
+  fill: #78867d;
 }
 
 .marketPoint.prepare {
-  fill: #ef8a12;
+  fill: #9c8758;
 }
 
 .marketPoint.deep {
-  fill: #d84a50;
+  fill: #a07779;
 }
 
 .marketPoint:hover,
@@ -834,15 +849,15 @@ button.betaAction {
 }
 
 .marketLevelLegend i.normal {
-  background: #b9dfc0;
+  background: var(--risk-normal);
 }
 
 .marketLevelLegend i.prepare {
-  background: #ffd48e;
+  background: var(--risk-prepare);
 }
 
 .marketLevelLegend i.deep {
-  background: #f4acac;
+  background: var(--risk-deep);
 }
 
 .marketLevelFooter {
@@ -1020,9 +1035,9 @@ button.betaAction {
 }
 
 .precisionControl label.selected {
-  border-color: rgba(49, 155, 114, 0.22);
-  color: var(--primary-dark);
-  background: #e8f6ef;
+  border-color: var(--action-selected-border);
+  color: var(--action-selected-text);
+  background: var(--action-selected);
 }
 
 .precisionControl label:focus-within {
@@ -1057,7 +1072,7 @@ button.betaAction {
 
 .secondaryButton {
   color: var(--text);
-  background: #f1f3f5;
+  background: var(--action-add);
 }
 
 .secondaryButton.fullWidth {
@@ -1071,7 +1086,7 @@ button.betaAction {
 .textButton {
   min-height: 36px;
   padding: 0 10px;
-  color: var(--primary-dark);
+  color: var(--action-remove);
   background: transparent;
 }
 
@@ -1133,15 +1148,15 @@ button.betaAction {
 }
 
 .allocationLeveraged {
-  background: var(--purple);
+  background: var(--asset-leveraged);
 }
 
 .allocationOriginal {
-  background: var(--teal);
+  background: var(--asset-original);
 }
 
 .allocationCash {
-  background: var(--blue);
+  background: var(--asset-cash);
 }
 
 .allocationLegend {
@@ -1166,15 +1181,15 @@ button.betaAction {
 }
 
 .legendItem .purple {
-  background: var(--purple);
+  background: var(--asset-leveraged);
 }
 
 .legendItem .teal {
-  background: var(--teal);
+  background: var(--asset-original);
 }
 
 .legendItem .blue {
-  background: var(--blue);
+  background: var(--asset-cash);
 }
 
 .legendItem em {
@@ -1312,7 +1327,7 @@ button.betaAction {
 .historyModeTabs button.active,
 .historyRangeTabs button.active {
   color: var(--text);
-  background: #ffffff;
+  background: var(--action-selected);
   box-shadow: 0 8px 18px rgba(17, 24, 33, 0.07);
 }
 
@@ -1575,13 +1590,18 @@ button.betaAction {
 }
 
 .holdingGroup.leveraged {
-  border-color: rgba(127, 97, 217, 0.2);
-  background: rgba(127, 97, 217, 0.045);
+  border-color: var(--asset-leveraged);
+  background: var(--asset-leveraged-soft);
 }
 
 .holdingGroup.original {
-  border-color: rgba(49, 151, 121, 0.18);
-  background: rgba(49, 151, 121, 0.045);
+  border-color: var(--asset-original);
+  background: var(--asset-original-soft);
+}
+
+.holdingGroup.cash {
+  border-color: var(--asset-cash);
+  background: var(--asset-cash-soft);
 }
 
 .holdingGroupHeader {
@@ -1735,38 +1755,31 @@ button.betaAction {
   line-height: 1.3;
 }
 
-.operationBetaField,
-.operationPrecisionField {
+.operationParameterRow {
   display: grid;
-  gap: 8px;
-}
-
-.operationBetaField input {
-  min-height: 52px;
-  font-size: 22px;
-  font-weight: 820;
+  grid-template-columns: minmax(130px, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
 }
 
 .operationBetaStepper {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: 44px minmax(96px, 120px) 44px;
+  gap: 6px;
 }
 
 .operationBetaStepper input {
   width: 100%;
   min-width: 0;
+  min-height: 44px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 820;
 }
 
-.operationBetaStepButtons {
-  display: grid;
-  grid-template-columns: repeat(2, 48px);
-  gap: 6px;
-}
-
-.operationBetaStepButtons button {
-  min-width: 48px;
-  min-height: 52px;
+.operationBetaStepper button {
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 1px solid rgba(17, 24, 33, 0.1);
   border-radius: 14px;
@@ -1777,23 +1790,9 @@ button.betaAction {
   cursor: pointer;
 }
 
-.operationBetaStepButtons button:disabled {
+.operationBetaStepper button:disabled {
   cursor: not-allowed;
   opacity: 0.38;
-}
-
-@media (max-width: 640px) {
-  .operationSummaryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .operationBetaStepButtons {
-    grid-template-columns: repeat(2, 44px);
-  }
-
-  .operationBetaStepButtons button {
-    min-width: 44px;
-  }
 }
 
 .operationBetaField span,
@@ -1810,6 +1809,35 @@ button.betaAction {
   font-size: 13px;
   font-weight: 720;
   line-height: 1.5;
+}
+
+.operationPrecisionField p {
+  grid-column: 2;
+}
+
+@media (max-width: 640px) {
+  .operationSummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .operationParameterRow {
+    grid-template-columns: 1fr;
+  }
+
+  .operationBetaStepper,
+  .operationPrecisionField .precisionControl {
+    justify-self: stretch;
+  }
+
+  .operationBetaStepper {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+
+  .operationPrecisionField p {
+    grid-column: 1;
+  }
 }
 
 .operationApplyFooter {
@@ -2097,7 +2125,7 @@ button.betaAction {
 
 .bottomTabBar button.active {
   color: var(--text);
-  background: rgba(17, 24, 33, 0.06);
+  background: var(--action-selected);
 }
 
 .settingsStack {
@@ -2107,7 +2135,7 @@ button.betaAction {
   border: 1px solid rgba(224, 229, 235, 0.82);
   border-radius: 26px;
   padding: 18px;
-  background: #eef1f4;
+  background: #ebe8e3;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -2219,8 +2247,8 @@ button.betaAction {
 }
 
 .cashReasonPanel label.active {
-  border-color: rgba(47, 160, 115, 0.28);
-  background: #ecf8f2;
+  border-color: var(--action-selected-border);
+  background: var(--action-selected);
 }
 
 .cashReasonPanel input {
@@ -2306,7 +2334,7 @@ button.betaAction {
 
 .settingsSubTabs button.active {
   color: var(--text);
-  background: #ffffff;
+  background: var(--action-selected);
   box-shadow: 0 6px 18px rgba(17, 24, 33, 0.08);
 }
 
@@ -2396,11 +2424,26 @@ button.betaAction {
 
 .positionSection {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   border: 1px solid rgba(224, 229, 235, 0.95);
   border-radius: var(--radius-lg);
-  padding: 14px;
+  padding: 12px;
   background: #fbfcfd;
+}
+
+.positionSection.leveraged {
+  border-color: var(--asset-leveraged);
+  background: var(--asset-leveraged-soft);
+}
+
+.positionSection.original {
+  border-color: var(--asset-original);
+  background: var(--asset-original-soft);
+}
+
+.positionEditor.cash {
+  border-color: var(--asset-cash);
+  background: var(--asset-cash-soft);
 }
 
 .positionSection.error {
@@ -2426,12 +2469,31 @@ button.betaAction {
   font-weight: 860;
 }
 
+.positionSection.leveraged > .positionSectionHeader strong,
+.holdingGroup.leveraged .holdingGroupHeader > div > strong {
+  color: #6f6274;
+}
+
+.positionSection.original > .positionSectionHeader strong,
+.holdingGroup.original .holdingGroupHeader > div > strong {
+  color: #5f7062;
+}
+
+.positionEditor.cash > .positionSectionHeader strong,
+.holdingGroup.cash .holdingGroupHeader > div > strong {
+  color: #61717d;
+}
+
 .positionSectionHeader span,
 .positionSectionHeader em {
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
   font-weight: 760;
+}
+
+.positionSectionHeader em {
+  color: var(--action-valid);
 }
 
 .positionSection.error .positionSectionHeader em,
@@ -2467,9 +2529,9 @@ button.betaAction {
 }
 
 .allocationModeControl button.active {
-  border-color: rgba(49, 155, 114, 0.28);
-  color: var(--primary-dark);
-  background: #e8f6ef;
+  border-color: var(--action-selected-border);
+  color: var(--action-selected-text);
+  background: var(--action-selected);
 }
 
 .fieldError {
@@ -2481,11 +2543,37 @@ button.betaAction {
 
 .positionEditor {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 13px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   background: #ffffff;
+}
+
+.positionEditorPrimaryFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.positionEditorPrimaryFields label,
+.positionEditorAllocationField {
+  min-width: 0;
+}
+
+.positionEditorPrimaryFields input,
+.positionEditorAllocationField input {
+  min-height: 44px;
+}
+
+@media (max-width: 420px) {
+  .positionEditorPrimaryFields {
+    gap: 8px;
+  }
+
+  .positionEditorPrimaryFields input {
+    padding-inline: 10px;
+  }
 }
 
 .cashFxInfo {
@@ -2518,11 +2606,12 @@ button.betaAction {
 }
 
 .cashEquivalentCard {
-  border-color: rgba(154, 164, 177, 0.38);
+  border-color: var(--asset-cash);
+  background: var(--asset-cash-soft);
 }
 
 .cashEquivalentEditor {
-  padding: 14px;
+  padding: 13px;
   border-radius: 14px;
   background: rgba(247, 249, 250, 0.72);
 }
