@@ -2290,7 +2290,10 @@ function OperationsView({
           </div>
         </div>
         <div className="operationParameterRow operationPrecisionField">
-          <span>台股交易精度</span>
+          <div className="operationPrecisionLabel">
+            <span>台股交易精度</span>
+            <p>美股固定精確到股數。</p>
+          </div>
           <div className="precisionControl" aria-label="再平衡精度">
             <label className={precision === "lots" ? "selected" : ""}>
               <input
@@ -2313,7 +2316,6 @@ function OperationsView({
               精確到股數
             </label>
           </div>
-          <p>美股固定精確到股數。</p>
         </div>
       </div>
       {warnings.map((warning) => (

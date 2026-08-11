@@ -111,8 +111,13 @@ test("rebalance parameters use compact rows and conventional stepper order", asy
 });
 
 test("mobile rebalance precision keeps both choices on one row", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
+  assert.match(
+    page,
+    /className="operationPrecisionLabel"[\s\S]*?台股交易精度[\s\S]*?美股固定精確到股數。/s,
+  );
   assert.match(
     styles,
     /@media \(max-width: 480px\)[\s\S]*?\.operationPrecisionField \.precisionControl\s*\{[^}]*grid-template-columns:\s*repeat\(2,/s,
@@ -121,4 +126,7 @@ test("mobile rebalance precision keeps both choices on one row", async () => {
     styles,
     /@media \(max-width: 420px\)[\s\S]*?\.operationPrecisionField\s*\{[^}]*grid-template-columns:/s,
   );
+  assert.match(styles, /\.operationPrecisionLabel\s*\{[^}]*display:\s*grid;[^}]*gap:/s);
+  assert.match(styles, /\.operationPrecisionLabel p\s*\{[^}]*font-size:\s*11px;/s);
+  assert.match(styles, /\.operationPrecisionField \.precisionControl\s*\{[^}]*gap:\s*12px;/s);
 });

@@ -1762,6 +1762,20 @@ button.betaAction {
   gap: 8px 16px;
 }
 
+.operationPrecisionField {
+  grid-template-columns: minmax(130px, 0.8fr) minmax(240px, 1.2fr);
+}
+
+.operationPrecisionLabel {
+  display: grid;
+  gap: 3px;
+}
+
+.operationPrecisionField .precisionControl {
+  width: 100%;
+  gap: 12px;
+}
+
 .operationBetaStepper {
   display: grid;
   grid-template-columns: 44px minmax(96px, 120px) 44px;
@@ -1811,8 +1825,9 @@ button.betaAction {
   line-height: 1.5;
 }
 
-.operationPrecisionField p {
-  grid-column: 2;
+.operationPrecisionLabel p {
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 @media (max-width: 640px) {
@@ -1841,7 +1856,7 @@ button.betaAction {
   }
 
   .operationPrecisionField p {
-    grid-column: 2;
+    grid-column: auto;
   }
 }
 
