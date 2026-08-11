@@ -24,6 +24,9 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("SSO", 2), "ProShares Ultra S&P500");
     assert.equal(getPositionDisplayName("VOO", 1), "Vanguard S&P 500 ETF");
     assert.equal(getPositionDisplayName("QQQ", 1), "Invesco QQQ Trust ETF");
+    assert.equal(getPositionDisplayName("SMH", 1), "VanEck Semiconductor ETF");
+    assert.equal(getPositionDisplayName("SOXX", 1), "iShares Semiconductor ETF");
+    assert.equal(getPositionDisplayName("USD", 2), "ProShares Ultra Semiconductors");
     assert.equal(getPositionDisplayName("QLD"), "ProShares Ultra QQQ");
   });
 

@@ -12,6 +12,9 @@ const TICKER_NAMES = {
   SSO: "ProShares Ultra S&P500",
   VOO: "Vanguard S&P 500 ETF",
   QQQ: "Invesco QQQ Trust ETF",
+  SMH: "VanEck Semiconductor ETF",
+  SOXX: "iShares Semiconductor ETF",
+  USD: "ProShares Ultra Semiconductors",
   QLD: "ProShares Ultra QQQ",
 };
 
