@@ -55,6 +55,7 @@ import { createOverviewAction } from "../src/lib/overview-action.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
   applyRebalanceToState,
+  createFundedRebalanceRecommendations,
   getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
 } from "../src/lib/rebalance-apply.js";
@@ -459,10 +460,17 @@ export default function Home() {
             : 0,
         };
       });
+      const targetRealCashTwd = targetCashSleeveValueTwd * cashTargets.realCashRatio;
+      const fundedRecommendations = createFundedRebalanceRecommendations({
+        recommendations: [...stockResult.recommendations, ...cashEquivalentRecommendations],
+        precision: rebalancePrecision,
+        cashTwd: calculation.realCashTwd,
+        minimumCashTwd: targetRealCashTwd,
+      });
       return {
         ...stockResult,
-        recommendations: [...stockResult.recommendations, ...cashEquivalentRecommendations],
-        targetRealCashTwd: targetCashSleeveValueTwd * cashTargets.realCashRatio,
+        recommendations: fundedRecommendations,
+        targetRealCashTwd,
       };
     },
     [
@@ -478,6 +486,7 @@ export default function Home() {
       formState.realCashTargetPct,
       calculation.cashEquivalentRecommendations,
       calculation.cashSleeveValueTwd,
+      calculation.realCashTwd,
     ],
   );
   const appliedRebalanceSummary = useMemo(

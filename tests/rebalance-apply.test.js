@@ -6,6 +6,7 @@ import {
   getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
   getRebalanceShareDelta,
+  createFundedRebalanceRecommendations,
 } from "../src/lib/rebalance-apply.js";
 
 const recommendations = [
@@ -24,6 +25,24 @@ const recommendations = [
 ];
 
 describe("apply rebalance", () => {
+  it("reduces rounded cash-equivalent buys before breaching the real-cash reserve", () => {
+    const funded = createFundedRebalanceRecommendations({
+      cashTwd: 1000000,
+      minimumCashTwd: 20000,
+      precision: "lots",
+      recommendations: [
+        { id: "leveraged", normalizedTicker: "00631L.TW", shares: 0, assetBeta: 2, tradeAmountTwd: 383570, priceTwd: 34.87 },
+        { id: "original", normalizedTicker: "0050.TW", shares: 0, assetBeta: 1, tradeAmountTwd: 418400, priceTwd: 104.6 },
+        { id: "bond", normalizedTicker: "00865B.TW", shares: 0, assetType: "cashEquivalent", tradeAmountTwd: 180000, priceTwd: 49.36 },
+      ],
+    });
+    const summary = getAppliedRebalanceSummary({ recommendations: funded, precision: "lots" });
+
+    assert.equal(getAppliedRebalanceShareDelta(funded[2], "lots"), 3000);
+    assert.equal(1000000 + summary.cashDeltaTwd, 49950);
+    assert.ok(1000000 + summary.cashDeltaTwd >= 20000);
+  });
+
   it("rounds all assets to shares in share precision mode", () => {
     assert.equal(getRebalanceShareDelta(recommendations[0], "shares"), 1150);
     assert.equal(getRebalanceShareDelta(recommendations[1], "shares"), -1);

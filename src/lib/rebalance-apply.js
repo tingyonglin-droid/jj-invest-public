@@ -44,6 +44,66 @@ export function getAppliedRebalanceShareDelta(recommendation, precision = "share
   return Math.max(requestedDeltaShares, -currentShares);
 }
 
+export function createFundedRebalanceRecommendations({
+  recommendations,
+  precision = "shares",
+  cashTwd,
+  minimumCashTwd = 0,
+}) {
+  const appliedDeltas = new Map(
+    recommendations.map((recommendation) => [
+      recommendation.id,
+      getAppliedRebalanceShareDelta(recommendation, precision),
+    ]),
+  );
+  const netTradeCost = recommendations.reduce(
+    (sum, recommendation) =>
+      sum + toNumber(appliedDeltas.get(recommendation.id)) * toNumber(recommendation.priceTwd),
+    0,
+  );
+  let deficit = roundCash(
+    Math.max(toNumber(minimumCashTwd) - (toNumber(cashTwd) - netTradeCost), 0),
+  );
+
+  const buys = recommendations
+    .filter((recommendation) => toNumber(appliedDeltas.get(recommendation.id)) > 0)
+    .sort((left, right) => {
+      const leftPriority = left.assetType === "cashEquivalent" ? 0 : 1;
+      const rightPriority = right.assetType === "cashEquivalent" ? 0 : 1;
+      if (leftPriority !== rightPriority) {
+        return leftPriority - rightPriority;
+      }
+      return Math.abs(toNumber(right.tradeAmountTwd)) - Math.abs(toNumber(left.tradeAmountTwd));
+    });
+
+  for (const recommendation of buys) {
+    if (deficit <= 0) {
+      break;
+    }
+    const shareUnit = precision === "lots" && isTaiwanTicker(recommendation.normalizedTicker)
+      ? TAIWAN_LOT_SIZE
+      : 1;
+    const unitCost = shareUnit * toNumber(recommendation.priceTwd);
+    if (unitCost <= 0) {
+      continue;
+    }
+    const currentDelta = toNumber(appliedDeltas.get(recommendation.id));
+    const availableUnits = Math.floor(currentDelta / shareUnit);
+    const unitsToRemove = Math.min(availableUnits, Math.ceil(deficit / unitCost));
+    appliedDeltas.set(
+      recommendation.id,
+      currentDelta - unitsToRemove * shareUnit,
+    );
+    deficit = roundCash(Math.max(deficit - unitsToRemove * unitCost, 0));
+  }
+
+  return recommendations.map((recommendation) => ({
+    ...recommendation,
+    tradeAmountTwd:
+      toNumber(appliedDeltas.get(recommendation.id)) * toNumber(recommendation.priceTwd),
+  }));
+}
+
 export function getAppliedRebalanceSummary({ recommendations, precision = "shares" }) {
   const summary = recommendations.reduce(
     (summary, recommendation) => {
