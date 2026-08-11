@@ -361,14 +361,13 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 96px;
-  height: 32px;
-  min-height: 32px;
-  border-radius: 9px;
-  padding: 6px 9px;
-  font-size: 11px;
+  width: 108px;
+  min-height: 52px;
+  border-radius: 14px;
+  padding: 8px 10px;
+  font-size: 15px;
   font-weight: 820;
-  line-height: 1;
+  line-height: 1.25;
   white-space: nowrap;
 }
 

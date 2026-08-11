@@ -71,7 +71,7 @@ describe("benchmark drawdown UI", () => {
     assert.doesNotMatch(pageSource, /marketLevelChartToolbar/);
     assert.match(pageSource, /股災區間/);
     assert.doesNotMatch(pageSource, /風險區間/);
-    assert.match(cssSource, /\.overviewCardAction[\s\S]*height:\s*32px/);
+    assert.match(cssSource, /\.overviewCardAction[\s\S]*min-height:\s*52px/);
     assert.match(cssSource, /\.marketLevelRangeControls/);
     assert.match(
       cssSource,

@@ -55,7 +55,10 @@ describe("overview card header", () => {
       /\.overviewCardSubtitle\s*\{[^}]*color:\s*var\(--muted\);[^}]*font-size:\s*13px;/s,
     );
     assert.match(cssSource, /\.overviewCardInfoButton::after\s*\{[^}]*width:\s*18px;[^}]*height:\s*18px;/s);
-    assert.match(cssSource, /\.overviewCardAction\s*\{[^}]*height:\s*32px;[^}]*font-size:\s*11px;/s);
+    assert.match(
+      cssSource,
+      /\.overviewCardAction\s*\{[^}]*width:\s*108px;[^}]*min-height:\s*52px;[^}]*border-radius:\s*14px;[^}]*padding:\s*8px 10px;[^}]*font-size:\s*15px;/s,
+    );
   });
 
   it("moves all overview info controls closer to their titles", () => {
@@ -102,7 +105,7 @@ describe("overview card header", () => {
   it("gives the beta and market actions the same left edge", () => {
     assert.match(
       cssSource,
-      /\.overviewCardAction\s*\{[^}]*width:\s*96px;/s,
+      /\.overviewCardAction\s*\{[^}]*width:\s*108px;/s,
     );
   });
 });
