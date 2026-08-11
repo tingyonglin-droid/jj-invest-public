@@ -178,7 +178,7 @@ function formatSignedPercent(ratio) {
 
 function formatNetTradeAmount(value) {
   if (Math.abs(value) < 0.5) {
-    return "無調整";
+    return "不需調整";
   }
   return `${value > 0 ? "淨買入" : "淨賣出"} ${formatTwd(Math.abs(value))}`;
 }

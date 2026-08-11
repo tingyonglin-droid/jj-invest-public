@@ -40,6 +40,13 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(styles, /\.operationHeaderRow/);
 });
 
+test("rebalance summary labels unchanged sleeves as no adjustment needed", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /return "不需調整";/);
+  assert.doesNotMatch(page, /return "無調整";/);
+});
+
 test("operations page places precision in parameters and apply action after the list", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
