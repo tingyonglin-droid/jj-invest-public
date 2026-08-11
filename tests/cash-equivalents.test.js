@@ -81,8 +81,8 @@ describe("cash-equivalent rebalance application", () => {
 });
 
 describe("cash-equivalent presentation", () => {
-  it("labels beta-zero ETF positions as cash equivalents", () => {
-    assert.equal(getPositionDisplayName("SGOV", 0), "類現金標的");
+  it("uses the verified display name for supported cash-equivalent ETFs", () => {
+    assert.equal(getPositionDisplayName("SGOV", 0), "iShares 0-3 Month Treasury Bond ETF");
   });
 });
 

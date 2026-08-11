@@ -1,25 +1,8 @@
-const TICKER_NAMES = {
-  "0050.TW": "元大台灣50",
-  "006208.TW": "富邦台50",
-  "00631L.TW": "元大台灣50正2",
-  "00663L.TW": "國泰台灣加權正2",
-  "00675L.TW": "富邦台灣加權正2",
-  "00685L.TW": "群益台灣加權正2",
-  "00662.TW": "富邦NASDAQ",
-  "00859B.TW": "群益0-1年美債",
-  "00859B.TWO": "群益0-1年美債",
-  "00864B.TW": "中信美國公債0-1",
-  "00864B.TWO": "中信美國公債0-1",
-  "00865B.TW": "國泰US短期公債",
-  "009816.TW": "凱基台灣TOP50",
-  SSO: "ProShares Ultra S&P500",
-  VOO: "Vanguard S&P 500 ETF",
-  QQQ: "Invesco QQQ Trust ETF",
-  SMH: "VanEck Semiconductor ETF",
-  SOXX: "iShares Semiconductor ETF",
-  USD: "ProShares Ultra Semiconductors",
-  QLD: "ProShares Ultra QQQ",
-};
+import supportedTickers from "../data/supported-tickers.json" with { type: "json" };
+
+const TICKER_NAMES = Object.fromEntries(
+  supportedTickers.flatMap((item) => item.symbols.map((symbol) => [symbol, item.name])),
+);
 
 const TICKER_BADGES = {
   "00631L.TW": "2x",

@@ -1,0 +1,202 @@
+[
+  {
+    "ticker": "00631L",
+    "symbols": ["00631L.TW"],
+    "name": "元大台灣50正2",
+    "category": "leveraged",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "00685L",
+    "symbols": ["00685L.TW"],
+    "name": "群益台灣加權正2",
+    "category": "leveraged",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "00663L",
+    "symbols": ["00663L.TW"],
+    "name": "國泰台灣加權正2",
+    "category": "leveraged",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "00675L",
+    "symbols": ["00675L.TW"],
+    "name": "富邦台灣加權正2",
+    "category": "leveraged",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "SSO",
+    "symbols": ["SSO"],
+    "name": "ProShares Ultra S&P500",
+    "category": "leveraged",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "QLD",
+    "symbols": ["QLD"],
+    "name": "ProShares Ultra QQQ",
+    "category": "leveraged",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "USD",
+    "symbols": ["USD"],
+    "name": "ProShares Ultra Semiconductors",
+    "category": "leveraged",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "0050",
+    "symbols": ["0050.TW"],
+    "name": "元大台灣50",
+    "category": "original",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "006208",
+    "symbols": ["006208.TW"],
+    "name": "富邦台50",
+    "category": "original",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "00662",
+    "symbols": ["00662.TW"],
+    "name": "富邦NASDAQ",
+    "category": "original",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "009816",
+    "symbols": ["009816.TW"],
+    "name": "凱基台灣TOP50",
+    "category": "original",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "VOO",
+    "symbols": ["VOO"],
+    "name": "Vanguard S&P 500 ETF",
+    "category": "original",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "QQQ",
+    "symbols": ["QQQ"],
+    "name": "Invesco QQQ Trust ETF",
+    "category": "original",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "SMH",
+    "symbols": ["SMH"],
+    "name": "VanEck Semiconductor ETF",
+    "category": "original",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "SOXX",
+    "symbols": ["SOXX"],
+    "name": "iShares Semiconductor ETF",
+    "category": "original",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "00865B",
+    "symbols": ["00865B.TW"],
+    "name": "國泰US短期公債",
+    "category": "cashEquivalent",
+    "market": "TWSE",
+    "quoteSources": ["TWSE", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "00864B",
+    "symbols": ["00864B.TW", "00864B.TWO"],
+    "name": "中信美國公債0-1",
+    "category": "cashEquivalent",
+    "market": "TPEx",
+    "quoteSources": ["TPEx", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "00859B",
+    "symbols": ["00859B.TW", "00859B.TWO"],
+    "name": "群益0-1年美債",
+    "category": "cashEquivalent",
+    "market": "TPEx",
+    "quoteSources": ["TPEx", "Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "SGOV",
+    "symbols": ["SGOV"],
+    "name": "iShares 0-3 Month Treasury Bond ETF",
+    "category": "cashEquivalent",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  },
+  {
+    "ticker": "BSV",
+    "symbols": ["BSV"],
+    "name": "Vanguard Short-Term Bond ETF",
+    "category": "cashEquivalent",
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-11"
+  }
+]
