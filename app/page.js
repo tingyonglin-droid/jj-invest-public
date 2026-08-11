@@ -1354,24 +1354,23 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
         subtitle="整體資產曝險程度"
         infoLabel="查看 Beta 說明"
         onInfo={onOpenGlossary}
-        action={
-          action.destination ? (
+        action={null}
+      />
+      <div className="betaTopline">
+        <div className="betaPrimary">
+          <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
+          {action.destination ? (
             <button
               type="button"
-              className={`betaAction ${action.tone}`}
+              className={`betaAction betaInlineAction ${action.tone}`}
               onClick={() => onAction(action)}
               aria-label={action.ariaLabel}
             >
               {action.label}
             </button>
           ) : (
-            <span className={`betaAction ${action.tone}`}>{action.label}</span>
-          )
-        }
-      />
-      <div className="betaTopline">
-        <div className="betaPrimary">
-          <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
+            <span className={`betaAction betaInlineAction ${action.tone}`}>{action.label}</span>
+          )}
         </div>
         <div className="betaMetaGrid">
           <div>

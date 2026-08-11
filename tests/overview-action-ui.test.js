@@ -7,7 +7,7 @@ const cssSource = readFileSync(new URL("../app/globals.css", import.meta.url), "
 
 describe("overview action UI", () => {
   it("places the overview action in the beta card and removes the separate advice card", () => {
-    assert.match(pageSource, /className={`betaAction \$\{action\.tone\}`}/);
+    assert.match(pageSource, /className={`betaAction betaInlineAction \$\{action\.tone\}`}/);
     assert.match(pageSource, /aria-label=\{action\.ariaLabel\}/);
     assert.doesNotMatch(pageSource, /function AdviceCard/);
     assert.doesNotMatch(pageSource, /<AdviceCard/);
@@ -20,14 +20,18 @@ describe("overview action UI", () => {
     );
   });
 
-  it("keeps the overview action pinned to the beta card top-right on phones", () => {
+  it("places every overview status beside the current Beta value", () => {
     assert.match(
       pageSource,
-      /<OverviewCardHeader[\s\S]*?title="目前 Beta"[\s\S]*?action=\{/,
+      /title="目前 Beta"[\s\S]*?action=\{null\}/s,
+    );
+    assert.match(
+      pageSource,
+      /className="betaPrimary"[\s\S]*?action\.destination[\s\S]*?className={`betaAction betaInlineAction \$\{action\.tone\}`}[\s\S]*?<span className={`betaAction betaInlineAction \$\{action\.tone\}`}>/s,
     );
     assert.match(
       cssSource,
-      /\.overviewCardHeader\s*\{[^}]*justify-content:\s*space-between;/s,
+      /\.betaInlineAction\s*\{[^}]*min-height:\s*36px;[^}]*padding:\s*7px 12px;[^}]*font-size:\s*13px;/s,
     );
   });
 

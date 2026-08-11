@@ -386,6 +386,9 @@ button.overviewCardAction::after {
 }
 
 .betaPrimary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -395,6 +398,16 @@ button.overviewCardAction::after {
 
 button.betaAction {
   touch-action: manipulation;
+}
+
+.betaInlineAction {
+  min-height: 36px;
+  border-radius: 12px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 820;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .betaAction.balanced {
