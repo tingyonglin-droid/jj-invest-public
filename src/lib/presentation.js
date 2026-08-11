@@ -42,8 +42,9 @@ function formatTwdText(value) {
 }
 
 export function getPositionDisplayName(normalizedTicker, assetBeta = 2) {
-  if (TICKER_NAMES[normalizedTicker]) {
-    return TICKER_NAMES[normalizedTicker];
+  const tickerKey = String(normalizedTicker || "").trim().toUpperCase();
+  if (TICKER_NAMES[tickerKey]) {
+    return TICKER_NAMES[tickerKey];
   }
 
   if (Number(assetBeta) === 0) {
