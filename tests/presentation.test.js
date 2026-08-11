@@ -16,6 +16,14 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("00631L.TW"), "元大台灣50正2");
     assert.equal(getPositionDisplayName("00685L.TW"), "群益台灣加權正2");
     assert.equal(getPositionDisplayName("00865B.TW", 0), "國泰US短期公債");
+    assert.equal(getPositionDisplayName("00859B.TW", 0), "群益0-1年美債");
+    assert.equal(getPositionDisplayName("00859B.TWO", 0), "群益0-1年美債");
+    assert.equal(getPositionDisplayName("00864B.TW", 0), "中信美國公債0-1");
+    assert.equal(getPositionDisplayName("00864B.TWO", 0), "中信美國公債0-1");
+    assert.equal(getPositionDisplayName("00662.TW", 1), "富邦NASDAQ");
+    assert.equal(getPositionDisplayName("SSO", 2), "ProShares Ultra S&P500");
+    assert.equal(getPositionDisplayName("VOO", 1), "Vanguard S&P 500 ETF");
+    assert.equal(getPositionDisplayName("QQQ", 1), "Invesco QQQ Trust ETF");
     assert.equal(getPositionDisplayName("QLD"), "ProShares Ultra QQQ");
   });
 
