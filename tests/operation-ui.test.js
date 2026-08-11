@@ -149,14 +149,14 @@ test("rebalance page uses the approved compact typography scale", async () => {
   assert.match(styles, /\.holdingGroupHeader strong\s*\{[^}]*font-size:\s*16px;/s);
   assert.match(styles, /\.holdingIdentity strong\s*\{[^}]*font-size:\s*16px;/s);
   assert.match(styles, /\.holdingIdentity span,[\s\S]*?\.holdingIdentity em\s*\{[^}]*font-size:\s*12px;/s);
-  assert.match(styles, /\.holdingAction strong\s*\{[^}]*font-size:\s*22px;/s);
+  assert.match(styles, /\.holdingAction strong\s*\{[^}]*font-size:\s*14px;/s);
 });
 
 test("rebalance holding cards use warm white interiors and two-line trade advice", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
-  assert.match(styles, /\.holdingRow\s*\{[^}]*background:\s*var\(--card\);/s);
+  assert.match(styles, /\.holdingRow\s*\{[^}]*background:\s*#ffffff;/s);
   assert.match(page, /const actionSummaryText =/);
   assert.match(page, /className={`holdingActionLine \$\{displayedAction\}`}/);
   assert.match(page, /\{actionSummaryText\}/);
