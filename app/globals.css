@@ -4356,6 +4356,8 @@ select {
   }
 
   .marketLevelChartWrap {
+    margin-top: -8px;
+    margin-bottom: -12px;
     margin-inline: -6px;
   }
 

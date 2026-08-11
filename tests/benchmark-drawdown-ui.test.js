@@ -84,6 +84,10 @@ describe("benchmark drawdown UI", () => {
       cssSource,
       /@media \(max-width: 760px\)[\s\S]*?\.marketPointTooltip text\s*\{[^}]*font-size:\s*13px;/,
     );
+    assert.match(
+      cssSource,
+      /@media \(max-width: 480px\)[\s\S]*?\.marketLevelChartWrap\s*\{[^}]*margin-top:\s*-8px;[^}]*margin-bottom:\s*-12px;/s,
+    );
     assert.match(pageSource, /className="marketPointDate"[\s\S]*?y=\{chart\.dateLabelY\}/);
     assert.doesNotMatch(cssSource, /\.marketLevelChartToolbar/);
   });
