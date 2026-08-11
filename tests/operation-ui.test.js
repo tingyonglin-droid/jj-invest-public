@@ -89,3 +89,12 @@ test("operations page has info panel for target beta and checkbox usage", async 
   assert.match(page, /這裡可以設定本次想再平衡到的 Beta/);
   assert.match(page, /取消勾選的持股本次不買不賣/);
 });
+
+test("rebalance rows show simple ticker text without circular badges", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(page, /getTickerDisplayText\(item\.normalizedTicker\)/);
+  assert.doesNotMatch(page, /className=\{`tickerBadge/);
+  assert.doesNotMatch(styles, /\.tickerBadge/);
+});

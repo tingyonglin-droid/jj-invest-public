@@ -78,7 +78,7 @@ import {
   getActionText,
   getEstimatedShares,
   getPositionDisplayName,
-  getTickerBadgeText,
+  getTickerDisplayText,
   getTickerPlaceholder,
 } from "../src/lib/presentation.js";
 
@@ -2494,6 +2494,7 @@ function HoldingRow({ item, onToggleSelection, precision }) {
   const afterDrift = afterSleeveWeight - item.currentSleeveWeight;
   const hasCustomTarget = item.allocationMode === "custom" && item.targetSleeveWeight !== null;
   const targetPct = clampPercent(item.targetSleeveWeight);
+  const displayTicker = getTickerDisplayText(item.normalizedTicker);
 
   return (
     <article className={`holdingRow ${item.isSelected ? "" : "unselected"}`}>
@@ -2503,14 +2504,11 @@ function HoldingRow({ item, onToggleSelection, precision }) {
             type="checkbox"
             checked={item.isSelected}
             onChange={() => onToggleSelection(item.id)}
-            aria-label={`${item.normalizedTicker} 是否納入本次再平衡`}
+            aria-label={`${displayTicker} 是否納入本次再平衡`}
           />
         </label>
-        <div className={`tickerBadge ${displayedAction}`}>
-          {getTickerBadgeText(item.normalizedTicker)}
-        </div>
         <div className="holdingIdentity">
-          <strong>{item.normalizedTicker}</strong>
+          <strong>{displayTicker}</strong>
           <span>{getPositionDisplayName(item.normalizedTicker, item.assetBeta)}</span>
           <em>市值 {formatTwd(item.currentValueTwd)}</em>
           <em>股價 {formatQuotePrice(item.price, item.currency)} · 更新 {formatQuoteDate(item.date)}</em>
@@ -2634,9 +2632,6 @@ function PositionSection({
                 }
               />
             </label>
-            <p className="hint">
-              正規化代號：{normalizeTicker(position.tickerInput) || "尚未輸入"}
-            </p>
           </div>
         ))}
         {positions.length === 0 && <div className="emptyState compact">{emptyText}</div>}
@@ -2873,7 +2868,6 @@ function SettingsAccordions({
                         onChange={(event) => onUpdateCashEquivalentPosition(position.id, "shares", event.target.value)}
                       />
                     </label>
-                    <p className="hint">正規化代號：{normalizeTicker(position.tickerInput) || "尚未輸入"}</p>
                   </div>
                 ))}
                 {!cashEquivalentStatus.isValid && (

@@ -23,3 +23,9 @@ test("custom allocation renders target ratios in the rebalance list", async () =
   assert.match(styles, /\.holdingProgressTarget/);
   assert.match(styles, /\.allocationModeControl/);
 });
+
+test("holding settings omit the normalized ticker hint", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.doesNotMatch(page, /正規化代號：/);
+});

@@ -25,6 +25,7 @@ test("cash-equivalent controls support ticker, shares, and custom targets", () =
   assert.match(page, /position\.tickerInput/);
   assert.match(page, /position\.shares/);
   assert.match(page, /position\.targetWeightPct/);
+  assert.doesNotMatch(page, /正規化代號：/);
 });
 
 test("operation list places cash equivalents after original holdings", () => {

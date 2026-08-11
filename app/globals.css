@@ -1873,13 +1873,13 @@ button.betaAction {
 
 .holdingAsset {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 13px;
   align-items: center;
 }
 
 .holdingSelect {
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 1;
   display: grid;
   place-items: center;
@@ -1894,28 +1894,10 @@ button.betaAction {
   accent-color: var(--primary);
 }
 
-.tickerBadge {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  color: #ffffff;
-  background: #7f61d9;
-  font-weight: 820;
-  letter-spacing: 0;
-}
-
-.tickerBadge.sell {
-  background: #c75463;
-}
-
-.tickerBadge.none {
-  background: var(--muted);
-}
-
 .holdingIdentity {
   display: grid;
+  grid-column: 1;
+  grid-row: 1;
   gap: 4px;
   min-width: 0;
 }
