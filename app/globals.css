@@ -415,12 +415,12 @@ button.betaAction {
 
 .betaAction.balanced {
   color: #5f6c64;
-  background: #e3e8e3;
+  background: #eef1ee;
 }
 
 .betaAction.rebalance {
   color: #78683f;
-  background: #e8dfc9;
+  background: #f1ecdf;
 }
 
 .betaAction.error {

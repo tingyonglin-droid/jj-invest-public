@@ -34,4 +34,6 @@ test("uses restrained Morandi states on the overview", () => {
   assert.match(styles, /\.marketBand\.prepare\s*\{[^}]*var\(--risk-prepare\)/s);
   assert.match(styles, /\.marketBand\.deep\s*\{[^}]*var\(--risk-deep\)/s);
   assert.match(styles, /\.bottomTabBar button\.active\s*\{[^}]*var\(--action-selected\)/s);
+  assert.match(styles, /\.betaAction\.balanced\s*\{[^}]*background:\s*#eef1ee;/s);
+  assert.match(styles, /\.betaAction\.rebalance\s*\{[^}]*background:\s*#f1ecdf;/s);
 });
