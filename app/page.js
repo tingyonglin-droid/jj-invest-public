@@ -2487,6 +2487,9 @@ function HoldingRow({ item, onToggleSelection, precision }) {
   const estimatedShares = Math.abs(getAppliedRebalanceShareDelta(item, precision));
   const displayedAction = !item.isSelected || estimatedShares === 0 ? "none" : item.action;
   const actionText = item.isSelected ? getActionText(displayedAction) : "不納入再平衡清單";
+  const actionSummaryText = displayedAction === "none"
+    ? actionText
+    : `${actionText} ${estimatedShares.toLocaleString("zh-TW")} 股`;
   const displayedTradeAmountTwd = estimatedShares * item.priceTwd;
   const currentPct = clampPercent(item.currentSleeveWeight);
   const afterSleeveWeight = item.appliedAfterSleeveWeight ?? item.afterSleeveWeight;
@@ -2543,9 +2546,8 @@ function HoldingRow({ item, onToggleSelection, precision }) {
       </div>
 
       <div className="holdingAction">
-        <span className={`actionPill ${displayedAction}`}>{actionText}</span>
+        <span className={`holdingActionLine ${displayedAction}`}>{actionSummaryText}</span>
         <strong>{formatTwd(displayedTradeAmountTwd)}</strong>
-        <em>{estimatedShares.toLocaleString("zh-TW")} 股</em>
       </div>
     </article>
   );

@@ -1624,7 +1624,7 @@ button.betaAction {
 
 .holdingGroupHeader strong {
   color: var(--ink);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 860;
   line-height: 1.25;
 }
@@ -1632,7 +1632,7 @@ button.betaAction {
 .holdingGroupHeader span,
 .holdingGroupHeader em {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 760;
   line-height: 1.35;
@@ -1665,7 +1665,11 @@ button.betaAction {
 
 .operationsPageCard {
   display: grid;
-  gap: 18px;
+  gap: 16px;
+}
+
+.operationsPageCard .cardTitleRow h2 {
+  font-size: 18px;
 }
 
 .operationRebalanceStatus {
@@ -1738,8 +1742,8 @@ button.betaAction {
   display: grid;
   align-content: start;
   gap: 4px;
-  min-height: 92px;
-  padding: 14px;
+  min-height: 84px;
+  padding: 12px;
   border: 1px solid rgba(17, 24, 33, 0.07);
   border-radius: 16px;
   background: #ffffff;
@@ -1748,14 +1752,14 @@ button.betaAction {
 .operationSummaryGrid span,
 .operationSummaryGrid small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 720;
   line-height: 1.4;
 }
 
 .operationSummaryGrid strong {
   color: var(--ink);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 840;
   line-height: 1.3;
 }
@@ -1796,7 +1800,7 @@ button.betaAction {
   min-width: 0;
   min-height: 44px;
   text-align: center;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 820;
 }
 
@@ -1808,7 +1812,7 @@ button.betaAction {
   border-radius: 14px;
   background: #ffffff;
   color: var(--ink);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 820;
   cursor: pointer;
 }
@@ -1821,7 +1825,7 @@ button.betaAction {
 .operationBetaField span,
 .operationPrecisionField span {
   color: var(--muted);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 780;
 }
 
@@ -1871,8 +1875,8 @@ button.betaAction {
 
 .operationApplyFooter {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 14px;
   border-radius: 20px;
   background: #ffffff;
   border: 1px solid rgba(17, 24, 33, 0.07);
@@ -1885,9 +1889,18 @@ button.betaAction {
   font-weight: 840;
 }
 
+.operationApplyFooter p {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .operationApplyActions {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+}
+
+.operationApplyActions :is(.primaryButton, .secondaryButton) {
+  min-height: 42px;
 }
 
 .operationApplyActions .primaryButton {
@@ -1900,9 +1913,10 @@ button.betaAction {
 
 .operationRestoreStatus {
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   color: var(--primary-dark);
   background: #e8f6ef;
+  font-size: 11px;
 }
 
 .operationWarning {
@@ -1917,11 +1931,11 @@ button.betaAction {
 
 .holdingRow {
   display: grid;
-  gap: 16px;
-  padding: 18px;
+  gap: 12px;
+  padding: 14px;
   border: 1px solid rgba(17, 24, 33, 0.06);
   border-radius: 20px;
-  background: var(--card-soft);
+  background: var(--card);
 }
 
 .holdingRow.unselected {
@@ -1961,14 +1975,14 @@ button.betaAction {
 
 .holdingIdentity strong {
   overflow-wrap: anywhere;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 820;
 }
 
 .holdingIdentity span,
 .holdingIdentity em {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 650;
 }
@@ -2033,7 +2047,7 @@ button.betaAction {
   justify-content: space-between;
   gap: 10px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -2060,48 +2074,34 @@ button.betaAction {
 
 .holdingAction {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
   justify-items: start;
 }
 
-.actionPill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
-  border-radius: 999px;
-  padding: 0 14px;
-  font-size: 15px;
-  font-weight: 820;
+.holdingActionLine {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
-.actionPill.buy {
+.holdingActionLine.buy {
   color: var(--primary-dark);
-  background: #e8f6ef;
 }
 
-.actionPill.sell {
+.holdingActionLine.sell {
   color: var(--danger);
-  background: #fff0f1;
 }
 
-.actionPill.none {
+.holdingActionLine.none {
   color: var(--muted);
-  background: #f1f3f5;
 }
 
 .holdingAction strong {
   overflow-wrap: anywhere;
-  font-size: clamp(24px, 5vw, 30px);
+  font-size: 22px;
   font-weight: 860;
   line-height: 1.05;
-}
-
-.holdingAction em {
-  color: var(--muted);
-  font-size: 17px;
-  font-style: normal;
-  font-weight: 760;
 }
 
 .emptyState {
@@ -3623,10 +3623,6 @@ select {
 
   .holdingAction {
     grid-template-columns: 1fr;
-  }
-
-  .holdingAction em {
-    grid-column: auto;
   }
 
   .infoDialogHeader h2 {

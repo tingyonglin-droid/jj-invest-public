@@ -139,3 +139,37 @@ test("mobile rebalance precision keeps both choices on one row", async () => {
   );
   assert.match(styles, /\.operationPrecisionField > \*\s*\{[^}]*min-width:\s*0;/s);
 });
+
+test("rebalance page uses the approved compact typography scale", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.operationsPageCard \.cardTitleRow h2\s*\{[^}]*font-size:\s*18px;/s);
+  assert.match(styles, /\.operationBetaStepper input\s*\{[^}]*font-size:\s*16px;/s);
+  assert.match(styles, /\.operationBetaStepper button\s*\{[^}]*font-size:\s*18px;/s);
+  assert.match(styles, /\.holdingGroupHeader strong\s*\{[^}]*font-size:\s*16px;/s);
+  assert.match(styles, /\.holdingIdentity strong\s*\{[^}]*font-size:\s*16px;/s);
+  assert.match(styles, /\.holdingIdentity span,[\s\S]*?\.holdingIdentity em\s*\{[^}]*font-size:\s*12px;/s);
+  assert.match(styles, /\.holdingAction strong\s*\{[^}]*font-size:\s*22px;/s);
+});
+
+test("rebalance holding cards use warm white interiors and two-line trade advice", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.holdingRow\s*\{[^}]*background:\s*var\(--card\);/s);
+  assert.match(page, /const actionSummaryText =/);
+  assert.match(page, /className={`holdingActionLine \$\{displayedAction\}`}/);
+  assert.match(page, /\{actionSummaryText\}/);
+  assert.doesNotMatch(page, /className={`actionPill/);
+  assert.doesNotMatch(page, /<em>\{estimatedShares\.toLocaleString/);
+  assert.match(styles, /\.holdingActionLine\s*\{[^}]*font-size:\s*14px;/s);
+});
+
+test("rebalance apply footer uses the approved compact sizing", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.operationApplyFooter\s*\{[^}]*gap:\s*8px;[^}]*padding:\s*14px;/s);
+  assert.match(styles, /\.operationApplyActions\s*\{[^}]*gap:\s*8px;/s);
+  assert.match(styles, /\.operationApplyActions :is\(\.primaryButton, \.secondaryButton\)\s*\{[^}]*min-height:\s*42px;/s);
+  assert.match(styles, /\.operationRestoreStatus\s*\{[^}]*padding:\s*8px 10px;[^}]*font-size:\s*11px;/s);
+});
