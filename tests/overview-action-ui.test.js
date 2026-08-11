@@ -31,7 +31,7 @@ describe("overview action UI", () => {
     );
     assert.match(
       cssSource,
-      /\.betaInlineAction\s*\{[^}]*min-height:\s*36px;[^}]*padding:\s*7px 12px;[^}]*font-size:\s*13px;/s,
+      /\.betaInlineAction\s*\{[^}]*display:\s*inline-flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*min-height:\s*36px;[^}]*padding:\s*7px 12px;[^}]*font-size:\s*13px;/s,
     );
   });
 
