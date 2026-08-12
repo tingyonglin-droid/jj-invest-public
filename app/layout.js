@@ -1,6 +1,14 @@
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import { Caveat } from "next/font/google";
 import RegisterServiceWorker from "./register-service-worker.js";
+
+const betreeWordmarkFont = Caveat({
+  subsets: ["latin"],
+  weight: "500",
+  display: "swap",
+  variable: "--font-betree",
+});
 
 export const metadata = {
   title: "JJ Invest System Public",
@@ -29,7 +37,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="zh-Hant">
-      <body>
+      <body className={betreeWordmarkFont.variable}>
         {children}
         <RegisterServiceWorker />
         <Analytics />

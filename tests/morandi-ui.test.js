@@ -37,3 +37,20 @@ test("uses restrained Morandi states on the overview", () => {
   assert.match(styles, /\.betaAction\.balanced\s*\{[^}]*background:\s*#eef1ee;/s);
   assert.match(styles, /\.betaAction\.rebalance\s*\{[^}]*background:\s*#f1ecdf;/s);
 });
+
+test("public header uses the centered handwritten Betree wordmark", async () => {
+  const [page, layout, css] = await Promise.all([
+    readFile(new URL("../app/page.js", import.meta.url), "utf8"),
+    readFile(new URL("../app/layout.js", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  const publicHeader = page.match(/function AppHeader\(\)[\s\S]*?\n}\n/)?.[0] ?? "";
+  assert.match(publicHeader, /className="betreeWordmark"[^>]*>\s*Betree\s*</);
+  assert.doesNotMatch(publicHeader, /JJ Invest System|brandGlyph|曝險管理/);
+  assert.match(layout, /Caveat\(\{[\s\S]*weight:\s*"500"/);
+  assert.match(layout, /variable:\s*"--font-betree"/);
+  assert.match(css, /\.appHeader\s*\{[\s\S]*justify-content:\s*center/);
+  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*font-family:\s*var\(--font-betree\)/);
+  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*white-space:\s*nowrap/);
+});

@@ -1361,16 +1361,7 @@ function BottomTabBar({ activeView, onChange }) {
 function AppHeader() {
   return (
     <header className="appHeader">
-      <div className="brandLockup">
-        <span className="brandGlyph" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </span>
-        <div>
-          <p>JJ Invest System</p>
-        </div>
-      </div>
+      <p className="betreeWordmark">Betree</p>
     </header>
   );
 }
