@@ -1,3 +1,5 @@
+import { normalizeTicker } from "./market-data.js";
+
 export const AUTO_REFRESH_INTERVAL_MS = 60_000;
 export const QUOTE_RETRY_DELAYS_MS = [2_000, 5_000, 15_000];
 
@@ -7,6 +9,19 @@ function hasUsableQuote(quote) {
 
 function hasUsableFx(fx) {
   return !fx?.error && Number.isFinite(fx?.usdTwd) && fx.usdTwd > 0;
+}
+
+export function hasCompletePriorQuoteResult(previous, tickers) {
+  if (!hasUsableFx(previous?.fx) || !Array.isArray(tickers) || tickers.length === 0) {
+    return false;
+  }
+
+  const usableTickers = new Set(
+    (Array.isArray(previous?.quotes) ? previous.quotes : [])
+      .filter(hasUsableQuote)
+      .map((quote) => quote.normalizedTicker),
+  );
+  return tickers.every((ticker) => usableTickers.has(normalizeTicker(ticker)));
 }
 
 export function mergeQuoteResults(previous, incoming) {
@@ -41,6 +56,44 @@ export function mergeQuoteResults(previous, incoming) {
     result: { quotes, fx },
     hasFailures,
     usedStaleData,
+  };
+}
+
+export function createQuoteRetryController({
+  setTimeoutFn,
+  clearTimeoutFn,
+  onRetry,
+  onExhausted,
+}) {
+  let retryIndex = 0;
+  let activeTimer = null;
+
+  function cancelTimer() {
+    if (activeTimer !== null) {
+      clearTimeoutFn(activeTimer);
+      activeTimer = null;
+    }
+  }
+
+  return {
+    schedule() {
+      cancelTimer();
+      if (retryIndex >= QUOTE_RETRY_DELAYS_MS.length) {
+        onExhausted();
+        return;
+      }
+
+      const delay = QUOTE_RETRY_DELAYS_MS[retryIndex];
+      activeTimer = setTimeoutFn(() => {
+        activeTimer = null;
+        retryIndex += 1;
+        onRetry();
+      }, delay);
+    },
+    reset() {
+      cancelTimer();
+      retryIndex = 0;
+    },
   };
 }
 

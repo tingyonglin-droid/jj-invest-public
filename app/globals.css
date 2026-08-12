@@ -90,10 +90,8 @@ p {
 }
 
 .appHeader {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 14px;
   margin-bottom: 22px;
 }
 
@@ -138,54 +136,6 @@ p {
 
 .brandGlyph span:nth-child(3) {
   height: 27px;
-}
-
-.headerActions {
-  display: flex;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
-.headerStatusPill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 44px;
-  border: 1px solid rgba(224, 229, 235, 0.86);
-  border-radius: 999px;
-  padding: 5px 6px 5px 16px;
-  color: var(--muted-strong);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 14px 34px rgba(17, 24, 33, 0.08);
-  font: inherit;
-  touch-action: manipulation;
-}
-
-.headerStatusPill span {
-  font-size: 13px;
-  font-weight: 760;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.headerStatusPill em {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  color: var(--text);
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(224, 229, 235, 0.78);
-  font-size: 20px;
-  font-style: normal;
-  font-weight: 820;
-  line-height: 1;
-}
-
-.headerStatusPill:disabled {
-  opacity: 0.72;
 }
 
 .viewStack {
@@ -3101,10 +3051,6 @@ select {
     padding-top: 36px;
   }
 
-  .appHeader {
-    grid-template-columns: 1fr auto;
-  }
-
   .holdingRow {
     grid-template-columns: minmax(220px, 1fr) minmax(240px, 1.1fr) minmax(180px, 0.8fr);
     align-items: center;
@@ -3147,22 +3093,6 @@ select {
 
   .brandGlyph {
     width: 24px;
-  }
-
-  .headerStatusPill {
-    gap: 8px;
-    min-height: 42px;
-    padding-left: 13px;
-  }
-
-  .headerStatusPill span {
-    font-size: 12px;
-  }
-
-  .headerStatusPill em {
-    width: 32px;
-    height: 32px;
-    font-size: 19px;
   }
 
   .betaTopline {

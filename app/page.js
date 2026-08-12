@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { OverviewCardHeader } from "../src/components/overview-card-header.js";
 import {
   AUTO_REFRESH_INTERVAL_MS,
+  createQuoteRetryController,
+  hasCompletePriorQuoteResult,
+  mergeQuoteResults,
   shouldAutoRefreshQuotes,
 } from "../src/lib/auto-refresh.js";
 import {
@@ -194,17 +197,6 @@ function formatQuoteDate(date) {
   return date || "尚未更新";
 }
 
-function formatLastUpdatedAt(date) {
-  if (!date) {
-    return "尚未更新";
-  }
-
-  return new Intl.DateTimeFormat("zh-TW", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
 function parseNumericInput(value) {
   if (value === "") {
     return "";
@@ -357,6 +349,9 @@ export default function Home() {
   const [hasHistoryRestorePoint, setHasHistoryRestorePoint] = useState(false);
   const [historyRestoreStatus, setHistoryRestoreStatus] = useState("");
   const [cashChangeReason, setCashChangeReason] = useState("external");
+  const quoteResultRef = useRef(emptyQuoteResult);
+  const requestInFlightRef = useRef(false);
+  const retryControllerRef = useRef(null);
   const analyticsClient = useMemo(
     () =>
       createAnalyticsClient({
@@ -517,12 +512,19 @@ export default function Home() {
     operationRebalance.recommendations.length > 0 &&
     appliedRebalanceSummary.actionCount > 0;
 
-  const refreshQuotes = useCallback(async () => {
+  const refreshQuotes = useCallback(async ({ isRetry = false } = {}) => {
     if (tickers.length === 0) {
       setRequestError("請至少輸入一個標的代號。");
       return;
     }
+    if (requestInFlightRef.current) {
+      return;
+    }
 
+    if (!isRetry) {
+      retryControllerRef.current?.reset();
+    }
+    requestInFlightRef.current = true;
     setStatus("loading");
     setRequestError("");
 
@@ -532,15 +534,17 @@ export default function Home() {
         throw new Error(`報價 API 回應 ${response.status}`);
       }
       const payload = await response.json();
+      const merged = mergeQuoteResults(quoteResultRef.current, payload);
+      quoteResultRef.current = merged.result;
       const nextCashValueTwd = calculateCashTwdValue({
         cashTwd: formState.cashTwd,
         cashUsd: formState.cashUsd,
-        usdTwd: payload.fx.usdTwd,
+        usdTwd: merged.result.fx.usdTwd,
       });
       const nextCalculation = calculatePortfolio({
         positions: formState.positions,
         cashEquivalentPositions: formState.cashEquivalentPositions,
-        quotes: payload.quotes,
+        quotes: merged.result.quotes,
         cashTwd: nextCashValueTwd,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
@@ -549,9 +553,15 @@ export default function Home() {
         cashEquivalentMode: formState.cashEquivalentMode,
         realCashTargetPct: formState.realCashTargetPct,
       });
-      setQuoteResult(payload);
-      setLastUpdatedAt(new Date());
-      setStatus("ready");
+      setQuoteResult(merged.result);
+      if (merged.hasFailures) {
+        retryControllerRef.current?.schedule();
+        setStatus(merged.usedStaleData ? "ready" : "error");
+      } else {
+        retryControllerRef.current?.reset();
+        setLastUpdatedAt(new Date());
+        setStatus("ready");
+      }
       if (nextCalculation.isValid) {
         analyticsClient.trackBetaCalculated({
           holdingCount: formState.positions.length,
@@ -562,10 +572,38 @@ export default function Home() {
         }
       }
     } catch (error) {
-      setRequestError(error instanceof Error ? error.message : "價格更新失敗。");
-      setStatus("error");
+      const hasPriorData = hasCompletePriorQuoteResult(quoteResultRef.current, tickers);
+      if (hasPriorData) {
+        retryControllerRef.current?.schedule();
+        setStatus("ready");
+      } else {
+        setRequestError(error instanceof Error ? error.message : "價格更新失敗。");
+        retryControllerRef.current?.schedule();
+        setStatus("error");
+      }
+    } finally {
+      requestInFlightRef.current = false;
     }
   }, [analyticsClient, formState, tickers]);
+
+  useEffect(() => {
+    const controller = createQuoteRetryController({
+      setTimeoutFn: (callback, delay) => window.setTimeout(callback, delay),
+      clearTimeoutFn: (timer) => window.clearTimeout(timer),
+      onRetry: () => refreshQuotes({ isRetry: true }),
+      onExhausted: () => {
+        setRequestError("部分價格暫時無法更新，將自動重試。");
+      },
+    });
+    retryControllerRef.current = controller;
+
+    return () => {
+      controller.reset();
+      if (retryControllerRef.current === controller) {
+        retryControllerRef.current = null;
+      }
+    };
+  }, [refreshQuotes]);
 
   useEffect(() => {
     if (!hydrated || tickers.length === 0) {
@@ -719,11 +757,13 @@ export default function Home() {
     }
 
     window.addEventListener("focus", refreshIfVisible);
+    window.addEventListener("online", refreshIfVisible);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener("focus", refreshIfVisible);
+      window.removeEventListener("online", refreshIfVisible);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [hydrated, refreshQuotes, status, tickers]);
@@ -1146,11 +1186,7 @@ export default function Home() {
 
   return (
     <main className="appShell">
-      <AppHeader
-        status={status}
-        lastUpdatedAt={lastUpdatedAt}
-        onRefresh={refreshQuotes}
-      />
+      <AppHeader />
 
       {(requestError ||
         quoteResult.fx.error ||
@@ -1311,7 +1347,7 @@ function BottomTabBar({ activeView, onChange }) {
   );
 }
 
-function AppHeader({ status, lastUpdatedAt, onRefresh }) {
+function AppHeader() {
   return (
     <header className="appHeader">
       <div className="brandLockup">
@@ -1323,18 +1359,6 @@ function AppHeader({ status, lastUpdatedAt, onRefresh }) {
         <div>
           <p>JJ Invest System</p>
         </div>
-      </div>
-      <div className="headerActions">
-        <button
-          type="button"
-          className="headerStatusPill"
-          onClick={onRefresh}
-          disabled={status === "loading"}
-          aria-label="更新價格"
-        >
-          <span>自動更新 {formatLastUpdatedAt(lastUpdatedAt)}</span>
-          <em aria-hidden="true">{status === "loading" ? "..." : "↻"}</em>
-        </button>
       </div>
     </header>
   );
