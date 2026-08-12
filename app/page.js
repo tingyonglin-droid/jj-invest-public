@@ -55,7 +55,10 @@ import {
   parseHistoryRestorePoint,
 } from "../src/lib/history-restore.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
-import { createOverviewAction } from "../src/lib/overview-action.js";
+import {
+  createOverviewAction,
+  isPortfolioSetupComplete,
+} from "../src/lib/overview-action.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
   applyRebalanceToState,
@@ -405,7 +408,9 @@ export default function Home() {
     hasReceivedQuoteResponse,
   );
   const betaRail = createBetaRailModel(calculation);
-  const overviewAction = createOverviewAction(calculation);
+  const overviewAction = createOverviewAction(calculation, {
+    setupComplete: isPortfolioSetupComplete({ formState, hasReceivedQuoteResponse }),
+  });
   const recommendationIds = useMemo(
     () => [
       ...calculation.recommendations,

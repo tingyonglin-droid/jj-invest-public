@@ -1,9 +1,85 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { createOverviewAction } from "../src/lib/overview-action.js";
+import {
+  createOverviewAction,
+  isPortfolioSetupComplete,
+} from "../src/lib/overview-action.js";
 
 describe("overview action", () => {
+  it("requires quotes, a funded holding, and cash before setup is complete", () => {
+    const baseState = {
+      positions: [{ shares: 100 }],
+      cashTwd: 1000,
+      cashUsd: 0,
+      cashEquivalentPositions: [],
+    };
+
+    assert.equal(
+      isPortfolioSetupComplete({ formState: baseState, hasReceivedQuoteResponse: false }),
+      false,
+    );
+    assert.equal(
+      isPortfolioSetupComplete({
+        formState: { ...baseState, positions: [{ shares: 0 }] },
+        hasReceivedQuoteResponse: true,
+      }),
+      false,
+    );
+    assert.equal(
+      isPortfolioSetupComplete({
+        formState: { ...baseState, cashTwd: 0 },
+        hasReceivedQuoteResponse: true,
+      }),
+      false,
+    );
+    assert.equal(
+      isPortfolioSetupComplete({ formState: baseState, hasReceivedQuoteResponse: true }),
+      true,
+    );
+  });
+
+  it("accepts USD cash or funded cash-equivalent holdings as cash setup", () => {
+    const positions = [{ shares: 100 }];
+
+    assert.equal(
+      isPortfolioSetupComplete({
+        formState: { positions, cashTwd: 0, cashUsd: 100, cashEquivalentPositions: [] },
+        hasReceivedQuoteResponse: true,
+      }),
+      true,
+    );
+    assert.equal(
+      isPortfolioSetupComplete({
+        formState: {
+          positions,
+          cashTwd: 0,
+          cashUsd: 0,
+          cashEquivalentPositions: [{ shares: 10 }],
+        },
+        hasReceivedQuoteResponse: true,
+      }),
+      true,
+    );
+  });
+
+  it("routes incomplete setup to holdings settings before rebalance", () => {
+    assert.deepEqual(
+      createOverviewAction(
+        { isValid: true, needsRebalance: true, issues: [] },
+        { setupComplete: false },
+      ),
+      {
+        kind: "setup",
+        label: "設定持股與現金 →",
+        tone: "setup",
+        destination: "settings",
+        settingsPage: "positions",
+        ariaLabel: "設定持股與現金，前往持股設定",
+      },
+    );
+  });
+
   it("presents a non-interactive balanced status inside tolerance", () => {
     assert.deepEqual(
       createOverviewAction({ isValid: true, needsRebalance: false, issues: [] }),
