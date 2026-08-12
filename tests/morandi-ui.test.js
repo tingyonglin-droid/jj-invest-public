@@ -56,7 +56,7 @@ test("public header uses the centered handwritten Betree wordmark", async () => 
   assert.match(css, /\.publicAppHeader\s*\{[\s\S]*justify-content:\s*center/);
   assert.match(css, /\.publicAppHeader\s*\{[\s\S]*height:\s*28px/);
   assert.match(css, /\.betreeWordmark\s*\{[\s\S]*font-family:\s*var\(--font-betree\)/);
-  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*font-size:\s*28px/);
-  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*line-height:\s*1;/);
+  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*font-size:\s*34px/);
+  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*line-height:\s*28px/);
   assert.match(css, /\.betreeWordmark\s*\{[\s\S]*white-space:\s*nowrap/);
 });
