@@ -11,13 +11,13 @@ const betreeWordmarkFont = Caveat({
 });
 
 export const metadata = {
-  title: "JJ Invest System Public",
-  description: "公開版 Beta 再平衡試算工具",
-  applicationName: "JJ Invest System",
+  title: "Betree 曝險管理",
+  description: "投資組合曝險管理與 Beta 再平衡工具",
+  applicationName: "Betree 曝險管理",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "JJ Invest System",
+    title: "Betree 曝險管理",
     statusBarStyle: "default",
   },
   icons: {
