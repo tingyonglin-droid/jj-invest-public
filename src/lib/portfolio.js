@@ -1,4 +1,9 @@
 import { normalizeTicker } from "./market-data.js";
+import { getPositionGroupTargetStatus } from "./position-settings.js";
+import {
+  getCashEquivalentTargetStatus,
+  getCashSleeveTargets,
+} from "./cash-equivalents.js";
 
 const MONEY_PRECISION = 100;
 const RATIO_PRECISION = 10000;
@@ -23,11 +28,15 @@ function getAssetType(assetBeta) {
 
 export function calculatePortfolio({
   positions,
+  cashEquivalentPositions = [],
   quotes,
   cashTwd,
   leveragedTargetPct = 0,
   originalTargetPct = 0,
   tolerancePct,
+  allocationModes = {},
+  cashEquivalentMode = "auto",
+  realCashTargetPct = 10,
 }) {
   const quoteByTicker = new Map(
     quotes.map((quote) => [quote.normalizedTicker, quote]),
@@ -37,8 +46,18 @@ export function calculatePortfolio({
     normalizedTicker: normalizeTicker(position.tickerInput),
     shares: toNumber(position.shares),
     assetBeta: toNumber(position.assetBeta),
+    targetWeightPct: toNumber(position.targetWeightPct),
   }));
-  const errors = [];
+  const normalizedCashEquivalentPositions = cashEquivalentPositions.map((position) => ({
+    ...position,
+    normalizedTicker: normalizeTicker(position.tickerInput),
+    shares: toNumber(position.shares),
+    targetWeightPct: toNumber(position.targetWeightPct),
+  }));
+  const issues = [];
+  const addIssue = (code, message, settingsPage) => {
+    issues.push({ code, message, settingsPage });
+  };
 
   const validRows = normalizedPositions
     .map((position) => {
@@ -52,6 +71,17 @@ export function calculatePortfolio({
         quote,
         currentValueTwd: roundMoney(currentValueTwd),
       };
+    })
+    .filter((row) => row.quote && !row.quote.error);
+
+  const validCashEquivalentRows = normalizedCashEquivalentPositions
+    .map((position) => {
+      const quote = quoteByTicker.get(position.normalizedTicker);
+      const currentValueTwd =
+        quote && !quote.error && typeof quote.priceTwd === "number"
+          ? position.shares * quote.priceTwd
+          : 0;
+      return { ...position, quote, currentValueTwd: roundMoney(currentValueTwd) };
     })
     .filter((row) => row.quote && !row.quote.error);
 
@@ -70,7 +100,12 @@ export function calculatePortfolio({
       0,
     ),
   );
-  const totalAssetsTwd = roundMoney(stockValueTwd + toNumber(cashTwd));
+  const cashEquivalentValueTwd = roundMoney(
+    validCashEquivalentRows.reduce((sum, row) => sum + row.currentValueTwd, 0),
+  );
+  const realCashTwd = roundMoney(toNumber(cashTwd));
+  const cashSleeveValueTwd = roundMoney(realCashTwd + cashEquivalentValueTwd);
+  const totalAssetsTwd = roundMoney(stockValueTwd + cashSleeveValueTwd);
   const originalTargetRatio = Math.min(Math.max(toNumber(originalTargetPct) / 100, 0), 1);
   const targetLeveragedRatio = Math.min(
     Math.max(toNumber(leveragedTargetPct) / 100, 0),
@@ -79,18 +114,67 @@ export function calculatePortfolio({
   const targetOriginalRatio = roundRatio(originalTargetRatio);
   const targetCashRatio = roundRatio(1 - targetLeveragedRatio - targetOriginalRatio);
   const targetBetaValue = roundRatio(targetLeveragedRatio * 2 + targetOriginalRatio);
+  const rowsByType = {
+    leveraged: validRows.filter((row) => getAssetType(row.assetBeta) === "leveraged"),
+    original: validRows.filter((row) => getAssetType(row.assetBeta) === "original"),
+  };
+  const targetWeightTotals = Object.fromEntries(
+    Object.entries(rowsByType).map(([assetType, rows]) => [
+      assetType,
+      rows.reduce((sum, row) => sum + row.targetWeightPct, 0),
+    ]),
+  );
 
   if (targetCashRatio < -RATIO_TOLERANCE) {
-    errors.push("正二與原形目標比例合計不能超過 100%。");
+    addIssue(
+      "TARGET_TOTAL_EXCEEDED",
+      "正二與原形目標比例合計不能超過 100%。",
+      "beta",
+    );
+  }
+
+  const cashTargetStatus = getCashEquivalentTargetStatus({
+    mode: cashEquivalentMode,
+    positions: normalizedCashEquivalentPositions,
+    realCashTargetPct,
+  });
+  if (!cashTargetStatus.isValid) {
+    addIssue(
+      "INVALID_CASH_EQUIVALENT_WEIGHTS",
+      "真實現金與類現金標的目標比例合計必須等於 100%。",
+      "cash",
+    );
   }
 
   if (targetLeveragedRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "leveraged")) {
-    errors.push("正二目標比例大於 0 時，請新增至少一個正二標的。");
+    addIssue(
+      "MISSING_LEVERAGED_POSITION",
+      "正二目標比例大於 0 時，請新增至少一個正二標的。",
+      "positions",
+    );
   }
 
   if (targetOriginalRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "original")) {
-    errors.push("原形目標比例大於 0 時，請新增至少一個原形標的。");
+    addIssue(
+      "MISSING_ORIGINAL_POSITION",
+      "原形目標比例大於 0 時，請新增至少一個原形標的。",
+      "positions",
+    );
   }
+
+  Object.entries(rowsByType).forEach(([assetType, rows]) => {
+    if (!getPositionGroupTargetStatus({
+      mode: allocationModes[assetType],
+      positions: rows,
+    }).isValid) {
+      const label = assetType === "leveraged" ? "正二" : "原形";
+      addIssue(
+        assetType === "leveraged" ? "INVALID_LEVERAGED_WEIGHTS" : "INVALID_ORIGINAL_WEIGHTS",
+        `${label}標的目標比例合計必須等於 100%。`,
+        "positions",
+      );
+    }
+  });
 
   const tolerance = toNumber(tolerancePct) / 100;
   const betaLower = roundRatio(targetBetaValue * (1 - tolerance));
@@ -99,6 +183,35 @@ export function calculatePortfolio({
 
   const targetLeveragedValueTwd = roundMoney(totalAssetsTwd * targetLeveragedRatio);
   const targetOriginalValueTwd = roundMoney(totalAssetsTwd * targetOriginalRatio);
+  const targetCashSleeveValueTwd = roundMoney(totalAssetsTwd * Math.max(targetCashRatio, 0));
+  const cashSleeveTargets = getCashSleeveTargets({
+    mode: cashEquivalentMode,
+    positions: normalizedCashEquivalentPositions,
+    realCashTargetPct,
+  });
+  const targetRealCashTwd = roundMoney(targetCashSleeveValueTwd * cashSleeveTargets.realCashRatio);
+  const cashEquivalentRecommendations = validCashEquivalentRows.map((row) => {
+    const targetValueTwd = roundMoney(
+      targetCashSleeveValueTwd * toNumber(cashSleeveTargets.positionRatios.get(row.id)),
+    );
+    return {
+      id: row.id,
+      tickerInput: row.tickerInput,
+      normalizedTicker: row.normalizedTicker,
+      shares: row.shares,
+      assetBeta: 0,
+      assetType: "cashEquivalent",
+      price: row.quote.price,
+      currency: row.quote.currency,
+      priceTwd: row.quote.priceTwd,
+      date: row.quote.date,
+      source: row.quote.source,
+      currentValueTwd: row.currentValueTwd,
+      targetValueTwd,
+      tradeAmountTwd: roundMoney(targetValueTwd - row.currentValueTwd),
+      targetWeightPct: row.targetWeightPct,
+    };
+  });
   const leveragedTradeAmountTwd = roundMoney(targetLeveragedValueTwd - leveragedValueTwd);
   const originalTradeAmountTwd = roundMoney(targetOriginalValueTwd - originalValueTwd);
   const cashTradeAmountTwd = roundMoney(-(leveragedTradeAmountTwd + originalTradeAmountTwd));
@@ -108,6 +221,9 @@ export function calculatePortfolio({
     const assetType = getAssetType(row.assetBeta);
     const typeValueTwd = assetType === "leveraged" ? leveragedValueTwd : originalValueTwd;
     const currentSleeveWeight = typeValueTwd > 0 ? row.currentValueTwd / typeValueTwd : 0;
+    const targetSleeveWeight = allocationModes[assetType] === "custom" && targetWeightTotals[assetType] > 0
+      ? row.targetWeightPct / targetWeightTotals[assetType]
+      : null;
     return {
       id: row.id,
       tickerInput: row.tickerInput,
@@ -122,6 +238,9 @@ export function calculatePortfolio({
       currentValueTwd: row.currentValueTwd,
       currentWeight,
       currentSleeveWeight: roundRatio(currentSleeveWeight),
+      targetWeightPct: row.targetWeightPct,
+      targetSleeveWeight: targetSleeveWeight === null ? null : roundRatio(targetSleeveWeight),
+      allocationMode: allocationModes[assetType] === "custom" ? "custom" : "auto",
       betaContribution: currentWeight * row.assetBeta,
     };
   });
@@ -138,17 +257,21 @@ export function calculatePortfolio({
   const afterBeta = targetBetaValue;
 
   return {
-    isValid: errors.length === 0,
-    errors,
+    isValid: issues.length === 0,
+    errors: issues.map((issue) => issue.message),
+    issues,
     totalAssetsTwd,
     stockValueTwd,
     leveragedValueTwd,
     originalValueTwd,
     cashTwd: roundMoney(toNumber(cashTwd)),
+    realCashTwd,
+    cashEquivalentValueTwd,
+    cashSleeveValueTwd,
     stockRatio: totalAssetsTwd > 0 ? stockValueTwd / totalAssetsTwd : 0,
     leveragedRatio: totalAssetsTwd > 0 ? leveragedValueTwd / totalAssetsTwd : 0,
     originalRatio: totalAssetsTwd > 0 ? originalValueTwd / totalAssetsTwd : 0,
-    cashRatio: totalAssetsTwd > 0 ? toNumber(cashTwd) / totalAssetsTwd : 0,
+    cashRatio: totalAssetsTwd > 0 ? cashSleeveValueTwd / totalAssetsTwd : 0,
     currentBeta,
     targetBeta: targetBetaValue,
     tolerancePct: toNumber(tolerancePct),
@@ -165,6 +288,9 @@ export function calculatePortfolio({
     leveragedTradeAmountTwd,
     originalTradeAmountTwd,
     cashTradeAmountTwd,
+    targetCashSleeveValueTwd,
+    targetRealCashTwd,
+    cashEquivalentRecommendations,
     afterBeta,
     totalTradeAmountTwd: roundMoney(Math.abs(leveragedTradeAmountTwd) + Math.abs(originalTradeAmountTwd)),
     recommendations,

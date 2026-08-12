@@ -5,6 +5,8 @@ import {
   createOperationListText,
   getOperationSummary,
   getPositionDisplayName,
+  getTickerDisplayText,
+  getTickerPlaceholder,
   getTickerBadgeText,
 } from "../src/lib/presentation.js";
 
@@ -14,6 +16,22 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("006208.TW"), "富邦台50");
     assert.equal(getPositionDisplayName("00631L.TW"), "元大台灣50正2");
     assert.equal(getPositionDisplayName("00685L.TW"), "群益台灣加權正2");
+    assert.equal(getPositionDisplayName("00663L.TW", 2), "國泰台灣加權正2");
+    assert.equal(getPositionDisplayName("00675L.TW", 2), "富邦台灣加權正2");
+    assert.equal(getPositionDisplayName("00865B.TW", 0), "國泰US短期公債");
+    assert.equal(getPositionDisplayName("00859B.TW", 0), "群益0-1年美債");
+    assert.equal(getPositionDisplayName("00859B.TWO", 0), "群益0-1年美債");
+    assert.equal(getPositionDisplayName("00864B.TW", 0), "中信美國公債0-1");
+    assert.equal(getPositionDisplayName("00864B.TWO", 0), "中信美國公債0-1");
+    assert.equal(getPositionDisplayName("00662.TW", 1), "富邦NASDAQ");
+    assert.equal(getPositionDisplayName("009816.TW", 1), "凱基台灣TOP50");
+    assert.equal(getPositionDisplayName(" 009816.tw ", 1), "凱基台灣TOP50");
+    assert.equal(getPositionDisplayName("SSO", 2), "ProShares Ultra S&P500");
+    assert.equal(getPositionDisplayName("VOO", 1), "Vanguard S&P 500 ETF");
+    assert.equal(getPositionDisplayName("QQQ", 1), "Invesco QQQ Trust ETF");
+    assert.equal(getPositionDisplayName("SMH", 1), "VanEck Semiconductor ETF");
+    assert.equal(getPositionDisplayName("SOXX", 1), "iShares Semiconductor ETF");
+    assert.equal(getPositionDisplayName("USD", 2), "ProShares Ultra Semiconductors");
     assert.equal(getPositionDisplayName("QLD"), "ProShares Ultra QQQ");
   });
 
@@ -22,9 +40,22 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("2330.TW", 2), "正二標的");
   });
 
+  it("shows asset-specific ticker examples in settings", () => {
+    assert.equal(getTickerPlaceholder("leveraged"), "00631L / 00685L / SSO / QLD");
+    assert.equal(getTickerPlaceholder("original"), "0050 / 006208 / VOO / QQQ");
+    assert.equal(getTickerPlaceholder("cashEquivalent"), "00865B / 00859B / SGOV / BSV");
+  });
+
   it("creates compact badge text from tickers", () => {
     assert.equal(getTickerBadgeText("00631L.TW"), "2x");
     assert.equal(getTickerBadgeText("QLD"), "QLD");
+  });
+
+  it("formats normalized tickers for user-facing text", () => {
+    assert.equal(getTickerDisplayText("00631L.TW"), "00631L");
+    assert.equal(getTickerDisplayText("00864B.TWO"), "00864B");
+    assert.equal(getTickerDisplayText(" qld "), "QLD");
+    assert.equal(getTickerDisplayText(), "");
   });
 
   it("creates a copyable operation list from recommendations", () => {
@@ -53,7 +84,7 @@ describe("presentation helpers", () => {
       text,
       [
         "JJ Invest System 操作清單",
-        "00631L.TW 賣出 NT$10,000，約 250 股",
+        "00631L 賣出 NT$10,000，約 250 股",
         "QLD 買入 NT$18,500，約 6 股",
       ].join("\n"),
     );

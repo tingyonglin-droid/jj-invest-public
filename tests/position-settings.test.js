@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import {
   getPositionGroups,
   getPositionGroupTargetStatus,
+  initializePositionTargetWeights,
 } from "../src/lib/position-settings.js";
 
 describe("position settings helpers", () => {
@@ -20,48 +21,48 @@ describe("position settings helpers", () => {
     });
   });
 
-  it("marks a required section invalid when target weights do not add to 100 percent", () => {
+  it("validates a custom sleeve only when its weights total 100 percent", () => {
     assert.deepEqual(
       getPositionGroupTargetStatus({
-        positions: [
-          { targetWeightPct: 60 },
-          { targetWeightPct: 20 },
-        ],
-        targetRatio: 0.4,
+        mode: "custom",
+        positions: [{ targetWeightPct: 60 }, { targetWeightPct: 40 }],
       }),
-      {
-        totalPct: 80,
-        isRequired: true,
-        isValid: false,
-      },
+      { totalPct: 100, isValid: true },
+    );
+    assert.deepEqual(
+      getPositionGroupTargetStatus({
+        mode: "custom",
+        positions: [{ targetWeightPct: 60 }, { targetWeightPct: 20 }],
+      }),
+      { totalPct: 80, isValid: false },
+    );
+    assert.deepEqual(
+      getPositionGroupTargetStatus({
+        mode: "auto",
+        positions: [{ targetWeightPct: 60 }, { targetWeightPct: 20 }],
+      }),
+      { totalPct: 80, isValid: true },
     );
   });
 
-  it("marks a populated section invalid even when its target asset ratio is zero", () => {
+  it("initializes custom weights from current sleeve values and absorbs rounding", () => {
     assert.deepEqual(
-      getPositionGroupTargetStatus({
-        positions: [{ targetWeightPct: 60 }],
-        targetRatio: 0,
-      }),
-      {
-        totalPct: 60,
-        isRequired: true,
-        isValid: false,
-      },
+      initializePositionTargetWeights([
+        { id: "a", currentValueTwd: 1 },
+        { id: "b", currentValueTwd: 2 },
+        { id: "c", currentValueTwd: 0 },
+      ]).map((position) => position.targetWeightPct),
+      [33.33, 66.67, 0],
     );
   });
 
-  it("does not require target weights for an unused section", () => {
+  it("rejects custom weights outside zero to 100 even when the total is 100", () => {
     assert.deepEqual(
       getPositionGroupTargetStatus({
-        positions: [],
-        targetRatio: 0,
+        mode: "custom",
+        positions: [{ targetWeightPct: -10 }, { targetWeightPct: 110 }],
       }),
-      {
-        totalPct: 0,
-        isRequired: false,
-        isValid: true,
-      },
+      { totalPct: 100, isValid: false },
     );
   });
 });

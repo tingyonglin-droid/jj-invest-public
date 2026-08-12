@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  adjustOperationTargetBeta,
   createOperationRebalance,
+  getOperationRebalanceStatus,
   normalizeSelectedRebalanceIds,
 } from "../src/lib/operation-rebalance.js";
 import {
@@ -59,6 +61,32 @@ function getAppliedBeta(recommendationsToApply, totalAssetsTwd, precision) {
 }
 
 describe("operation rebalance", () => {
+  it("classifies the current beta against the inclusive target tolerance range", () => {
+    assert.deepEqual(getOperationRebalanceStatus(0.89, 0.9, 1.1), {
+      label: "需增加 Beta",
+      tone: "increase",
+    });
+    assert.deepEqual(getOperationRebalanceStatus(0.9, 0.9, 1.1), {
+      label: "不需再平衡",
+      tone: "balanced",
+    });
+    assert.deepEqual(getOperationRebalanceStatus(1.1, 0.9, 1.1), {
+      label: "不需再平衡",
+      tone: "balanced",
+    });
+    assert.deepEqual(getOperationRebalanceStatus(1.11, 0.9, 1.1), {
+      label: "需降低 Beta",
+      tone: "decrease",
+    });
+  });
+
+  it("adjusts the operation target beta in 0.01 steps within the supported range", () => {
+    assert.equal(adjustOperationTargetBeta(1, 0.01), 1.01);
+    assert.equal(adjustOperationTargetBeta(1, -0.01), 0.99);
+    assert.equal(adjustOperationTargetBeta(2, 0.01), 2);
+    assert.equal(adjustOperationTargetBeta(0, -0.01), 0);
+  });
+
   it("defaults every current holding to selected", () => {
     assert.deepEqual(
       normalizeSelectedRebalanceIds({
@@ -79,10 +107,77 @@ describe("operation rebalance", () => {
     });
 
     assert.equal(result.afterBeta, 1.4);
-    assert.equal(result.recommendations[0].targetValueTwd, 36000);
-    assert.equal(result.recommendations[1].targetValueTwd, 24000);
+    assert.equal(result.recommendations[0].targetValueTwd, 25000);
+    assert.equal(result.recommendations[1].targetValueTwd, 35000);
     assert.equal(result.recommendations[2].targetValueTwd, 20000);
     assert.equal(result.summary.totalAmountTwd, 40000);
+  });
+
+  it("buys every selected holding in a sleeve when that sleeve needs more exposure", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 40000, shares: 1000 },
+        { ...recommendations[1], currentValueTwd: 0, shares: 0 },
+        { ...recommendations[2], currentValueTwd: 20000, shares: 2000 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b", "original-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.2,
+      originalTargetRatio: 0.2,
+    });
+
+    assert.deepEqual(
+      result.recommendations.map((item) => item.tradeAmountTwd),
+      [5000, 5000, 0],
+    );
+    assert.deepEqual(
+      result.recommendations.map((item) => item.action),
+      ["buy", "buy", "none"],
+    );
+    assert.equal(result.afterBeta, 1.2);
+  });
+
+  it("leaves zero-share holdings untouched when their sleeve needs less exposure", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 60000, shares: 1500 },
+        { ...recommendations[1], currentValueTwd: 0, shares: 0 },
+        { ...recommendations[2], currentValueTwd: 20000, shares: 2000 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b", "original-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1,
+      originalTargetRatio: 0.2,
+    });
+
+    assert.deepEqual(
+      result.recommendations.map((item) => item.tradeAmountTwd),
+      [-20000, 0, 0],
+    );
+    assert.deepEqual(
+      result.recommendations.map((item) => item.action),
+      ["sell", "none", "none"],
+    );
+    assert.equal(result.afterBeta, 1);
+  });
+
+  it("redistributes an unsatisfied equal sale across the remaining selected holdings", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 5000, shares: 125 },
+        { ...recommendations[1], currentValueTwd: 35000, shares: 700 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b"],
+      totalAssetsTwd: 100000,
+      targetBeta: 0.4,
+      originalTargetRatio: 0,
+    });
+
+    assert.deepEqual(
+      result.recommendations.map((item) => item.tradeAmountTwd),
+      [-5000, -15000],
+    );
+    assert.equal(result.afterBeta, 0.4);
   });
 
   it("keeps unselected holdings untouched and reallocates selected holdings", () => {
@@ -225,5 +320,36 @@ describe("operation rebalance", () => {
     );
     assert.ok(corrected.correctedTargetBeta < 1.2);
     assert.equal(corrected.appliedAfterBeta, Number(correctedAppliedBeta.toFixed(4)));
+  });
+
+  it("allocates a custom sleeve by target weights", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], currentValueTwd: 40000 },
+        { ...recommendations[1], currentValueTwd: 0, shares: 0 },
+      ],
+      selectedIds: ["leveraged-a", "leveraged-b"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.2,
+      originalTargetRatio: 0,
+      allocationModes: { leveraged: "custom", original: "auto" },
+    });
+
+    assert.deepEqual(result.recommendations.map((item) => item.targetValueTwd), [36000, 24000]);
+    assert.deepEqual(result.recommendations.map((item) => item.tradeAmountTwd), [-4000, 24000]);
+  });
+
+  it("keeps an unselected custom holding and allocates the remainder by selected weights", () => {
+    const result = createOperationRebalance({
+      recommendations,
+      selectedIds: ["leveraged-a", "original-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.4,
+      originalTargetRatio: 0.2,
+      allocationModes: { leveraged: "custom", original: "custom" },
+    });
+
+    assert.equal(result.recommendations[1].targetValueTwd, 50000);
+    assert.equal(result.recommendations[0].targetValueTwd, 10000);
   });
 });

@@ -32,4 +32,10 @@ describe("Beta target emphasis UI", () => {
       /@media \(max-width: 760px\)[\s\S]*?\.weightGuard\.ok\s*\{[^}]*grid-template-columns:\s*1fr;/,
     );
   });
+
+  it("uses the shared Morandi gray-green tone for the valid target summary", () => {
+    assert.match(stylesSource, /\.weightGuard\.ok\s*\{[^}]*color:\s*var\(--primary-dark\);[^}]*background:\s*#edf0ec;/s);
+    assert.match(stylesSource, /\.weightGuardSummary > span\s*\{[^}]*color:\s*rgba\(95, 108, 100, 0\.82\);/s);
+    assert.match(stylesSource, /\.weightGuardBeta\s*\{[^}]*border:\s*1px solid rgba\(120, 134, 125, 0\.2\);/s);
+  });
 });

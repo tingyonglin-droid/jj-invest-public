@@ -1,15 +1,23 @@
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import { Caveat } from "next/font/google";
 import RegisterServiceWorker from "./register-service-worker.js";
 
+const betreeWordmarkFont = Caveat({
+  subsets: ["latin"],
+  weight: "600",
+  display: "swap",
+  variable: "--font-betree",
+});
+
 export const metadata = {
-  title: "JJ Invest System Public",
-  description: "公開版 Beta 再平衡試算工具",
-  applicationName: "JJ Invest System",
+  title: "Betree 曝險管理",
+  description: "投資組合曝險管理與 Beta 再平衡工具",
+  applicationName: "Betree 曝險管理",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "JJ Invest System",
+    title: "Betree 曝險管理",
     statusBarStyle: "default",
   },
   icons: {
@@ -29,7 +37,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="zh-Hant">
-      <body>
+      <body className={betreeWordmarkFont.variable}>
         {children}
         <RegisterServiceWorker />
         <Analytics />

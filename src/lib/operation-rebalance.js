@@ -33,6 +33,72 @@ function getAssetType(assetBeta) {
   return toNumber(assetBeta) >= 1.5 ? "leveraged" : "original";
 }
 
+export function adjustOperationTargetBeta(value, delta) {
+  const nextValue = Math.min(Math.max(toNumber(value) + toNumber(delta), 0), 2);
+  return Math.round((nextValue + Number.EPSILON) * 100) / 100;
+}
+
+export function getOperationRebalanceStatus(currentBeta, betaLower, betaUpper) {
+  if (toNumber(currentBeta) < toNumber(betaLower)) {
+    return { label: "需增加 Beta", tone: "increase" };
+  }
+  if (toNumber(currentBeta) > toNumber(betaUpper)) {
+    return { label: "需降低 Beta", tone: "decrease" };
+  }
+  return { label: "不需再平衡", tone: "balanced" };
+}
+
+function distributeBuyAmount(rows, amount) {
+  const tradeAmounts = new Map();
+  let remainingAmount = roundMoney(amount);
+
+  rows.forEach((row, index) => {
+    const tradeAmount =
+      index === rows.length - 1
+        ? remainingAmount
+        : roundMoney(amount / rows.length);
+    tradeAmounts.set(row.id, tradeAmount);
+    remainingAmount = roundMoney(remainingAmount - tradeAmount);
+  });
+
+  return tradeAmounts;
+}
+
+function distributeSellAmount(rows, amount) {
+  const tradeAmounts = new Map(rows.map((row) => [row.id, 0]));
+  let remainingAmount = roundMoney(amount);
+  let activeRows = rows.filter((row) => toNumber(row.currentValueTwd) > 0.5);
+
+  while (remainingAmount > 0.5 && activeRows.length > 0) {
+    const equalAmount = roundMoney(remainingAmount / activeRows.length);
+    const cappedRows = activeRows.filter(
+      (row) => toNumber(row.currentValueTwd) + toNumber(tradeAmounts.get(row.id)) <= equalAmount,
+    );
+
+    if (cappedRows.length === 0) {
+      activeRows.forEach((row, index) => {
+        const saleAmount =
+          index === activeRows.length - 1 ? remainingAmount : equalAmount;
+        tradeAmounts.set(row.id, roundMoney(toNumber(tradeAmounts.get(row.id)) - saleAmount));
+        remainingAmount = roundMoney(remainingAmount - saleAmount);
+      });
+      break;
+    }
+
+    cappedRows.forEach((row) => {
+      const availableAmount = roundMoney(
+        toNumber(row.currentValueTwd) + toNumber(tradeAmounts.get(row.id)),
+      );
+      tradeAmounts.set(row.id, roundMoney(toNumber(tradeAmounts.get(row.id)) - availableAmount));
+      remainingAmount = roundMoney(remainingAmount - availableAmount);
+    });
+    const cappedIds = new Set(cappedRows.map((row) => row.id));
+    activeRows = activeRows.filter((row) => !cappedIds.has(row.id));
+  }
+
+  return { tradeAmounts, remainingAmount };
+}
+
 export function normalizeSelectedRebalanceIds({
   currentIds,
   previousSelectedIds,
@@ -66,6 +132,7 @@ export function createOperationRebalance({
   targetBeta,
   originalTargetRatio,
   precision = null,
+  allocationModes = {},
 }) {
   if (precision) {
     return createSmartOperationRebalance({
@@ -75,6 +142,7 @@ export function createOperationRebalance({
       targetBeta,
       originalTargetRatio,
       precision,
+      allocationModes,
     });
   }
 
@@ -84,6 +152,7 @@ export function createOperationRebalance({
     totalAssetsTwd,
     targetBeta,
     originalTargetRatio,
+    allocationModes,
   });
 }
 
@@ -94,6 +163,7 @@ function createSmartOperationRebalance({
   targetBeta,
   originalTargetRatio,
   precision,
+  allocationModes,
 }) {
   const desiredBeta = toNumber(targetBeta);
   let bestResult = null;
@@ -111,6 +181,7 @@ function createSmartOperationRebalance({
       totalAssetsTwd,
       targetBeta: candidateBeta,
       originalTargetRatio,
+      allocationModes,
     });
     const appliedAfterBeta = calculateAppliedAfterBeta({
       recommendations: result.recommendations,
@@ -144,6 +215,7 @@ function createSmartOperationRebalance({
     totalAssetsTwd,
     targetBeta,
     originalTargetRatio,
+    allocationModes,
   });
 }
 
@@ -182,6 +254,7 @@ function createOperationRebalanceForTarget({
   totalAssetsTwd,
   targetBeta,
   originalTargetRatio,
+  allocationModes = {},
 }) {
   const selectedSet = new Set(selectedIds.map(String));
   const totalAssets = toNumber(totalAssetsTwd);
@@ -202,17 +275,13 @@ function createOperationRebalanceForTarget({
 
   Object.entries(rowsByType).forEach(([assetType, rows]) => {
     const selectedRows = rows.filter((row) => selectedSet.has(String(row.id)));
-    const unselectedRows = rows.filter((row) => !selectedSet.has(String(row.id)));
     const targetTypeValue = roundMoney(totalAssets * targetRatios[assetType]);
-    const unselectedValue = roundMoney(
-      unselectedRows.reduce((sum, row) => sum + toNumber(row.currentValueTwd), 0),
+    const currentTypeValue = roundMoney(
+      rows.reduce((sum, row) => sum + toNumber(row.currentValueTwd), 0),
     );
-    const remainingTargetValue = roundMoney(targetTypeValue - unselectedValue);
+    const typeTradeAmount = roundMoney(targetTypeValue - currentTypeValue);
 
     if (selectedRows.length === 0) {
-      const currentTypeValue = roundMoney(
-        rows.reduce((sum, row) => sum + toNumber(row.currentValueTwd), 0),
-      );
       if (Math.abs(currentTypeValue - targetTypeValue) > 0.5) {
         isReachable = false;
       }
@@ -220,19 +289,46 @@ function createOperationRebalanceForTarget({
       return;
     }
 
-    if (remainingTargetValue < -0.5) {
+    if (allocationModes[assetType] === "custom") {
+      const unselectedValue = roundMoney(
+        rows.filter((row) => !selectedSet.has(String(row.id)))
+          .reduce((sum, row) => sum + toNumber(row.currentValueTwd), 0),
+      );
+      const remainingTargetValue = roundMoney(targetTypeValue - unselectedValue);
+      const selectedWeightTotal = selectedRows.reduce(
+        (sum, row) => sum + Math.max(toNumber(row.targetWeightPct), 0),
+        0,
+      );
+      if (remainingTargetValue < -0.5 || selectedWeightTotal <= 0) {
+        isReachable = false;
+      }
+      selectedRows.forEach((row) => {
+        const relativeWeight = selectedWeightTotal > 0
+          ? Math.max(toNumber(row.targetWeightPct), 0) / selectedWeightTotal
+          : 1 / selectedRows.length;
+        nextTargetValues.set(row.id, roundMoney(Math.max(remainingTargetValue, 0) * relativeWeight));
+      });
+      rows.filter((row) => !selectedSet.has(String(row.id))).forEach((row) => {
+        nextTargetValues.set(row.id, toNumber(row.currentValueTwd));
+      });
+      return;
+    }
+
+    const tradeAmounts = typeTradeAmount >= 0
+      ? distributeBuyAmount(selectedRows, typeTradeAmount)
+      : distributeSellAmount(selectedRows, Math.abs(typeTradeAmount)).tradeAmounts;
+    const distributedAmount = roundMoney(
+      selectedRows.reduce((sum, row) => sum + toNumber(tradeAmounts.get(row.id)), 0),
+    );
+    if (Math.abs(distributedAmount - typeTradeAmount) > 0.5) {
       isReachable = false;
     }
 
-    const safeRemainingTargetValue = Math.max(remainingTargetValue, 0);
-
-    selectedRows.forEach((row) => {
-      const selectedWeight = 1 / selectedRows.length;
-      nextTargetValues.set(row.id, roundMoney(safeRemainingTargetValue * selectedWeight));
-    });
-
-    unselectedRows.forEach((row) => {
-      nextTargetValues.set(row.id, toNumber(row.currentValueTwd));
+    rows.forEach((row) => {
+      nextTargetValues.set(
+        row.id,
+        roundMoney(toNumber(row.currentValueTwd) + toNumber(tradeAmounts.get(row.id))),
+      );
     });
   });
 

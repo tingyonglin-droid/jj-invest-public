@@ -18,9 +18,13 @@ const settings = {
   ],
   cashTwd: 100000,
   cashUsd: 500,
-  targetBeta: 1.2,
+  leveragedTargetPct: 60,
   tolerancePct: 10,
   originalTargetPct: 0,
+  allocationModes: { leveraged: "custom", original: "auto" },
+  cashEquivalentPositions: [],
+  cashEquivalentMode: "auto",
+  realCashTargetPct: 10,
 };
 
 describe("rebalance restore points", () => {
@@ -46,6 +50,8 @@ describe("rebalance restore points", () => {
     assert.equal(parsed.settings.cashTwd, 100000);
     assert.equal(parsed.settings.cashUsd, 500);
     assert.equal(parsed.settings.positions[0].shares, 1001);
+    assert.equal(parsed.settings.positions[0].targetWeightPct, 100);
+    assert.equal(parsed.settings.allocationModes.leveraged, "custom");
   });
 
   it("rejects invalid restore point files", () => {

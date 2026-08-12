@@ -14,12 +14,16 @@ const settings = {
       tickerInput: "00631L",
       shares: 1000,
       assetBeta: 2,
-      targetWeightPct: 60,
+      targetWeightPct: 100,
     },
   ],
+  allocationModes: { leveraged: "custom", original: "auto" },
+  cashEquivalentPositions: [],
+  cashEquivalentMode: "auto",
+  realCashTargetPct: 10,
   cashTwd: 120000,
   cashUsd: 1000,
-  targetBeta: 1.2,
+  leveragedTargetPct: 40,
   originalTargetPct: 40,
   tolerancePct: 10,
 };
@@ -68,6 +72,42 @@ describe("app backup", () => {
     assert.equal(parsed.settings.cashTwd, 120001);
     assert.equal(parsed.settings.cashUsd, 999);
     assert.equal(parsed.settings.positions[0].shares, 1000);
+    assert.equal(parsed.settings.positions[0].targetWeightPct, 100);
+    assert.deepEqual(parsed.settings.allocationModes, {
+      leveraged: "custom",
+      original: "auto",
+    });
+  });
+
+  it("loads legacy settings in automatic allocation mode", () => {
+    const parsed = parseAppBackup(JSON.stringify({
+      app: "jj-invest-public",
+      version: 1,
+      settings: {
+        positions: [{ id: "legacy", tickerInput: "00631L", shares: 1, assetBeta: 2 }],
+      },
+      history: [],
+    }));
+
+    assert.deepEqual(parsed.settings.allocationModes, {
+      leveraged: "auto",
+      original: "auto",
+    });
+    assert.equal(parsed.settings.positions[0].targetWeightPct, 0);
+  });
+
+  it("keeps an imported automatic mode when fallback settings are custom", () => {
+    const parsed = parseAppBackup(JSON.stringify({
+      app: "jj-invest-public",
+      version: 1,
+      settings: { ...settings, allocationModes: { leveraged: "auto", original: "auto" } },
+      history: [],
+    }), { allocationModes: { leveraged: "custom", original: "custom" } });
+
+    assert.deepEqual(parsed.settings.allocationModes, {
+      leveraged: "auto",
+      original: "auto",
+    });
   });
 
   it("merges imported history by date without deleting newer local records", () => {

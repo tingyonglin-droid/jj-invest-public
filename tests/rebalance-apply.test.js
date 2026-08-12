@@ -5,7 +5,9 @@ import {
   applyRebalanceToState,
   getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
+  getCashSleeveValueAfterStockTrades,
   getRebalanceShareDelta,
+  createFundedRebalanceRecommendations,
 } from "../src/lib/rebalance-apply.js";
 
 const recommendations = [
@@ -24,6 +26,75 @@ const recommendations = [
 ];
 
 describe("apply rebalance", () => {
+  it("derives the cash sleeve from applied stock lots instead of theoretical beta", () => {
+    const cashSleeveValue = getCashSleeveValueAfterStockTrades({
+      totalAssetsTwd: 1000000,
+      precision: "lots",
+      recommendations: [
+        {
+          id: "leveraged",
+          normalizedTicker: "00631L.TW",
+          shares: 0,
+          assetBeta: 2,
+          currentValueTwd: 0,
+          tradeAmountTwd: 383570,
+          priceTwd: 34.87,
+        },
+        {
+          id: "original",
+          normalizedTicker: "0050.TW",
+          shares: 0,
+          assetBeta: 1,
+          currentValueTwd: 0,
+          tradeAmountTwd: 418400,
+          priceTwd: 104.6,
+        },
+      ],
+    });
+
+    assert.equal(cashSleeveValue, 198030);
+  });
+
+  it("keeps the closer cash-equivalent lot in custom allocation mode", () => {
+    const funded = createFundedRebalanceRecommendations({
+      cashTwd: 148670,
+      minimumCashTwd: 100000,
+      cashTargetStrategy: "nearest",
+      precision: "lots",
+      recommendations: [
+        {
+          id: "bond",
+          normalizedTicker: "00865B.TW",
+          shares: 1000,
+          assetType: "cashEquivalent",
+          tradeAmountTwd: 50640,
+          priceTwd: 49.36,
+        },
+      ],
+    });
+
+    assert.equal(getAppliedRebalanceShareDelta(funded[0], "lots"), 1000);
+    assert.equal(funded[0].tradeAmountTwd, 49360);
+  });
+
+  it("reduces rounded cash-equivalent buys before breaching the real-cash reserve", () => {
+    const funded = createFundedRebalanceRecommendations({
+      cashTwd: 1000000,
+      minimumCashTwd: 20000,
+      precision: "lots",
+      recommendations: [
+        { id: "leveraged", normalizedTicker: "00631L.TW", shares: 0, assetBeta: 2, tradeAmountTwd: 383570, priceTwd: 34.87 },
+        { id: "original", normalizedTicker: "0050.TW", shares: 0, assetBeta: 1, tradeAmountTwd: 418400, priceTwd: 104.6 },
+        { id: "bond", normalizedTicker: "00865B.TW", shares: 0, assetType: "cashEquivalent", tradeAmountTwd: 180000, priceTwd: 49.36 },
+      ],
+    });
+    const summary = getAppliedRebalanceSummary({ recommendations: funded, precision: "lots" });
+
+    assert.equal(getAppliedRebalanceShareDelta(funded[2], "lots"), 3000);
+    assert.equal(1000000 + summary.cashDeltaTwd, 49950);
+    assert.ok(1000000 + summary.cashDeltaTwd >= 20000);
+  });
+
   it("rounds all assets to shares in share precision mode", () => {
     assert.equal(getRebalanceShareDelta(recommendations[0], "shares"), 1150);
     assert.equal(getRebalanceShareDelta(recommendations[1], "shares"), -1);
@@ -122,5 +193,60 @@ describe("apply rebalance", () => {
 
     assert.equal(summary.actionCount, 1);
     assert.equal(summary.totalAmountTwd, 120000);
+  });
+
+  it("summarizes applied net trades by sleeve and the matching cash change", () => {
+    const summary = getAppliedRebalanceSummary({
+      recommendations: [
+        {
+          id: "leveraged-buy",
+          normalizedTicker: "00631L.TW",
+          shares: 1000,
+          assetBeta: 2,
+          tradeAmountTwd: 46000,
+          priceTwd: 40,
+        },
+        {
+          id: "original-sell",
+          normalizedTicker: "0050.TW",
+          shares: 1000,
+          assetBeta: 1,
+          tradeAmountTwd: -25200,
+          priceTwd: 25,
+        },
+      ],
+      precision: "lots",
+    });
+
+    assert.equal(summary.leveragedNetAmountTwd, 40000);
+    assert.equal(summary.originalNetAmountTwd, -25000);
+    assert.equal(summary.cashDeltaTwd, -15000);
+  });
+
+  it("rounds sleeve and cash net amounts after combining fractional trades", () => {
+    const summary = getAppliedRebalanceSummary({
+      recommendations: [
+        {
+          id: "fraction-a",
+          normalizedTicker: "QLD",
+          shares: 0,
+          assetBeta: 2,
+          tradeAmountTwd: 0.4,
+          priceTwd: 0.4,
+        },
+        {
+          id: "fraction-b",
+          normalizedTicker: "SSO",
+          shares: 0,
+          assetBeta: 2,
+          tradeAmountTwd: 0.4,
+          priceTwd: 0.4,
+        },
+      ],
+      precision: "shares",
+    });
+
+    assert.equal(summary.leveragedNetAmountTwd, 1);
+    assert.equal(summary.cashDeltaTwd, -1);
   });
 });

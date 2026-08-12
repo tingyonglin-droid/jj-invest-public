@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { OverviewCardHeader } from "../src/components/overview-card-header.js";
 import {
   AUTO_REFRESH_INTERVAL_MS,
+  createQuoteRetryController,
+  getVisibleCalculationErrors,
+  hasCompletePriorQuoteResult,
+  mergeQuoteResults,
   shouldAutoRefreshQuotes,
 } from "../src/lib/auto-refresh.js";
 import {
@@ -12,6 +17,12 @@ import {
   parseAppBackup,
 } from "../src/lib/backup.js";
 import { createBenchmarkDrawdown } from "../src/lib/benchmark-drawdown.js";
+import {
+  createBenchmarkDrawdownChart,
+  filterBenchmarkHistoryByRange,
+  getMarketLevelLabel,
+  getNearestMarketPointIndex,
+} from "../src/lib/benchmark-drawdown-chart.js";
 import {
   createAnalyticsClient,
   getAssetType,
@@ -22,6 +33,10 @@ import {
 import { createBetaRailModel } from "../src/lib/beta-rail.js";
 import { createBetaSummary } from "../src/lib/beta-summary.js";
 import { calculateCashTwdValue } from "../src/lib/cash.js";
+import {
+  getCashEquivalentTargetStatus,
+  getCashSleeveTargets,
+} from "../src/lib/cash-equivalents.js";
 import {
   addHistoryPerformanceAdjustment,
   createHistoryChartModel,
@@ -40,29 +55,38 @@ import {
   parseHistoryRestorePoint,
 } from "../src/lib/history-restore.js";
 import { normalizeTicker } from "../src/lib/market-data.js";
+import {
+  createOverviewAction,
+  isPortfolioSetupComplete,
+} from "../src/lib/overview-action.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
 import {
   applyRebalanceToState,
+  createFundedRebalanceRecommendations,
   getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
+  getCashSleeveValueAfterStockTrades,
 } from "../src/lib/rebalance-apply.js";
 import {
   createRebalanceRestorePoint,
   parseRebalanceRestorePoint,
 } from "../src/lib/rebalance-restore.js";
 import {
+  adjustOperationTargetBeta,
   createOperationRebalance,
+  getOperationRebalanceStatus,
 } from "../src/lib/operation-rebalance.js";
-import { createAdviceDisplay } from "../src/lib/advice-summary.js";
 import {
   getPositionGroups,
   getPositionGroupTargetStatus,
+  initializePositionTargetWeights,
 } from "../src/lib/position-settings.js";
 import {
   getActionText,
   getEstimatedShares,
   getPositionDisplayName,
-  getTickerBadgeText,
+  getTickerDisplayText,
+  getTickerPlaceholder,
 } from "../src/lib/presentation.js";
 
 const STORAGE_KEY = "jj-invest-public-overview-v1";
@@ -79,13 +103,18 @@ const DEFAULT_STATE = {
       tickerInput: "00631L",
       shares: 0,
       assetBeta: 2,
+      targetWeightPct: 0,
     },
   ],
   cashTwd: 0,
   cashUsd: 0,
+  cashEquivalentPositions: [],
+  cashEquivalentMode: "auto",
+  realCashTargetPct: 10,
   leveragedTargetPct: 60,
   originalTargetPct: 0,
   tolerancePct: 10,
+  allocationModes: { leveraged: "auto", original: "auto" },
 };
 
 const emptyQuoteResult = {
@@ -154,19 +183,22 @@ function formatSignedPercent(ratio) {
   return `${safeRatio > 0 ? "+" : ""}${formatPercent(safeRatio)}`;
 }
 
-function formatQuoteDate(date) {
-  return date || "尚未更新";
+function formatNetTradeAmount(value) {
+  if (Math.abs(value) < 0.5) {
+    return "不需調整";
+  }
+  return `${value > 0 ? "淨買入" : "淨賣出"} ${formatTwd(Math.abs(value))}`;
 }
 
-function formatLastUpdatedAt(date) {
-  if (!date) {
-    return "尚未更新";
+function formatCashDelta(value) {
+  if (Math.abs(value) < 0.5) {
+    return "無變化";
   }
+  return `${value > 0 ? "淨增加" : "淨減少"} ${formatTwd(Math.abs(value))}`;
+}
 
-  return new Intl.DateTimeFormat("zh-TW", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+function formatQuoteDate(date) {
+  return date || "尚未更新";
 }
 
 function parseNumericInput(value) {
@@ -186,14 +218,27 @@ function parseIntegerInput(value) {
 }
 
 function normalizeStoredState(state) {
+  const modes = state.allocationModes || DEFAULT_STATE.allocationModes;
   return {
     ...state,
     cashTwd: parseIntegerInput(state.cashTwd),
     cashUsd: parseIntegerInput(state.cashUsd ?? 0),
+    cashEquivalentMode: state.cashEquivalentMode === "custom" ? "custom" : "auto",
+    realCashTargetPct: parseNumericInput(state.realCashTargetPct ?? 10),
+    cashEquivalentPositions: (state.cashEquivalentPositions || []).map((position) => ({
+      ...position,
+      shares: parseIntegerInput(position.shares),
+      targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
+    })),
     originalTargetPct: parseNumericInput(state.originalTargetPct ?? DEFAULT_STATE.originalTargetPct),
+    allocationModes: {
+      leveraged: modes.leveraged === "custom" ? "custom" : "auto",
+      original: modes.original === "custom" ? "custom" : "auto",
+    },
     positions: (state.positions || DEFAULT_STATE.positions).map((position) => ({
       ...position,
       assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
+      targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
     })),
   };
 }
@@ -210,70 +255,6 @@ function getTradeClass(item) {
 
 function clampPercent(value) {
   return Math.min(Math.max((Number.isFinite(value) ? value : 0) * 100, 0), 100);
-}
-
-function getBetaStatus(calculation) {
-  if (calculation.currentBeta > calculation.betaUpper) {
-    return {
-      tone: "sell",
-      label: "高於上限，建議降低曝險",
-      boundaryLabel: "高於上限",
-      boundaryGap: calculation.currentBeta - calculation.betaUpper,
-    };
-  }
-
-  if (calculation.currentBeta < calculation.betaLower) {
-    return {
-      tone: "buy",
-      label: "低於下限，建議提高曝險",
-      boundaryLabel: "低於下限",
-      boundaryGap: calculation.currentBeta - calculation.betaLower,
-    };
-  }
-
-  return {
-    tone: "ok",
-    label: "正常",
-    boundaryLabel: "距離區間邊界",
-    boundaryGap: Math.min(
-      calculation.currentBeta - calculation.betaLower,
-      calculation.betaUpper - calculation.currentBeta,
-    ),
-  };
-}
-
-function getAdvice(calculation) {
-  const betaStatus = getBetaStatus(calculation);
-
-  if (!calculation.isValid) {
-    return {
-      tone: "none",
-      status: "設定需修正",
-      headline: "設定需修正",
-      classActions: ["請先調整比例"],
-    };
-  }
-
-  if (!calculation.needsRebalance) {
-    return {
-      tone: "none",
-      status: "目前位於容忍區間",
-      headline: "無需操作",
-      classActions: ["正二：無需調整", "原形：無需調整", "現金：無需調整"],
-    };
-  }
-
-  const display = createAdviceDisplay({
-    betaBoundaryLabel: betaStatus.boundaryLabel,
-    leveragedTradeAmountTwd: calculation.leveragedTradeAmountTwd,
-    originalTradeAmountTwd: calculation.originalTradeAmountTwd,
-    cashTradeAmountTwd: calculation.cashTradeAmountTwd,
-  });
-
-  return {
-    ...display,
-    status: betaStatus.label,
-  };
 }
 
 function isLocalPreviewHost(hostname) {
@@ -356,9 +337,11 @@ export default function Home() {
   const [quoteResult, setQuoteResult] = useState(emptyQuoteResult);
   const [status, setStatus] = useState("idle");
   const [requestError, setRequestError] = useState("");
+  const [hasReceivedQuoteResponse, setHasReceivedQuoteResponse] = useState(false);
   const [rebalancePrecision, setRebalancePrecision] = useState("lots");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [activeView, setActiveView] = useState("overview");
+  const [settingsTargetPage, setSettingsTargetPage] = useState(null);
   const [glossaryTopic, setGlossaryTopic] = useState(null);
   const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState("");
   const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
@@ -370,7 +353,10 @@ export default function Home() {
   const [rebalanceRestoreStatus, setRebalanceRestoreStatus] = useState("");
   const [hasHistoryRestorePoint, setHasHistoryRestorePoint] = useState(false);
   const [historyRestoreStatus, setHistoryRestoreStatus] = useState("");
-  const [cashChangeReason, setCashChangeReason] = useState("fee");
+  const [cashChangeReason, setCashChangeReason] = useState("external");
+  const quoteResultRef = useRef(emptyQuoteResult);
+  const requestInFlightRef = useRef(false);
+  const retryControllerRef = useRef(null);
   const analyticsClient = useMemo(
     () =>
       createAnalyticsClient({
@@ -381,10 +367,10 @@ export default function Home() {
 
   const tickers = useMemo(
     () =>
-      formState.positions
+      [...formState.positions, ...formState.cashEquivalentPositions]
         .map((position) => position.tickerInput)
         .filter((ticker) => String(ticker || "").trim()),
-    [formState.positions],
+    [formState.positions, formState.cashEquivalentPositions],
   );
 
   const isLocalPreview =
@@ -402,23 +388,35 @@ export default function Home() {
 
       return calculatePortfolio({
         positions: formState.positions,
+        cashEquivalentPositions: formState.cashEquivalentPositions,
         quotes: quoteResult.quotes,
         cashTwd: cashValueTwd,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
+        allocationModes: formState.allocationModes,
+        cashEquivalentMode: formState.cashEquivalentMode,
+        realCashTargetPct: formState.realCashTargetPct,
       });
     },
     [formState, quoteResult],
   );
 
   const quoteErrors = quoteResult.quotes.filter((quote) => quote.error);
-  const pageCalculationErrors = calculation.errors;
+  const pageCalculationErrors = getVisibleCalculationErrors(
+    calculation.errors,
+    hasReceivedQuoteResponse,
+  );
   const betaRail = createBetaRailModel(calculation);
-  const advice = getAdvice(calculation);
+  const overviewAction = createOverviewAction(calculation, {
+    setupComplete: isPortfolioSetupComplete({ formState, hasReceivedQuoteResponse }),
+  });
   const recommendationIds = useMemo(
-    () => calculation.recommendations.map((item) => String(item.id)),
-    [calculation.recommendations],
+    () => [
+      ...calculation.recommendations,
+      ...calculation.cashEquivalentRecommendations,
+    ].map((item) => String(item.id)),
+    [calculation.recommendations, calculation.cashEquivalentRecommendations],
   );
   const selectedRebalanceIds = useMemo(
     () => {
@@ -430,15 +428,71 @@ export default function Home() {
   const rebalanceTargetBeta =
     rebalanceTargetBetaOverride === "" ? calculation.targetBeta : rebalanceTargetBetaOverride;
   const operationRebalance = useMemo(
-    () =>
-      createOperationRebalance({
+    () => {
+      const stockResult = createOperationRebalance({
         recommendations: calculation.recommendations,
         selectedIds: selectedRebalanceIds,
         totalAssetsTwd: calculation.totalAssetsTwd,
         targetBeta: rebalanceTargetBeta,
         originalTargetRatio: calculation.targetOriginalRatio,
         precision: rebalancePrecision,
-      }),
+        allocationModes: formState.allocationModes,
+      });
+      const targetCashSleeveValueTwd = getCashSleeveValueAfterStockTrades({
+        recommendations: stockResult.recommendations,
+        totalAssetsTwd: calculation.totalAssetsTwd,
+        precision: rebalancePrecision,
+      });
+      const cashTargets = getCashSleeveTargets({
+        mode: formState.cashEquivalentMode,
+        positions: formState.cashEquivalentPositions,
+        realCashTargetPct: formState.realCashTargetPct,
+      });
+      const cashEquivalentRecommendations = calculation.cashEquivalentRecommendations.map((item) => {
+        const targetValueTwd = targetCashSleeveValueTwd * Number(
+          cashTargets.positionRatios.get(item.id) || 0,
+        );
+        const tradeAmountTwd = targetValueTwd - item.currentValueTwd;
+        const isSelected = selectedRebalanceIds.includes(String(item.id));
+        return {
+          ...item,
+          targetValueTwd,
+          desiredTradeAmountTwd: tradeAmountTwd,
+          tradeAmountTwd: isSelected ? tradeAmountTwd : 0,
+          action: isSelected && tradeAmountTwd > 0.5
+            ? "buy"
+            : isSelected && tradeAmountTwd < -0.5
+              ? "sell"
+              : "none",
+          isSelected,
+          currentSleeveWeight: calculation.cashSleeveValueTwd > 0
+            ? item.currentValueTwd / calculation.cashSleeveValueTwd
+            : 0,
+          targetSleeveWeight: Number(cashTargets.positionRatios.get(item.id) || 0),
+          allocationMode: formState.cashEquivalentMode,
+          afterSleeveWeight: targetCashSleeveValueTwd > 0
+            ? targetValueTwd / targetCashSleeveValueTwd
+            : 0,
+        };
+      });
+      const targetRealCashTwd = targetCashSleeveValueTwd * cashTargets.realCashRatio;
+      const excludedCashEquivalentReserveTwd = cashEquivalentRecommendations.reduce(
+        (sum, item) => sum + (!item.isSelected ? Math.max(item.desiredTradeAmountTwd, 0) : 0),
+        0,
+      );
+      const fundedRecommendations = createFundedRebalanceRecommendations({
+        recommendations: [...stockResult.recommendations, ...cashEquivalentRecommendations],
+        precision: rebalancePrecision,
+        cashTwd: calculation.realCashTwd,
+        minimumCashTwd: targetRealCashTwd + excludedCashEquivalentReserveTwd,
+        cashTargetStrategy: formState.cashEquivalentMode === "custom" ? "nearest" : "floor",
+      });
+      return {
+        ...stockResult,
+        recommendations: fundedRecommendations,
+        targetRealCashTwd,
+      };
+    },
     [
       calculation.recommendations,
       calculation.targetOriginalRatio,
@@ -446,6 +500,13 @@ export default function Home() {
       rebalanceTargetBeta,
       rebalancePrecision,
       selectedRebalanceIds,
+      formState.allocationModes,
+      formState.cashEquivalentMode,
+      formState.cashEquivalentPositions,
+      formState.realCashTargetPct,
+      calculation.cashEquivalentRecommendations,
+      calculation.cashSleeveValueTwd,
+      calculation.realCashTwd,
     ],
   );
   const appliedRebalanceSummary = useMemo(
@@ -461,12 +522,19 @@ export default function Home() {
     operationRebalance.recommendations.length > 0 &&
     appliedRebalanceSummary.actionCount > 0;
 
-  const refreshQuotes = useCallback(async () => {
+  const refreshQuotes = useCallback(async ({ isRetry = false } = {}) => {
     if (tickers.length === 0) {
       setRequestError("請至少輸入一個標的代號。");
       return;
     }
+    if (requestInFlightRef.current) {
+      return;
+    }
 
+    if (!isRetry) {
+      retryControllerRef.current?.reset();
+    }
+    requestInFlightRef.current = true;
     setStatus("loading");
     setRequestError("");
 
@@ -476,22 +544,35 @@ export default function Home() {
         throw new Error(`報價 API 回應 ${response.status}`);
       }
       const payload = await response.json();
+      setHasReceivedQuoteResponse(true);
+      const merged = mergeQuoteResults(quoteResultRef.current, payload);
+      quoteResultRef.current = merged.result;
       const nextCashValueTwd = calculateCashTwdValue({
         cashTwd: formState.cashTwd,
         cashUsd: formState.cashUsd,
-        usdTwd: payload.fx.usdTwd,
+        usdTwd: merged.result.fx.usdTwd,
       });
       const nextCalculation = calculatePortfolio({
         positions: formState.positions,
-        quotes: payload.quotes,
+        cashEquivalentPositions: formState.cashEquivalentPositions,
+        quotes: merged.result.quotes,
         cashTwd: nextCashValueTwd,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
+        allocationModes: formState.allocationModes,
+        cashEquivalentMode: formState.cashEquivalentMode,
+        realCashTargetPct: formState.realCashTargetPct,
       });
-      setQuoteResult(payload);
-      setLastUpdatedAt(new Date());
-      setStatus("ready");
+      setQuoteResult(merged.result);
+      if (merged.hasFailures) {
+        retryControllerRef.current?.schedule();
+        setStatus(merged.usedStaleData ? "ready" : "error");
+      } else {
+        retryControllerRef.current?.reset();
+        setLastUpdatedAt(new Date());
+        setStatus("ready");
+      }
       if (nextCalculation.isValid) {
         analyticsClient.trackBetaCalculated({
           holdingCount: formState.positions.length,
@@ -502,10 +583,38 @@ export default function Home() {
         }
       }
     } catch (error) {
-      setRequestError(error instanceof Error ? error.message : "價格更新失敗。");
-      setStatus("error");
+      const hasPriorData = hasCompletePriorQuoteResult(quoteResultRef.current, tickers);
+      if (hasPriorData) {
+        retryControllerRef.current?.schedule();
+        setStatus("ready");
+      } else {
+        setRequestError(error instanceof Error ? error.message : "價格更新失敗。");
+        retryControllerRef.current?.schedule();
+        setStatus("error");
+      }
+    } finally {
+      requestInFlightRef.current = false;
     }
   }, [analyticsClient, formState, tickers]);
+
+  useEffect(() => {
+    const controller = createQuoteRetryController({
+      setTimeoutFn: (callback, delay) => window.setTimeout(callback, delay),
+      clearTimeoutFn: (timer) => window.clearTimeout(timer),
+      onRetry: () => refreshQuotes({ isRetry: true }),
+      onExhausted: () => {
+        setRequestError("部分價格暫時無法更新，將自動重試。");
+      },
+    });
+    retryControllerRef.current = controller;
+
+    return () => {
+      controller.reset();
+      if (retryControllerRef.current === controller) {
+        retryControllerRef.current = null;
+      }
+    };
+  }, [refreshQuotes]);
 
   useEffect(() => {
     if (!hydrated || tickers.length === 0) {
@@ -659,11 +768,13 @@ export default function Home() {
     }
 
     window.addEventListener("focus", refreshIfVisible);
+    window.addEventListener("online", refreshIfVisible);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener("focus", refreshIfVisible);
+      window.removeEventListener("online", refreshIfVisible);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [hydrated, refreshQuotes, status, tickers]);
@@ -718,6 +829,12 @@ export default function Home() {
 
   function updateSetting(field, value) {
     setFormState((current) => {
+      if (field === "cashEquivalentMode") {
+        return {
+          ...current,
+          cashEquivalentMode: value === "custom" ? "custom" : "auto",
+        };
+      }
       const isCashField = field === "cashTwd" || field === "cashUsd";
       const nextValue = isCashField ? parseIntegerInput(value) : parseNumericInput(value);
 
@@ -766,6 +883,78 @@ export default function Home() {
     }));
   }
 
+  function updateCashEquivalentPosition(id, field, value) {
+    setFormState((current) => ({
+      ...current,
+      cashEquivalentPositions: current.cashEquivalentPositions.map((position) =>
+        position.id === id
+          ? { ...position, [field]: field === "tickerInput" ? value : parseNumericInput(value) }
+          : position,
+      ),
+    }));
+  }
+
+  function addCashEquivalentPosition() {
+    setFormState((current) => ({
+      ...current,
+      cashEquivalentPositions: [
+        ...current.cashEquivalentPositions,
+        {
+          id: `cash-equivalent-${Date.now()}`,
+          tickerInput: "",
+          shares: 0,
+          targetWeightPct: 0,
+        },
+      ],
+    }));
+  }
+
+  function removeCashEquivalentPosition(id) {
+    setFormState((current) => ({
+      ...current,
+      cashEquivalentPositions: current.cashEquivalentPositions.filter(
+        (position) => position.id !== id,
+      ),
+    }));
+  }
+
+  function updateAllocationMode(assetType, mode) {
+    setFormState((current) => {
+      const nextMode = mode === "custom" ? "custom" : "auto";
+      const positionsInSleeve = current.positions.filter(
+        (position) => getHoldingAssetType(position.assetBeta) === assetType,
+      );
+      const hasSavedWeights = positionsInSleeve.some(
+        (position) => Number(position.targetWeightPct) > 0,
+      );
+      let nextPositions = current.positions;
+      if (nextMode === "custom" && !hasSavedWeights) {
+        const currentValueById = new Map(
+          calculation.recommendations.map((item) => [item.id, item.currentValueTwd]),
+        );
+        const initialized = initializePositionTargetWeights(
+          positionsInSleeve.map((position) => ({
+            ...position,
+            currentValueTwd: currentValueById.get(position.id) || 0,
+          })),
+        );
+        const initializedById = new Map(
+          initialized.map((position) => [position.id, position.targetWeightPct]),
+        );
+        nextPositions = current.positions.map((position) =>
+          initializedById.has(position.id)
+            ? { ...position, targetWeightPct: initializedById.get(position.id) }
+            : position,
+        );
+      }
+      return {
+        ...current,
+        positions: nextPositions,
+        allocationModes: { ...current.allocationModes, [assetType]: nextMode },
+      };
+    });
+  }
+
   function addPosition(assetBeta = 2) {
     setFormState((current) => ({
       ...current,
@@ -776,6 +965,7 @@ export default function Home() {
           tickerInput: "",
           shares: 0,
           assetBeta,
+          targetWeightPct: 0,
         },
       ],
     }));
@@ -833,6 +1023,7 @@ export default function Home() {
       });
       const result = applyRebalanceToState({
         positions: current.positions,
+        cashEquivalentPositions: current.cashEquivalentPositions,
         cashTwd: currentCashTwd,
         recommendations: operationRebalance.recommendations,
         precision: rebalancePrecision,
@@ -841,6 +1032,7 @@ export default function Home() {
       return {
         ...current,
         positions: result.positions,
+        cashEquivalentPositions: result.cashEquivalentPositions,
         cashTwd: result.cashTwd - calculateCashTwdValue({
           cashTwd: 0,
           cashUsd: current.cashUsd,
@@ -979,7 +1171,11 @@ export default function Home() {
     [setFormState, setHistoryRecords],
   );
 
-  function changeView(nextView) {
+  function changeView(nextView, options = {}) {
+    if (nextView === "settings") {
+      setSettingsTargetPage(options.settingsPage || null);
+    }
+
     if (nextView === activeView) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -991,13 +1187,17 @@ export default function Home() {
     });
   }
 
+  function handleOverviewAction(action) {
+    if (!action.destination) {
+      return;
+    }
+
+    changeView(action.destination, { settingsPage: action.settingsPage });
+  }
+
   return (
     <main className="appShell">
-      <AppHeader
-        status={status}
-        lastUpdatedAt={lastUpdatedAt}
-        onRefresh={refreshQuotes}
-      />
+      <AppHeader />
 
       {(requestError ||
         quoteResult.fx.error ||
@@ -1021,18 +1221,16 @@ export default function Home() {
         {activeView === "overview" && (
           <>
             <BetaCard
+              action={overviewAction}
               calculation={calculation}
               betaRail={betaRail}
+              onAction={handleOverviewAction}
               onOpenGlossary={() => setGlossaryTopic("beta")}
             />
 
             <MarketLevelCard
               benchmarkDrawdown={benchmarkDrawdown}
               onOpenGlossary={() => setGlossaryTopic("benchmarkDrawdown")}
-            />
-
-            <AdviceCard
-              advice={advice}
             />
 
             <AllocationCard
@@ -1046,6 +1244,7 @@ export default function Home() {
           <OperationsView
             canApplyRebalance={canApplyRebalance}
             appliedSummary={appliedRebalanceSummary}
+            calculation={calculation}
             hasRestorePoint={hasRebalanceRestorePoint}
             operationRebalance={operationRebalance}
             onApplyRebalance={applyOneClickRebalance}
@@ -1081,17 +1280,22 @@ export default function Home() {
 
         {activeView === "settings" && (
           <SettingsAccordions
+            initialPage={settingsTargetPage || "cash"}
             backupStatus={backupStatus}
             calculation={calculation}
             formState={formState}
             fx={quoteResult.fx}
             historyCount={historyRecords.length}
             onAddPosition={addPosition}
+            onAddCashEquivalentPosition={addCashEquivalentPosition}
             onExportBackup={handleExportBackup}
             onImportBackup={handleImportBackup}
             onRemovePosition={removePosition}
+            onRemoveCashEquivalentPosition={removeCashEquivalentPosition}
             onSetCashChangeReason={setCashChangeReason}
             onUpdatePosition={updatePosition}
+            onUpdateCashEquivalentPosition={updateCashEquivalentPosition}
+            onUpdateAllocationMode={updateAllocationMode}
             onUpdateSetting={updateSetting}
             cashChangeReason={cashChangeReason}
           />
@@ -1154,36 +1358,15 @@ function BottomTabBar({ activeView, onChange }) {
   );
 }
 
-function AppHeader({ status, lastUpdatedAt, onRefresh }) {
+function AppHeader() {
   return (
-    <header className="appHeader">
-      <div className="brandLockup">
-        <span className="brandGlyph" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </span>
-        <div>
-          <p>JJ Invest System</p>
-        </div>
-      </div>
-      <div className="headerActions">
-        <button
-          type="button"
-          className="headerStatusPill"
-          onClick={onRefresh}
-          disabled={status === "loading"}
-          aria-label="更新價格"
-        >
-          <span>自動更新 {formatLastUpdatedAt(lastUpdatedAt)}</span>
-          <em aria-hidden="true">{status === "loading" ? "..." : "↻"}</em>
-        </button>
-      </div>
+    <header className="appHeader publicAppHeader">
+      <p className="betreeWordmark">Betree</p>
     </header>
   );
 }
 
-function BetaCard({ calculation, betaRail, onOpenGlossary }) {
+function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
   const betaSummary = createBetaSummary({
     currentBeta: calculation.currentBeta,
     targetBeta: calculation.targetBeta,
@@ -1192,20 +1375,28 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
 
   return (
     <section className="appCard betaCard">
+      <OverviewCardHeader
+        title="目前 Beta"
+        subtitle="整體資產曝險程度"
+        infoLabel="查看 Beta 說明"
+        onInfo={onOpenGlossary}
+        action={null}
+      />
       <div className="betaTopline">
-        <div>
-          <div className="cardLabelRow">
-            <p className="cardLabel">目前 Beta</p>
+        <div className="betaPrimary">
+          <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
+          {action.destination ? (
             <button
               type="button"
-              className="infoButton"
-              onClick={onOpenGlossary}
-              aria-label="查看 Beta 說明"
+              className={`betaAction betaInlineAction ${action.tone}`}
+              onClick={() => onAction(action)}
+              aria-label={action.ariaLabel}
             >
-              i
+              {action.label}
             </button>
-          </div>
-          <div className="megaNumber">{formatNumber(calculation.currentBeta)}</div>
+          ) : (
+            <span className={`betaAction betaInlineAction ${action.tone}`}>{action.label}</span>
+          )}
         </div>
         <div className="betaMetaGrid">
           <div>
@@ -1244,46 +1435,237 @@ function BetaCard({ calculation, betaRail, onOpenGlossary }) {
 }
 
 function MarketLevelCard({ benchmarkDrawdown, onOpenGlossary }) {
+  const [activePointDate, setActivePointDate] = useState(null);
+  const [chartRange, setChartRange] = useState("1M");
+  const chartHistory = filterBenchmarkHistoryByRange(
+    benchmarkDrawdown?.fullHistory,
+    benchmarkDrawdown?.currentDate,
+    chartRange,
+  );
+  const chart = createBenchmarkDrawdownChart(
+    chartHistory,
+    benchmarkDrawdown?.highPrice,
+    { mode: "overview" },
+  );
+
   if (!benchmarkDrawdown) {
     return null;
   }
 
-  const levelLabel = {
-    normal: "正常區間",
-    prepare: "觀察低接",
-    deep: "深度回落",
-  }[benchmarkDrawdown.level] || "市場水位";
+  const activePoint = chart.points.find((point) => point.date === activePointDate) || null;
+  const tooltipLeft = activePoint
+    ? activePoint.tooltipAnchor === "start"
+      ? activePoint.tooltipX
+      : activePoint.tooltipAnchor === "end"
+        ? activePoint.tooltipX - 178
+        : activePoint.tooltipX - 89
+    : 0;
+  const tooltipTop = activePoint ? Math.min(246, Math.max(50, activePoint.y - 104)) : 0;
+  const tooltipTextX = tooltipLeft + 12;
+  const levelLabel = getMarketLevelLabel(benchmarkDrawdown.level);
+  const rangeStartDate = chart.points[0]?.date || benchmarkDrawdown.currentDate;
+  const formatRangeDate = (date) => (chartRange === "1Y" ? date.slice(2) : date.slice(5)).replaceAll("-", "/");
+
+  function activatePoint(event, index) {
+    event.stopPropagation();
+    const clickedDate = chart.points[index]?.date || null;
+    setActivePointDate((current) => current === clickedDate ? null : clickedDate);
+  }
+
+  function handlePointKeyDown(event, index) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activatePoint(event, index);
+    }
+  }
+
+  function handleChartClick(event) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (bounds.width <= 0) {
+      return;
+    }
+    const chartX = ((event.clientX - bounds.left) / bounds.width) * chart.width;
+    const nearestIndex = getNearestMarketPointIndex(chart.points, chartX);
+    if (nearestIndex !== null) {
+      const nearestDate = chart.points[nearestIndex].date;
+      setActivePointDate((current) => current === nearestDate ? null : nearestDate);
+    }
+  }
 
   return (
     <section className={`appCard marketLevelCard ${benchmarkDrawdown.level}`}>
-      <div className="cardHeaderRow">
-        <div>
-          <div className="cardTitleRow">
-            <h2>市場水位</h2>
-            <button
-              type="button"
-              className="infoButton small"
-              onClick={onOpenGlossary}
-              aria-label="查看 0050 距收盤高點說明"
-            >
-              i
-            </button>
+      <div className="marketLevelHeader">
+        <OverviewCardHeader
+          title="市場水位"
+          subtitle="0050 距歷史高點"
+          infoLabel="查看 0050 距收盤高點說明"
+          onInfo={onOpenGlossary}
+        />
+
+        <div className="marketLevelSummaries">
+          <div className="marketLevelDrawdownSummary">
+            <span className="marketLevelSummaryLabel">距歷史高點</span>
+            <strong>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</strong>
+            <span className={`marketLevelSummaryMeta ${benchmarkDrawdown.level}`}>{levelLabel}</span>
           </div>
-          <p>0050 距收盤高點</p>
+          <div>
+            <span className="marketLevelSummaryLabel">目前價格（{benchmarkDrawdown.currentSource === "live" ? "即時" : "收盤"}）</span>
+            <strong>{formatNumber(benchmarkDrawdown.currentPrice, 2)}</strong>
+            <time className="marketLevelSummaryMeta" dateTime={benchmarkDrawdown.currentDate}>{benchmarkDrawdown.currentDate}</time>
+          </div>
+          <div>
+            <span className="marketLevelSummaryLabel">歷史高點（收盤）</span>
+            <strong>{formatNumber(benchmarkDrawdown.highPrice, 2)}</strong>
+            <time className="marketLevelSummaryMeta" dateTime={benchmarkDrawdown.highDate}>{benchmarkDrawdown.highDate}</time>
+          </div>
         </div>
-        <span className="marketLevelBadge">{levelLabel}</span>
       </div>
 
-      <div className="marketLevelBody">
-        <strong>{formatSignedPercent(benchmarkDrawdown.drawdownRatio)}</strong>
-        <div>
-          <span>
-            高點 {formatNumber(benchmarkDrawdown.highPrice, 2)} · {benchmarkDrawdown.highDate}
-          </span>
-          <span>
-            目前 {formatNumber(benchmarkDrawdown.currentPrice, 2)} · {benchmarkDrawdown.currentDate}
-          </span>
-        </div>
+      <div className="marketLevelRangeControls" aria-label="市場水位顯示期間">
+        <span>Zoom</span>
+        {["1M", "3M", "6M", "1Y"].map((range) => (
+          <button
+            type="button"
+            key={range}
+            aria-pressed={chartRange === range}
+            onClick={() => {
+              setChartRange(range);
+              setActivePointDate(null);
+            }}
+          >
+            {range}
+          </button>
+        ))}
+        <time className="marketLevelRangeDates">
+          {formatRangeDate(rangeStartDate)}－{formatRangeDate(benchmarkDrawdown.currentDate)}
+        </time>
+      </div>
+
+      <div className="marketLevelChartWrap">
+        <svg
+          className="marketLevelChart"
+          width={chart.width}
+          height={chart.height}
+          viewBox={chart.viewBox}
+          role="group"
+          aria-label={`0050 最近 ${chartRange} 的市場水位走勢圖`}
+          onClick={handleChartClick}
+        >
+          {chart.bands.map((band) => (
+            <g key={band.level}>
+              <rect
+                className={`marketBand ${band.level}`}
+                x={chart.bandInset}
+                y={band.top}
+                width={chart.width - chart.bandInset * 2}
+                height={band.bottom - band.top}
+              />
+              <text
+                className={`marketBandName ${band.level}`}
+                x={chart.edgeLabelInset}
+                y={(band.top + band.bottom) / 2 + 4}
+              >
+                {band.level === "normal" ? "正常" : band.level === "prepare" ? "觀察" : "股災"}
+              </text>
+            </g>
+          ))}
+
+          {chart.thresholds.map((threshold) => (
+            <g key={threshold.ratio}>
+              <line
+                className="marketThreshold"
+                x1={chart.plot.left}
+                x2={chart.plot.right}
+                y1={threshold.y}
+                y2={threshold.y}
+              />
+              <text className="marketThresholdRatio" x={chart.edgeLabelInset} y={threshold.y + 20}>
+                {formatSignedPercent(threshold.ratio)}
+              </text>
+              <text className="marketThresholdPrice" x={chart.width - chart.edgeLabelInset} y={threshold.y + 17} textAnchor="end">
+                {formatNumber(threshold.price, 2)}
+              </text>
+            </g>
+          ))}
+
+          {chart.scaleMin < -0.3 && (
+            <text
+              className="marketThresholdRatio marketScaleFloor"
+              x={chart.edgeLabelInset}
+              y={chart.scaleFloor.y - 8}
+            >
+              {formatSignedPercent(chart.scaleFloor.ratio)}
+            </text>
+          )}
+
+          <polyline className="marketTrendLine" points={chart.linePoints} />
+
+          {chart.points.map((point, index) => {
+            const shortDate = point.date.slice(5).replace("-", "/");
+            const isActive = activePointDate === point.date;
+            return (
+              <g key={point.date}>
+                <circle
+                  className="marketPointHitArea"
+                  cx={point.x}
+                  cy={point.y}
+                  r="18"
+                  role="button"
+                  tabIndex="0"
+                  aria-pressed={isActive}
+                  aria-label={`${point.date}，0050 股價 ${formatNumber(point.price, 2)}，市場水位 ${formatSignedPercent(point.drawdownRatio)}，${getMarketLevelLabel(point.level)}`}
+                  onClick={(event) => activatePoint(event, index)}
+                  onKeyDown={(event) => handlePointKeyDown(event, index)}
+                />
+                <circle
+                  className={`marketPoint ${point.level}${isActive ? " active" : ""}${index === chart.points.length - 1 ? " latest" : ""}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r="8"
+                  aria-hidden="true"
+                />
+                {point.showDateLabel && (
+                  <text className="marketPointDate" x={point.x} y={chart.dateLabelY} textAnchor="middle">{shortDate}</text>
+                )}
+              </g>
+            );
+          })}
+
+          {activePoint && (
+            <g
+              className={`marketPointTooltip ${activePoint.level}`}
+              onClick={(event) => event.stopPropagation()}
+              pointerEvents="all"
+            >
+              <rect
+                x={tooltipLeft}
+                y={tooltipTop}
+                width="178"
+                height="82"
+                rx="10"
+              />
+              <text
+                x={tooltipTextX}
+                y={tooltipTop + 22}
+              >
+                <tspan className="tooltipDate">{activePoint.date}</tspan>
+                <tspan x={tooltipTextX} dy="20">0050　{formatNumber(activePoint.price, 2)}</tspan>
+                <tspan x={tooltipTextX} dy="20">{formatSignedPercent(activePoint.drawdownRatio)}　{getMarketLevelLabel(activePoint.level)}</tspan>
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
+
+      <div className="marketLevelLegend" aria-label="市場水位區間圖例">
+        <span><i className="normal" />正常區間（-10% 以內）</span>
+        <span><i className="prepare" />觀察區間（-10%～-20%）</span>
+        <span><i className="deep" />股災區間（-20% 以上）</span>
+      </div>
+
+      <div className="marketLevelFooter">
+        <span>資料來源：0050 {benchmarkDrawdown.currentSource === "live" ? "即時價與歷史收盤價" : "收盤價"}</span>
+        <span>更新日期：{benchmarkDrawdown.currentDate}</span>
       </div>
     </section>
   );
@@ -1400,8 +1782,9 @@ function GlossaryDialog({ topic, onClose }) {
 
               <article className="glossaryItem">
                 <span>現金</span>
-                <p>現金是台幣現金與美金現金換算成台幣後的加總。</p>
-                <p>資產配置比例會把正二、原形與現金一起納入總資產計算。</p>
+                <p>現金桶是台幣現金、美金現金換算台幣，以及類現金 ETF 市值的加總。</p>
+                <p>類現金 ETF 的 Beta 以 0 計算，會參與現金桶與再平衡，但仍有價格波動。</p>
+                <p>資產配置比例會把正二、原形與現金＋類現金一起納入總資產計算。</p>
               </article>
             </>
           )}
@@ -1415,50 +1798,20 @@ function GlossaryDialog({ topic, onClose }) {
   );
 }
 
-function AdviceCard({ advice }) {
-  return (
-    <section className="appCard adviceCard">
-      <div className={`adviceIcon ${advice.tone}`} aria-hidden="true">
-        <span />
-      </div>
-      <div className="adviceContent">
-        <p className="cardLabel">今日操作建議</p>
-        <p className={`adviceStatus ${advice.tone}`}>{advice.status}</p>
-        <strong className={advice.tone}>{advice.headline}</strong>
-        {(advice.classActions || []).map((line, index) => (
-          <p className={`adviceMeta${index > 0 ? " muted" : ""}`} key={line}>
-            {line}
-          </p>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function AllocationCard({ calculation, onOpenGlossary }) {
   const cashValueTwd = calculation.totalAssetsTwd - calculation.stockValueTwd;
 
   return (
     <section className="appCard allocationCard">
-      <div className="cardHeaderRow">
-        <div>
-          <div className="cardTitleRow">
-            <h2>資產配置比例</h2>
-            <button
-              type="button"
-              className="infoButton small"
-              onClick={onOpenGlossary}
-              aria-label="查看正二、原形與現金說明"
-            >
-              i
-            </button>
-          </div>
-          <p>正二、原形與現金配置</p>
-        </div>
-        <div className="allocationTotal">
-          <span>總資產</span>
-          <strong>{formatTwd(calculation.totalAssetsTwd)}</strong>
-        </div>
+      <OverviewCardHeader
+        title="資產配置比例"
+        subtitle="正二、原形與現金＋類現金配置"
+        infoLabel="查看正二、原形與現金＋類現金說明"
+        onInfo={onOpenGlossary}
+      />
+      <div className="allocationTotal">
+        <span>總資產</span>
+        <strong>{formatTwd(calculation.totalAssetsTwd)}</strong>
       </div>
       <AllocationBar
         leveragedRatio={calculation.leveragedRatio}
@@ -1482,7 +1835,7 @@ function AllocationCard({ calculation, onOpenGlossary }) {
         />
         <AllocationMetric
           color="blue"
-          label="現金"
+          label="現金＋類現金"
           current={calculation.cashRatio}
           target={calculation.afterCashRatio}
           valueTwd={cashValueTwd}
@@ -1844,6 +2197,7 @@ function HistoryChart({ model }) {
 function OperationsView({
   appliedSummary,
   canApplyRebalance,
+  calculation,
   hasRestorePoint,
   operationRebalance,
   onApplyRebalance,
@@ -1862,42 +2216,109 @@ function OperationsView({
     recommendations,
     totalAssetsTwd: operationRebalance.totalAssetsTwd,
   });
+  const rebalanceStatus = getOperationRebalanceStatus(
+    calculation.currentBeta,
+    calculation.betaLower,
+    calculation.betaUpper,
+  );
 
   return (
     <section className="appCard operationsPageCard">
-      <div className="cardHeaderRow">
+      <div className="cardHeaderRow operationHeaderRow">
         <div>
-          <div className="cardTitleRow">
+          <div className="cardTitleRow operationTitleRow">
             <h2>再平衡參數設定</h2>
             <button
               type="button"
-              className="infoButton small"
+              className="infoButton overviewCardInfoButton"
               onClick={onOpenGlossary}
               aria-label="查看再平衡操作說明"
             >
               i
             </button>
           </div>
-          <p>
-            共 {appliedSummary.actionCount} 筆操作 / 調整後 Beta {formatNumber(appliedAfterBeta)} / 預估調整{" "}
-            {formatTwd(appliedSummary.totalAmountTwd)}
-          </p>
+          <p>共 {appliedSummary.actionCount} 筆操作，金額依目前交易精度估算。</p>
+        </div>
+        <div
+          className={`operationRebalanceStatus ${rebalanceStatus.tone}`}
+          role="status"
+        >
+          <span>目前狀態</span>
+          <strong>{rebalanceStatus.label}</strong>
+        </div>
+      </div>
+      <div className="operationSummaryGrid">
+        <div>
+          <span>目標 Beta</span>
+          <strong>{formatNumber(calculation.targetBeta)}</strong>
+          <small>
+            容忍區間 {formatNumber(calculation.betaLower)}–{formatNumber(calculation.betaUpper)}
+          </small>
+        </div>
+        <div>
+          <span>目前 Beta</span>
+          <strong>{formatNumber(calculation.currentBeta)}</strong>
+        </div>
+        <div>
+          <span>再平衡後 Beta</span>
+          <strong>{formatNumber(appliedAfterBeta)}</strong>
+        </div>
+        <div>
+          <span>正二</span>
+          <strong>{formatNetTradeAmount(appliedSummary.leveragedNetAmountTwd)}</strong>
+        </div>
+        <div>
+          <span>原形</span>
+          <strong>{formatNetTradeAmount(appliedSummary.originalNetAmountTwd)}</strong>
+        </div>
+        <div>
+          <span>類現金 ETF</span>
+          <strong>{formatNetTradeAmount(appliedSummary.cashEquivalentNetAmountTwd)}</strong>
+        </div>
+        <div>
+          <span>現金</span>
+          <strong>{formatCashDelta(appliedSummary.cashDeltaTwd)}</strong>
         </div>
       </div>
       <div className="operationParameterCard">
-        <label className="operationBetaField">
+        <div className="operationParameterRow operationBetaField">
           <span>再平衡到 Beta</span>
-          <input
-            type="number"
-            min="0"
-            max="2"
-            step="0.01"
-            value={rebalanceTargetBeta}
-            onChange={(event) => onTargetBetaChange(event.target.value)}
-          />
-        </label>
-        <div className="operationPrecisionField">
-          <span>台股交易精度</span>
+          <div className="operationBetaStepper">
+            <button
+              type="button"
+              aria-label="降低再平衡 Beta 0.01"
+              disabled={Number(rebalanceTargetBeta) <= 0}
+              onClick={() => onTargetBetaChange(
+                adjustOperationTargetBeta(rebalanceTargetBeta, -0.01),
+              )}
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min="0"
+              max="2"
+              step="0.01"
+              value={rebalanceTargetBeta}
+              onChange={(event) => onTargetBetaChange(event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label="提高再平衡 Beta 0.01"
+              disabled={Number(rebalanceTargetBeta) >= 2}
+              onClick={() => onTargetBetaChange(
+                adjustOperationTargetBeta(rebalanceTargetBeta, 0.01),
+              )}
+            >
+              ＋
+            </button>
+          </div>
+        </div>
+        <div className="operationParameterRow operationPrecisionField">
+          <div className="operationPrecisionLabel">
+            <span>台股交易精度</span>
+            <p>美股固定精確到股數。</p>
+          </div>
           <div className="precisionControl" aria-label="再平衡精度">
             <label className={precision === "lots" ? "selected" : ""}>
               <input
@@ -1920,7 +2341,6 @@ function OperationsView({
               精確到股數
             </label>
           </div>
-          <p>美股固定精確到股數。</p>
         </div>
       </div>
       {warnings.map((warning) => (
@@ -1954,7 +2374,7 @@ function OperationsView({
               className="secondaryButton restoreButton"
               onClick={onRestorePreviousRebalance}
             >
-              復原上一步
+              復原
             </button>
           ) : null}
         </div>
@@ -1983,10 +2403,13 @@ function getAppliedAfterBeta({ recommendations, totalAssetsTwd, precision }) {
 
 function HoldingList({ recommendations, onToggleSelection, precision, totalAssetsTwd }) {
   const leveragedRecommendations = recommendations.filter(
-    (item) => getHoldingAssetType(item.assetBeta) === "leveraged",
+    (item) => item.assetType !== "cashEquivalent" && getHoldingAssetType(item.assetBeta) === "leveraged",
   );
   const originalRecommendations = recommendations.filter(
-    (item) => getHoldingAssetType(item.assetBeta) === "original",
+    (item) => item.assetType !== "cashEquivalent" && getHoldingAssetType(item.assetBeta) === "original",
+  );
+  const cashEquivalentRecommendations = recommendations.filter(
+    (item) => item.assetType === "cashEquivalent",
   );
 
   return (
@@ -2008,6 +2431,16 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
           title="原形再平衡清單"
           totalAssetsTwd={totalAssetsTwd}
         />
+        {cashEquivalentRecommendations.length > 0 && (
+          <HoldingGroup
+            items={cashEquivalentRecommendations}
+            onToggleSelection={onToggleSelection}
+            precision={precision}
+            tone="cash"
+            title="類現金再平衡清單"
+            totalAssetsTwd={totalAssetsTwd}
+          />
+        )}
         {recommendations.length === 0 && (
           <div className="emptyState">更新價格後會顯示再平衡操作清單。</div>
         )}
@@ -2079,11 +2512,17 @@ function HoldingRow({ item, onToggleSelection, precision }) {
   const estimatedShares = Math.abs(getAppliedRebalanceShareDelta(item, precision));
   const displayedAction = !item.isSelected || estimatedShares === 0 ? "none" : item.action;
   const actionText = item.isSelected ? getActionText(displayedAction) : "不納入再平衡清單";
+  const actionSummaryText = displayedAction === "none"
+    ? actionText
+    : `${actionText} ${estimatedShares.toLocaleString("zh-TW")} 股`;
   const displayedTradeAmountTwd = estimatedShares * item.priceTwd;
   const currentPct = clampPercent(item.currentSleeveWeight);
   const afterSleeveWeight = item.appliedAfterSleeveWeight ?? item.afterSleeveWeight;
   const afterPct = clampPercent(afterSleeveWeight);
   const afterDrift = afterSleeveWeight - item.currentSleeveWeight;
+  const hasCustomTarget = item.allocationMode === "custom" && item.targetSleeveWeight !== null;
+  const targetPct = clampPercent(item.targetSleeveWeight);
+  const displayTicker = getTickerDisplayText(item.normalizedTicker);
 
   return (
     <article className={`holdingRow ${item.isSelected ? "" : "unselected"}`}>
@@ -2093,14 +2532,11 @@ function HoldingRow({ item, onToggleSelection, precision }) {
             type="checkbox"
             checked={item.isSelected}
             onChange={() => onToggleSelection(item.id)}
-            aria-label={`${item.normalizedTicker} 是否納入本次再平衡`}
+            aria-label={`${displayTicker} 是否納入本次再平衡`}
           />
         </label>
-        <div className={`tickerBadge ${displayedAction}`}>
-          {getTickerBadgeText(item.normalizedTicker)}
-        </div>
         <div className="holdingIdentity">
-          <strong>{item.normalizedTicker}</strong>
+          <strong>{displayTicker}</strong>
           <span>{getPositionDisplayName(item.normalizedTicker, item.assetBeta)}</span>
           <em>市值 {formatTwd(item.currentValueTwd)}</em>
           <em>股價 {formatQuotePrice(item.price, item.currency)} · 更新 {formatQuoteDate(item.date)}</em>
@@ -2113,14 +2549,17 @@ function HoldingRow({ item, onToggleSelection, precision }) {
           style={{
             "--current-ratio": `${currentPct}%`,
             "--after-ratio": `${afterPct}%`,
+            "--target-ratio": `${targetPct}%`,
           }}
-          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}，再平衡後 ${formatPercent(afterSleeveWeight)}`}
+          aria-label={`目前 ${formatPercent(item.currentSleeveWeight)}${hasCustomTarget ? `，目標 ${formatPercent(item.targetSleeveWeight)}` : ""}，再平衡後 ${formatPercent(afterSleeveWeight)}`}
         >
           <span className="holdingProgressFill" />
+          {hasCustomTarget && <span className="holdingProgressTarget" />}
           <span className="holdingProgressAfter" />
         </div>
         <div className="holdingRatioLabels">
           <span>目前 {formatPercent(item.currentSleeveWeight)}</span>
+          {hasCustomTarget && <span>目標 {formatPercent(item.targetSleeveWeight)}</span>}
           <span>再平衡後 {formatPercent(afterSleeveWeight)}</span>
         </div>
         {displayedAction !== "none" && (
@@ -2132,9 +2571,8 @@ function HoldingRow({ item, onToggleSelection, precision }) {
       </div>
 
       <div className="holdingAction">
-        <span className={`actionPill ${displayedAction}`}>{actionText}</span>
+        <span className={`holdingActionLine ${displayedAction}`}>{actionSummaryText}</span>
         <strong>{formatTwd(displayedTradeAmountTwd)}</strong>
-        <em>{estimatedShares.toLocaleString("zh-TW")} 股</em>
       </div>
     </article>
   );
@@ -2149,13 +2587,26 @@ function PositionSection({
   onUpdatePosition,
   positions,
   title,
+  assetType,
+  mode,
+  onUpdateAllocationMode,
 }) {
+  const status = getPositionGroupTargetStatus({ mode, positions });
   return (
-    <section className="positionSection ok">
+    <section className={`positionSection ${assetType} ${status.isValid ? "ok" : "error"}`}>
       <div className="positionSectionHeader">
         <div>
           <strong>{title}</strong>
           <span>{positions.length} 筆標的</span>
+        </div>
+        {mode === "custom" && <em>合計 {formatNumber(status.totalPct)}% / 100%</em>}
+      </div>
+
+      <div className="allocationModeControl" role="radiogroup" aria-label={`${title}個股佔比分配方式`}>
+        <span>個股佔比分配方式</span>
+        <div>
+          <button type="button" className={mode === "auto" ? "active" : ""} onClick={() => onUpdateAllocationMode(assetType, "auto")}>自動分配</button>
+          <button type="button" className={mode === "custom" ? "active" : ""} onClick={() => onUpdateAllocationMode(assetType, "custom")}>自訂個股佔比</button>
         </div>
       </div>
 
@@ -2173,34 +2624,51 @@ function PositionSection({
                 移除
               </button>
             </div>
-            <label>
-              <span>代號</span>
-              <input
-                value={position.tickerInput}
-                onChange={(event) =>
-                  onUpdatePosition(position.id, "tickerInput", event.target.value)
-                }
-                placeholder="00631L 或 QLD"
-              />
-            </label>
-            <label>
-              <span>股數</span>
-              <input
-                type="number"
-                min="0"
-                value={position.shares}
-                onChange={(event) =>
-                  onUpdatePosition(position.id, "shares", event.target.value)
-                }
-              />
-            </label>
-            <p className="hint">
-              正規化代號：{normalizeTicker(position.tickerInput) || "尚未輸入"}
-            </p>
+            <div className="positionEditorPrimaryFields">
+              <label>
+                <span>代號</span>
+                <input
+                  value={position.tickerInput}
+                  onChange={(event) =>
+                    onUpdatePosition(position.id, "tickerInput", event.target.value)
+                  }
+                  placeholder={getTickerPlaceholder(assetType)}
+                />
+              </label>
+              <label>
+                <span>股數</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={position.shares}
+                  onChange={(event) =>
+                    onUpdatePosition(position.id, "shares", event.target.value)
+                  }
+                />
+              </label>
+            </div>
+            {mode === "custom" && (
+              <label className="positionEditorAllocationField">
+                <span>同類資產內目標比例 %</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={position.targetWeightPct}
+                  aria-invalid={!status.isValid}
+                  onChange={(event) => onUpdatePosition(position.id, "targetWeightPct", event.target.value)}
+                />
+              </label>
+            )}
           </div>
         ))}
         {positions.length === 0 && <div className="emptyState compact">{emptyText}</div>}
       </div>
+
+      {mode === "custom" && !status.isValid && (
+        <p className="fieldError">{title}標的目標比例合計必須等於 100%。</p>
+      )}
 
       <button type="button" className="secondaryButton fullWidth" onClick={onAddPosition}>
         {addLabel}
@@ -2216,19 +2684,29 @@ function SettingsAccordions({
   formState,
   fx,
   historyCount,
+  initialPage,
   onAddPosition,
+  onAddCashEquivalentPosition,
   onExportBackup,
   onImportBackup,
   onRemovePosition,
+  onRemoveCashEquivalentPosition,
   onSetCashChangeReason,
   onUpdatePosition,
+  onUpdateCashEquivalentPosition,
   onUpdateSetting,
+  onUpdateAllocationMode,
 }) {
   const positionGroups = getPositionGroups(formState.positions);
   const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
   const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
   const betaGuardIsValid = calculation.errors.length === 0;
-  const [activeSettingsPage, setActiveSettingsPage] = useState("cash");
+  const cashEquivalentStatus = getCashEquivalentTargetStatus({
+    mode: formState.cashEquivalentMode,
+    positions: formState.cashEquivalentPositions,
+    realCashTargetPct: formState.realCashTargetPct,
+  });
+  const [activeSettingsPage, setActiveSettingsPage] = useState(initialPage);
 
   return (
     <section className="settingsStack" aria-label="參數設定">
@@ -2259,8 +2737,17 @@ function SettingsAccordions({
         </nav>
 
         <div className="settingsBody">
+          {calculation.errors.length > 0 ? (
+            <div className="settingsErrorSummary" role="alert">
+              <strong>請修正以下設定</strong>
+              <ul>
+                {calculation.errors.map((error) => <li key={error}>{error}</li>)}
+              </ul>
+            </div>
+          ) : null}
           {activeSettingsPage === "cash" && (
-            <div className="positionEditor cashEditor">
+            <>
+              <div className="positionEditor cashEditor cash" aria-label="現金設定">
               <div className="positionTitle">
                 <strong>現金</strong>
               </div>
@@ -2329,7 +2816,100 @@ function SettingsAccordions({
                 </label>
               </div>
               <p className="hint">美金現金會用最新 USD/TWD 匯率換算，與新台幣相加後顯示總現金市值。</p>
-            </div>
+              </div>
+              <section
+                className={`positionEditor cashEquivalentCard cash cashEquivalentSection ${cashEquivalentStatus.isValid ? "ok" : "error"}`}
+                aria-label="類現金設定"
+              >
+                <div className="positionSectionHeader">
+                  <div>
+                    <strong>類現金標的</strong>
+                    <span>{formState.cashEquivalentPositions.length} 筆 ETF</span>
+                  </div>
+                  {formState.cashEquivalentMode === "custom" && (
+                    <em>合計 {formatNumber(cashEquivalentStatus.totalPct)}% / 100%</em>
+                  )}
+                </div>
+                <div className="allocationModeControl" role="radiogroup" aria-label="類現金配置方式">
+                  <span>配置方式</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={formState.cashEquivalentMode === "auto" ? "active" : ""}
+                      onClick={() => onUpdateSetting("cashEquivalentMode", "auto")}
+                    >
+                      自動配置
+                    </button>
+                    <button
+                      type="button"
+                      className={formState.cashEquivalentMode === "custom" ? "active" : ""}
+                      onClick={() => onUpdateSetting("cashEquivalentMode", "custom")}
+                    >
+                      自訂比例
+                    </button>
+                  </div>
+                </div>
+                <label>
+                  <span>真實現金保留比例 %（占現金＋類現金部位）</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={formState.realCashTargetPct}
+                    onChange={(event) => onUpdateSetting("realCashTargetPct", event.target.value)}
+                  />
+                </label>
+                {formState.cashEquivalentPositions.map((position, index) => (
+                  <div className="positionEditor cashEquivalentEditor" key={position.id}>
+                    <div className="positionTitle">
+                      <strong>類現金 {index + 1}</strong>
+                      <button type="button" className="textButton" onClick={() => onRemoveCashEquivalentPosition(position.id)}>移除</button>
+                    </div>
+                    <div className="positionEditorPrimaryFields">
+                      <label>
+                        <span>代號</span>
+                        <input
+                          value={position.tickerInput}
+                          placeholder={getTickerPlaceholder("cashEquivalent")}
+                          onChange={(event) => onUpdateCashEquivalentPosition(position.id, "tickerInput", event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        <span>股數</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={position.shares}
+                          onChange={(event) => onUpdateCashEquivalentPosition(position.id, "shares", event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    {formState.cashEquivalentMode === "custom" && (
+                      <label className="positionEditorAllocationField">
+                        <span>現金桶內目標比例 %</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={position.targetWeightPct}
+                          onChange={(event) => onUpdateCashEquivalentPosition(position.id, "targetWeightPct", event.target.value)}
+                        />
+                      </label>
+                    )}
+                  </div>
+                ))}
+                {!cashEquivalentStatus.isValid && (
+                  <p className="fieldError">真實現金與類現金標的目標比例合計必須等於 100%。</p>
+                )}
+                <p className="hint">類現金 ETF 仍有價格波動，並非保本現金。</p>
+                <button type="button" className="secondaryButton fullWidth" onClick={onAddCashEquivalentPosition}>
+                  新增類現金標的
+                </button>
+              </section>
+            </>
           )}
 
           {activeSettingsPage === "positions" && (
@@ -2351,6 +2931,9 @@ function SettingsAccordions({
                   onUpdatePosition={onUpdatePosition}
                   positions={positionGroups.leveraged}
                   title="正二"
+                  assetType="leveraged"
+                  mode={formState.allocationModes.leveraged}
+                  onUpdateAllocationMode={onUpdateAllocationMode}
                 />
                 {(hasOriginalTarget || hasOriginalPositions) && (
                   <PositionSection
@@ -2362,6 +2945,9 @@ function SettingsAccordions({
                     onUpdatePosition={onUpdatePosition}
                     positions={positionGroups.original}
                     title="原形"
+                    assetType="original"
+                    mode={formState.allocationModes.original}
+                    onUpdateAllocationMode={onUpdateAllocationMode}
                   />
                 )}
                 {!hasOriginalTarget && !hasOriginalPositions && (

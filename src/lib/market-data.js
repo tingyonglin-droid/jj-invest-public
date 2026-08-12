@@ -1,5 +1,6 @@
 const TAIWAN_TICKER_PATTERN = /^\d{4,6}[A-Z]?$/i;
 const TAIWAN_LISTED_TICKER_PATTERN = /^(\d{4,6}[A-Z]?)\.TW$/i;
+const TAIWAN_EXCHANGE_TICKER_PATTERN = /^(\d{4,6}[A-Z]?)\.(?:TW|TWO)$/i;
 
 export function normalizeTicker(tickerInput) {
   const value = String(tickerInput || "").trim().toUpperCase();
@@ -210,7 +211,7 @@ function parseTwseFirstLevelPrice(value) {
   return parseTwseNumber(String(value || "").split("_")[0]);
 }
 
-export function parseTwseQuote(stockInfo) {
+export function parseTwseQuote(stockInfo, source = "TWSE") {
   const tradePrice = parseTwseNumber(stockInfo?.z);
   const quotedDate = formatTwseDate(stockInfo?.d);
 
@@ -219,7 +220,7 @@ export function parseTwseQuote(stockInfo) {
       price: tradePrice,
       date: quotedDate,
       currency: "TWD",
-      source: "TWSE",
+      source,
       error: null,
     };
   }
@@ -231,7 +232,7 @@ export function parseTwseQuote(stockInfo) {
       price: (bestAsk + bestBid) / 2,
       date: quotedDate,
       currency: "TWD",
-      source: "TWSE",
+      source,
       error: null,
     };
   }
@@ -243,7 +244,7 @@ export function parseTwseQuote(stockInfo) {
       price: previousClose,
       date: previousDate,
       currency: "TWD",
-      source: "TWSE",
+      source,
       error: null,
     };
   }
@@ -256,12 +257,12 @@ export function toTwseChannel(normalizedTicker) {
   return match ? `tse_${match[1]}.tw` : null;
 }
 
-export async function fetchTwseQuote(normalizedTicker) {
-  const channel = toTwseChannel(normalizedTicker);
-  if (!channel) {
-    throw new Error("不是 TWSE 上市股票代號。");
-  }
+export function toTpexChannel(normalizedTicker) {
+  const match = String(normalizedTicker || "").toUpperCase().match(TAIWAN_EXCHANGE_TICKER_PATTERN);
+  return match ? `otc_${match[1]}.tw` : null;
+}
 
+async function fetchTaiwanChannel(channel, source) {
   const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${encodeURIComponent(channel)}&json=1&delay=0`;
   const response = await fetch(url, {
     headers: {
@@ -273,16 +274,38 @@ export async function fetchTwseQuote(normalizedTicker) {
   });
 
   if (!response.ok) {
-    throw new Error(`TWSE 回應 ${response.status}`);
+    throw new Error(`${source} 回應 ${response.status}`);
   }
 
   const payload = await response.json();
-  const stockInfo = payload?.msgArray?.[0];
-  return parseTwseQuote(stockInfo);
+  return parseTwseQuote(payload?.msgArray?.[0], source);
+}
+
+export async function fetchTwseQuote(normalizedTicker) {
+  const listedChannel = toTwseChannel(normalizedTicker);
+  const otcChannel = toTpexChannel(normalizedTicker);
+  const channels = listedChannel
+    ? [[listedChannel, "TWSE"], [otcChannel, "TPEx"]]
+    : otcChannel
+      ? [[otcChannel, "TPEx"]]
+      : [];
+  if (!channels.length) {
+    throw new Error("不是 TWSE 上市股票代號。");
+  }
+
+  let lastError = null;
+  for (const [channel, source] of channels) {
+    try {
+      return await fetchTaiwanChannel(channel, source);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("台灣市場沒有回傳可用價格。");
 }
 
 export async function fetchYahooQuote(normalizedTicker) {
-  if (toTwseChannel(normalizedTicker)) {
+  if (toTwseChannel(normalizedTicker) || toTpexChannel(normalizedTicker)) {
     try {
       return await fetchTwseQuote(normalizedTicker);
     } catch {
@@ -290,46 +313,55 @@ export async function fetchYahooQuote(normalizedTicker) {
     }
   }
 
-  const symbol = toYahooChartSymbol(normalizedTicker);
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`;
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0",
-    },
-    next: {
-      revalidate: 60,
-    },
-  });
+  const yahooTickers = normalizedTicker.endsWith(".TW")
+    ? [normalizedTicker, normalizedTicker.replace(/\.TW$/, ".TWO")]
+    : [normalizedTicker];
+  let lastYahooError = null;
 
-  if (!response.ok) {
-    throw new Error(`Yahoo Finance 回應 ${response.status}`);
-  }
+  for (const yahooTicker of yahooTickers) {
+    const symbol = toYahooChartSymbol(yahooTicker);
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5d&interval=1d`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+      next: {
+        revalidate: 60,
+      },
+    });
 
-  const payload = await response.json();
-  const result = payload?.chart?.result?.[0];
-  const quote = result?.indicators?.quote?.[0];
-  const close = quote?.close || [];
-  const timestamps = result?.timestamp || [];
-  const meta = result?.meta || {};
-
-  for (let index = close.length - 1; index >= 0; index -= 1) {
-    const price = close[index];
-    if (typeof price === "number" && Number.isFinite(price)) {
-      const timestamp = timestamps[index];
-      const date = timestamp
-        ? new Date(timestamp * 1000).toISOString().slice(0, 10)
-        : null;
-      return {
-        price,
-        date,
-        currency: meta.currency || guessCurrency(normalizedTicker),
-        source: "Yahoo Finance",
-        error: null,
-      };
+    if (!response.ok) {
+      lastYahooError = new Error(`Yahoo Finance 回應 ${response.status}`);
+      continue;
     }
+
+    const payload = await response.json();
+    const result = payload?.chart?.result?.[0];
+    const quote = result?.indicators?.quote?.[0];
+    const close = quote?.close || [];
+    const timestamps = result?.timestamp || [];
+    const meta = result?.meta || {};
+
+    for (let index = close.length - 1; index >= 0; index -= 1) {
+      const price = close[index];
+      if (typeof price === "number" && Number.isFinite(price)) {
+        const timestamp = timestamps[index];
+        const date = timestamp
+          ? new Date(timestamp * 1000).toISOString().slice(0, 10)
+          : null;
+        return {
+          price,
+          date,
+          currency: meta.currency || guessCurrency(yahooTicker),
+          source: "Yahoo Finance",
+          error: null,
+        };
+      }
+    }
+    lastYahooError = new Error("Yahoo Finance 沒有回傳可用價格。");
   }
 
-  throw new Error("Yahoo Finance 沒有回傳可用價格。");
+  throw lastYahooError || new Error("Yahoo Finance 沒有回傳可用價格。");
 }
 
 export async function fetchUsdTwdRate() {

@@ -1,8 +1,8 @@
 export default function manifest() {
   return {
-    name: "JJ Invest System",
-    short_name: "JJ Invest",
-    description: "Beta 再平衡公開試算工具",
+    name: "Betree 曝險管理",
+    short_name: "Betree 曝險管理",
+    description: "投資組合曝險管理與 Beta 再平衡工具",
     lang: "zh-Hant",
     start_url: "/",
     scope: "/",
