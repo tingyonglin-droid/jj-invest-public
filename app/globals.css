@@ -104,8 +104,8 @@ p {
   margin: 0;
   color: var(--text);
   font-family: var(--font-betree), "Snell Roundhand", "Segoe Script", cursive;
-  font-size: 34px;
-  font-weight: 500;
+  font-size: 40px;
+  font-weight: 600;
   line-height: 28px;
   white-space: nowrap;
 }

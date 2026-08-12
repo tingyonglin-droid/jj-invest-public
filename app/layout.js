@@ -5,7 +5,7 @@ import RegisterServiceWorker from "./register-service-worker.js";
 
 const betreeWordmarkFont = Caveat({
   subsets: ["latin"],
-  weight: "500",
+  weight: "600",
   display: "swap",
   variable: "--font-betree",
 });

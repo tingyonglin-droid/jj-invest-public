@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - The public header displays only one centered line: `Betree`.
-- Use Caveat Medium for the wordmark with a cursive fallback and no clickable behavior.
+- Use Caveat 600 at 40px for the wordmark with a cursive fallback, `--text` color, a 28px compact header/line-height, and no clickable behavior.
 - Do not show `曝險管理` inside the App header.
 - The installed App name is exactly `Betree 曝險管理` in manifest metadata and Apple Web App metadata.
 - The App icon is a pure black field with one white abstract uppercase `B`: a continuous left spine, smaller upper mass, larger lower mass, and black negative-space channel.
@@ -50,7 +50,7 @@ test("public header uses the centered handwritten Betree wordmark", async () => 
   const publicHeader = page.match(/function AppHeader\(\)[\s\S]*?\n}\n/)?.[0] ?? "";
   assert.match(publicHeader, /className="betreeWordmark"[^>]*>\s*Betree\s*</);
   assert.doesNotMatch(publicHeader, /JJ Invest System|brandGlyph|曝險管理/);
-  assert.match(layout, /Caveat\(\{[\s\S]*weight:\s*"500"/);
+  assert.match(layout, /Caveat\(\{[\s\S]*weight:\s*"600"/);
   assert.match(layout, /variable:\s*"--font-betree"/);
   assert.match(css, /\.appHeader\s*\{[\s\S]*justify-content:\s*center/);
   assert.match(css, /\.betreeWordmark\s*\{[\s\S]*font-family:\s*var\(--font-betree\)/);
@@ -114,8 +114,8 @@ Keep `.brandLockup` and `.brandGlyph` rules because admin pages still consume th
   margin: 0;
   color: var(--text);
   font-family: var(--font-betree), "Snell Roundhand", "Segoe Script", cursive;
-  font-size: 34px;
-  font-weight: 500;
+  font-size: 40px;
+  font-weight: 600;
   line-height: 0.95;
   white-space: nowrap;
 }
@@ -226,6 +226,7 @@ git commit -m "feat: rename installed app to Betree"
 - Modify: `public/icons/icon-512.png`
 - Modify: `public/icons/maskable-512.png`
 - Modify: `public/icons/apple-touch-icon.png`
+- Modify: `public/sw.js`
 - Modify: `tests/pwa.test.js`
 
 **Interfaces:**
@@ -269,6 +270,16 @@ test("Betree icon source is versioned with the PWA assets", async () => {
   const source = await readPngDimensions("../public/icons/betree-icon-source.png");
   assert.deepEqual(source, { width: 1254, height: 1254 });
 });
+
+test("service worker refreshes the Betree icon cache", async () => {
+  const sw = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
+
+  assert.match(sw, /const CACHE_NAME = "jj-invest-public-v2"/);
+  assert.match(sw, /"\/icons\/icon-192\.png"/);
+  assert.match(sw, /"\/icons\/icon-512\.png"/);
+  assert.match(sw, /"\/icons\/maskable-512\.png"/);
+  assert.match(sw, /"\/icons\/apple-touch-icon\.png"/);
+});
 ```
 
 - [ ] **Step 2: Run the source-asset test and verify failure**
@@ -302,6 +313,12 @@ cp public/icons/betree-icon-source.png public/icons/apple-touch-icon.png
 sips -z 180 180 public/icons/apple-touch-icon.png
 ```
 
+Update the service-worker cache version so existing installations do not keep serving the prior icon assets forever:
+
+```js
+const CACHE_NAME = "jj-invest-public-v2";
+```
+
 - [ ] **Step 5: Run tests and inspect small-size output**
 
 Run: `node --test tests/pwa.test.js`
@@ -313,7 +330,7 @@ Open `public/icons/icon-192.png` and `public/icons/apple-touch-icon.png` at orig
 - [ ] **Step 6: Commit icon assets**
 
 ```bash
-git add public/icons tests/pwa.test.js
+git add public/icons public/sw.js tests/pwa.test.js
 git commit -m "feat: add Betree compounding app icon"
 ```
 
