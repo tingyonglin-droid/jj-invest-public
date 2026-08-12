@@ -71,11 +71,11 @@ describe("overview action", () => {
       ),
       {
         kind: "setup",
-        label: "設定持股與現金 →",
+        label: "設定Beta參數/持股/現金→",
         tone: "setup",
         destination: "settings",
         settingsPage: "positions",
-        ariaLabel: "設定持股與現金，前往持股設定",
+        ariaLabel: "設定 Beta 參數、持股與現金，前往設定頁",
       },
     );
   });
