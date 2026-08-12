@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   QUOTE_RETRY_DELAYS_MS,
   createQuoteRetryController,
+  getVisibleCalculationErrors,
   hasCompletePriorQuoteResult,
   mergeQuoteResults,
   shouldAutoRefreshQuotes,
@@ -218,6 +219,13 @@ describe("auto refresh policy", () => {
       hasCompletePriorQuoteResult({ ...prior, fx: { usdTwd: null, error: "失敗" } }, ["00631L"]),
       false,
     );
+  });
+
+  it("hides transient calculation errors until the first quote response arrives", () => {
+    const errors = ["正二目標比例大於 0 時，請新增至少一個正二標的。"];
+
+    assert.deepEqual(getVisibleCalculationErrors(errors, false), []);
+    assert.deepEqual(getVisibleCalculationErrors(errors, true), errors);
   });
 
   it("refreshes only when visible, idle, and tickers exist", () => {

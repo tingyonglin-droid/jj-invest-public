@@ -6,6 +6,7 @@ import { OverviewCardHeader } from "../src/components/overview-card-header.js";
 import {
   AUTO_REFRESH_INTERVAL_MS,
   createQuoteRetryController,
+  getVisibleCalculationErrors,
   hasCompletePriorQuoteResult,
   mergeQuoteResults,
   shouldAutoRefreshQuotes,
@@ -333,6 +334,7 @@ export default function Home() {
   const [quoteResult, setQuoteResult] = useState(emptyQuoteResult);
   const [status, setStatus] = useState("idle");
   const [requestError, setRequestError] = useState("");
+  const [hasReceivedQuoteResponse, setHasReceivedQuoteResponse] = useState(false);
   const [rebalancePrecision, setRebalancePrecision] = useState("lots");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [activeView, setActiveView] = useState("overview");
@@ -398,7 +400,10 @@ export default function Home() {
   );
 
   const quoteErrors = quoteResult.quotes.filter((quote) => quote.error);
-  const pageCalculationErrors = calculation.errors;
+  const pageCalculationErrors = getVisibleCalculationErrors(
+    calculation.errors,
+    hasReceivedQuoteResponse,
+  );
   const betaRail = createBetaRailModel(calculation);
   const overviewAction = createOverviewAction(calculation);
   const recommendationIds = useMemo(
@@ -534,6 +539,7 @@ export default function Home() {
         throw new Error(`報價 API 回應 ${response.status}`);
       }
       const payload = await response.json();
+      setHasReceivedQuoteResponse(true);
       const merged = mergeQuoteResults(quoteResultRef.current, payload);
       quoteResultRef.current = merged.result;
       const nextCashValueTwd = calculateCashTwdValue({

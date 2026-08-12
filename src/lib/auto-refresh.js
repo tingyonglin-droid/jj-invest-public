@@ -3,6 +3,10 @@ import { normalizeTicker } from "./market-data.js";
 export const AUTO_REFRESH_INTERVAL_MS = 60_000;
 export const QUOTE_RETRY_DELAYS_MS = [2_000, 5_000, 15_000];
 
+export function getVisibleCalculationErrors(errors, hasReceivedQuoteResponse) {
+  return hasReceivedQuoteResponse ? errors : [];
+}
+
 function hasUsableQuote(quote) {
   return !quote?.error && Number.isFinite(quote?.priceTwd) && quote.priceTwd > 0;
 }
