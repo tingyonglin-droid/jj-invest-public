@@ -1,4 +1,4 @@
-const CACHE_NAME = "jj-invest-public-v1";
+const CACHE_NAME = "jj-invest-public-v2";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
