@@ -46,11 +46,17 @@ test("public header uses the centered handwritten Betree wordmark", async () => 
   ]);
 
   const publicHeader = page.match(/function AppHeader\(\)[\s\S]*?\n}\n/)?.[0] ?? "";
+  const sharedHeader = css.match(/\.appHeader\s*\{[^}]*\}/)?.[0] ?? "";
   assert.match(publicHeader, /className="betreeWordmark"[^>]*>\s*Betree\s*</);
+  assert.match(publicHeader, /className="appHeader publicAppHeader"/);
   assert.doesNotMatch(publicHeader, /JJ Invest System|brandGlyph|曝險管理/);
   assert.match(layout, /Caveat\(\{[\s\S]*weight:\s*"500"/);
   assert.match(layout, /variable:\s*"--font-betree"/);
-  assert.match(css, /\.appHeader\s*\{[\s\S]*justify-content:\s*center/);
+  assert.doesNotMatch(sharedHeader, /justify-content|min-height|height/);
+  assert.match(css, /\.publicAppHeader\s*\{[\s\S]*justify-content:\s*center/);
+  assert.match(css, /\.publicAppHeader\s*\{[\s\S]*height:\s*28px/);
   assert.match(css, /\.betreeWordmark\s*\{[\s\S]*font-family:\s*var\(--font-betree\)/);
+  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*font-size:\s*28px/);
+  assert.match(css, /\.betreeWordmark\s*\{[\s\S]*line-height:\s*1;/);
   assert.match(css, /\.betreeWordmark\s*\{[\s\S]*white-space:\s*nowrap/);
 });

@@ -92,18 +92,21 @@ p {
 .appHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 32px;
   margin-bottom: 22px;
+}
+
+.publicAppHeader {
+  justify-content: center;
+  height: 28px;
 }
 
 .betreeWordmark {
   margin: 0;
   color: var(--text);
   font-family: var(--font-betree), "Snell Roundhand", "Segoe Script", cursive;
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 500;
-  line-height: 0.95;
+  line-height: 1;
   white-space: nowrap;
 }
 

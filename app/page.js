@@ -1360,7 +1360,7 @@ function BottomTabBar({ activeView, onChange }) {
 
 function AppHeader() {
   return (
-    <header className="appHeader">
+    <header className="appHeader publicAppHeader">
       <p className="betreeWordmark">Betree</p>
     </header>
   );
