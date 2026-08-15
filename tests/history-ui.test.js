@@ -68,6 +68,11 @@ describe("history UI", () => {
     assert.match(styles, /\.historyMetric strong\s*\{[^}]*font-size:\s*16px;[^}]*font-weight:\s*840;[^}]*line-height:\s*1\.3;/s);
   });
 
+  it("matches rebalance heading size for history section titles only", () => {
+    assert.match(styles, /\.historySummaryCard \.cardHeaderRow h2,\s*\.historyRecordsCard \.cardHeaderRow h2\s*\{[^}]*font-size:\s*18px;/s);
+    assert.match(styles, /\.cardHeaderRow h2\s*\{[^}]*font-size:\s*16px;/s);
+  });
+
   it("shows full app backup controls in settings", () => {
     assert.match(pageSource, /資料備份/);
     assert.match(pageSource, /匯出完整備份/);

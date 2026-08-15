@@ -11,7 +11,9 @@
 ## Global Constraints
 
 - Only change the four summary metrics in the history page's `歷史紀錄` card.
-- Preserve the outer card, title, subtitle, date pill, chart, records, data, storage, and interactions.
+- Preserve the outer card structure, subtitle, date pill, chart, records, data, storage, and interactions.
+- Set only the `歷史紀錄` and `最近紀錄` section titles to 18px, matching `再平衡參數設定`.
+- Preserve the global `.cardHeaderRow h2` 16px rule for all other cards.
 - Preserve the desktop four-column and mobile two-column layouts.
 - Do not modify the rebalance page styles or extract shared components.
 - Deploy a Vercel Preview only; do not deploy to production.
@@ -124,3 +126,65 @@ Expected: deployment status is READY.
 - [ ] **Step 3: Report preview result**
 
 Report the URL, preview target, READY status, short commit SHA, detected framework, and available build duration from inspection output.
+
+### Task 3: Align history section title size
+
+**Files:**
+- Modify: `tests/history-ui.test.js`
+- Modify: `app/globals.css`
+
+**Interfaces:**
+- Consumes: existing `.historySummaryCard`, `.historyRecordsCard`, and `.cardHeaderRow h2` selectors.
+- Produces: 18px headings only inside the history summary and records cards while preserving the global 16px card heading rule.
+
+- [x] **Step 1: Write the failing title-size test**
+
+Add this test to the existing history UI suite:
+
+```js
+it("matches rebalance heading size for history section titles only", () => {
+  assert.match(styles, /\.historySummaryCard \.cardHeaderRow h2,\s*\.historyRecordsCard \.cardHeaderRow h2\s*\{[^}]*font-size:\s*18px;/s);
+  assert.match(styles, /\.cardHeaderRow h2\s*\{[^}]*font-size:\s*16px;/s);
+});
+```
+
+- [x] **Step 2: Run the focused test and verify RED**
+
+Run: `node --test tests/history-ui.test.js`
+
+Expected: FAIL only in `matches rebalance heading size for history section titles only` because no history-specific 18px heading rule exists.
+
+- [x] **Step 3: Add the minimal scoped CSS rule**
+
+Add immediately after the global `.cardHeaderRow h2` rule:
+
+```css
+.historySummaryCard .cardHeaderRow h2,
+.historyRecordsCard .cardHeaderRow h2 {
+  font-size: 18px;
+}
+```
+
+- [x] **Step 4: Run focused and related tests and verify GREEN**
+
+Run: `node --test tests/history-ui.test.js tests/operation-ui.test.js`
+
+Expected: all tests PASS.
+
+- [x] **Step 5: Run full verification**
+
+Run: `pnpm test`
+
+Run: `pnpm build`
+
+Expected: both commands exit 0 with no failures.
+
+- [ ] **Step 6: Commit and redeploy Preview**
+
+```bash
+git add tests/history-ui.test.js app/globals.css docs/superpowers/plans/2026-08-15-history-summary-style.md
+git commit -m "style: align history section titles"
+pnpm dlx vercel deploy --yes
+```
+
+Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.

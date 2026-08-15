@@ -1085,6 +1085,11 @@ button.betaAction {
   font-weight: 760;
 }
 
+.historySummaryCard .cardHeaderRow h2,
+.historyRecordsCard .cardHeaderRow h2 {
+  font-size: 18px;
+}
+
 .cardHeaderRow p {
   margin: 3px 0 0;
   color: var(--muted);
