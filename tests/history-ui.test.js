@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 const pageSource = readFileSync(new URL("../app/page.js", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
 describe("history UI", () => {
   it("adds a history tab and history page controls", () => {
@@ -59,6 +60,12 @@ describe("history UI", () => {
   it("does not show a separate 0050 daily change metric on the history page", () => {
     assert.doesNotMatch(pageSource, /0050 今日漲跌/);
     assert.match(pageSource, /selectBenchmark0050SnapshotPrice/);
+  });
+
+  it("matches rebalance summary metric surface and typography", () => {
+    assert.match(styles, /\.historyMetric\s*\{[^}]*min-height:\s*84px;[^}]*padding:\s*12px;[^}]*border:\s*1px solid rgba\(17, 24, 33, 0\.07\);[^}]*border-radius:\s*16px;[^}]*background:\s*#ffffff;/s);
+    assert.match(styles, /\.historyMetric span\s*\{[^}]*font-size:\s*11px;[^}]*font-weight:\s*720;[^}]*line-height:\s*1\.4;/s);
+    assert.match(styles, /\.historyMetric strong\s*\{[^}]*font-size:\s*16px;[^}]*font-weight:\s*840;[^}]*line-height:\s*1\.3;/s);
   });
 
   it("shows full app backup controls in settings", () => {
