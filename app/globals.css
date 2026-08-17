@@ -1085,10 +1085,10 @@ button.betaAction {
   font-weight: 760;
 }
 
-.historySummaryCard .cardHeaderRow h2,
-.historyRecordsCard .cardHeaderRow h2 {
-  font-size: 20px;
-  font-weight: 800;
+.historySummaryCard .cardTitleRow h2,
+.historyRecordsCard .cardTitleRow h2 {
+  font-size: 18px;
+  font-weight: 760;
 }
 
 .cardHeaderRow p {
@@ -2169,13 +2169,13 @@ button.betaAction {
 .settingsIntro p {
   margin: 0;
   color: var(--text);
-  font-size: 20px;
-  font-weight: 820;
+  font-size: 18px;
+  font-weight: 760;
 }
 
 .settingsIntro span {
   display: block;
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--muted);
   font-size: 13px;
   font-weight: 680;
@@ -3505,10 +3505,6 @@ select {
     margin-left: -2px;
     margin-right: -2px;
     padding: 14px;
-  }
-
-  .settingsIntro p {
-    font-size: 18px;
   }
 
   .settingsPanel summary {

@@ -40,3 +40,11 @@ test("holding editors use compact two-column fields and asset tones", async () =
   assert.match(styles, /\.positionEditorPrimaryFields\s*\{[^}]*grid-template-columns:\s*repeat\(2,/s);
   assert.match(styles, /@media \(max-width: 420px\)[\s\S]*\.positionEditorPrimaryFields/s);
 });
+
+test("settings intro matches rebalance heading typography and subtitle gap", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.settingsIntro p\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
+  assert.match(styles, /\.settingsIntro span\s*\{[^}]*margin-top:\s*3px;/s);
+  assert.doesNotMatch(styles, /@media \(max-width:\s*480px\)[\s\S]*?\.settingsIntro p\s*\{/s);
+});

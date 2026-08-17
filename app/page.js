@@ -1927,7 +1927,9 @@ function HistoryView({
       <section className="appCard historySummaryCard">
         <div className="cardHeaderRow">
           <div>
-            <h2>歷史紀錄</h2>
+            <div className="cardTitleRow historyTitleRow">
+              <h2>歷史紀錄</h2>
+            </div>
             <p>總資產、Beta 與 0050 同日起始比較</p>
           </div>
           <span className="historyDatePill">{summary.latestDate}</span>
@@ -1981,7 +1983,9 @@ function HistoryView({
       <section className="appCard historyRecordsCard">
         <div className="cardHeaderRow">
           <div>
-            <h2>最近紀錄</h2>
+            <div className="cardTitleRow historyTitleRow">
+              <h2>最近紀錄</h2>
+            </div>
             <p>同一天更新會覆蓋為最新快照</p>
           </div>
         </div>

@@ -201,7 +201,7 @@ Inspect the returned URL and verify target `preview`, status `Ready`, and an HTT
 - Consumes: `.cardTitleRow`, `.cardHeaderRow h2`, `.cardHeaderRow p`, `.settingsIntro p`, and `.settingsIntro span`.
 - Produces: history and settings headings with the rebalance title's 18px/760 typography and a 3px subtitle gap, without changing data or interactions.
 
-- [ ] **Step 1: Write failing history heading alignment tests**
+- [x] **Step 1: Write failing history heading alignment tests**
 
 Replace the existing history heading assertion with:
 
@@ -217,7 +217,7 @@ it("uses the rebalance title structure and exact heading rhythm", () => {
 
 Production mutations caught: removing either shared title row, reverting either heading to 20px/800, changing desktop card top padding, or changing the shared subtitle gap.
 
-- [ ] **Step 2: Write failing settings heading alignment tests**
+- [x] **Step 2: Write failing settings heading alignment tests**
 
 Add to `tests/position-settings-ui.test.js`:
 
@@ -233,13 +233,13 @@ test("settings intro matches rebalance heading typography and subtitle gap", asy
 
 Production mutations caught: restoring 20px/820, restoring the 4px subtitle gap, or adding a mobile-only title override.
 
-- [ ] **Step 3: Run focused tests and verify RED**
+- [x] **Step 3: Run focused tests and verify RED**
 
 Run: `node --test tests/history-ui.test.js tests/position-settings-ui.test.js`
 
 Expected: FAIL because history lacks `historyTitleRow`, history is 20px/800, settings is 20px/820 with a 4px gap, and the mobile override still exists.
 
-- [ ] **Step 4: Apply the minimal history markup and CSS changes**
+- [x] **Step 4: Apply the minimal history markup and CSS changes**
 
 Wrap each history heading in the same title-row structure used by rebalance:
 
@@ -267,7 +267,7 @@ Replace the current history heading override with:
 }
 ```
 
-- [ ] **Step 5: Apply the minimal settings CSS changes**
+- [x] **Step 5: Apply the minimal settings CSS changes**
 
 Update the existing rules to:
 
@@ -291,13 +291,13 @@ Update the existing rules to:
 
 Delete the `.settingsIntro p { font-size: 18px; }` override from the 480px media query.
 
-- [ ] **Step 6: Run focused and related tests and verify GREEN**
+- [x] **Step 6: Run focused and related tests and verify GREEN**
 
 Run: `node --test tests/history-ui.test.js tests/position-settings-ui.test.js tests/operation-ui.test.js`
 
 Expected: all tests PASS.
 
-- [ ] **Step 7: Run full verification**
+- [x] **Step 7: Run full verification**
 
 Run: `pnpm test`
 

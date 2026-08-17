@@ -68,9 +68,12 @@ describe("history UI", () => {
     assert.match(styles, /\.historyMetric strong\s*\{[^}]*font-size:\s*16px;[^}]*font-weight:\s*840;[^}]*line-height:\s*1\.3;/s);
   });
 
-  it("matches rebalance heading size for history section titles only", () => {
-    assert.match(styles, /\.historySummaryCard \.cardHeaderRow h2,\s*\.historyRecordsCard \.cardHeaderRow h2\s*\{[^}]*font-size:\s*20px;[^}]*font-weight:\s*800;/s);
-    assert.match(styles, /\.cardHeaderRow h2\s*\{[^}]*font-size:\s*16px;/s);
+  it("uses the rebalance title structure and exact heading rhythm", () => {
+    assert.match(pageSource, /className="cardTitleRow historyTitleRow">\s*<h2>歷史紀錄<\/h2>/s);
+    assert.match(pageSource, /className="cardTitleRow historyTitleRow">\s*<h2>最近紀錄<\/h2>/s);
+    assert.match(styles, /\.historySummaryCard \.cardTitleRow h2,\s*\.historyRecordsCard \.cardTitleRow h2\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
+    assert.match(styles, /\.appCard\s*\{[^}]*padding:\s*18px 20px;/s);
+    assert.match(styles, /\.cardHeaderRow p\s*\{[^}]*margin:\s*3px 0 0;/s);
   });
 
   it("shows full app backup controls in settings", () => {
