@@ -9,7 +9,7 @@
 - 僅調整歷史頁「歷史紀錄」卡片內的四個摘要格。
 - 摘要格改用再平衡摘要格的白色底、淡色細框、16px 圓角、內距與最小高度。
 - 標籤與數值沿用再平衡摘要格的字級、字重、行高與文字顏色。
-- 「歷史紀錄」與「最近紀錄」兩個區段標題使用 18px，對齊再平衡頁「再平衡參數設定」標題。
+- 「歷史紀錄」與「最近紀錄」兩個區段標題使用 20px、字重 800，以視覺補償較短標題在相同 18px、760 字重下顯得較小的問題。
 - 桌面維持四欄，手機維持兩欄。
 
 ## 不變更
@@ -22,12 +22,12 @@
 
 ## 實作方式
 
-調整 `app/globals.css` 中 `.historyMetric`、`.historyMetric span` 與 `.historyMetric strong`，使其視覺值精準對齊 `.operationSummaryGrid > div` 及其文字規則。另以歷史頁專用 selector 將摘要及最近紀錄標題設為 18px，不修改全域 `.cardHeaderRow h2`。保留既有 HistoryView 結構與 `HistoryMetric` 元件介面。
+調整 `app/globals.css` 中 `.historyMetric`、`.historyMetric span` 與 `.historyMetric strong`，使其視覺值精準對齊 `.operationSummaryGrid > div` 及其文字規則。另以歷史頁專用 selector 將摘要及最近紀錄標題設為 20px、字重 800，不修改全域 `.cardHeaderRow h2` 或再平衡標題。保留既有 HistoryView 結構與 `HistoryMetric` 元件介面。
 
 ## 驗證
 
 - 更新或新增 UI 測試，鎖定歷史摘要格的白底、邊框、圓角和文字規格。
-- 鎖定兩個歷史區段標題為 18px，並確認全域卡片標題仍維持原值。
+- 鎖定兩個歷史區段標題為 20px、字重 800，並確認全域卡片標題與再平衡標題仍維持原值。
 - 執行歷史頁及相關樣式測試。
 - 執行完整測試，確認沒有功能回歸。
 - 在桌面與手機寬度檢查四欄／兩欄排列、長金額換行與可讀性。
