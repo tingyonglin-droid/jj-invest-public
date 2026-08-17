@@ -101,6 +101,19 @@ describe("history UI", () => {
     assert.match(styles, /\.cardHeaderRow p\s*\{[^}]*margin:\s*3px 0 0;/s);
   });
 
+  it("shows the latest history date as a muted caption below summary metrics", () => {
+    assert.match(
+      pageSource,
+      /className="historySummaryGrid"[\s\S]*<p className="historyUpdateDate">更新日期：\{summary\.latestDate\}<\/p>/,
+    );
+    assert.doesNotMatch(pageSource, /historyDatePill/);
+    assert.match(
+      styles,
+      /\.historyUpdateDate\s*\{[^}]*margin:\s*10px 0 0;[^}]*color:\s*var\(--muted\);[^}]*font-size:\s*11px;/s,
+    );
+    assert.doesNotMatch(styles, /\.historyDatePill/);
+  });
+
   it("shows full app backup controls in settings", () => {
     assert.match(pageSource, /資料備份/);
     assert.match(pageSource, /匯出完整備份/);

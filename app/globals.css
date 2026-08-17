@@ -1242,14 +1242,13 @@ button.betaAction {
   font-weight: 700;
 }
 
-.historyDatePill {
-  align-self: flex-start;
-  border-radius: 999px;
-  padding: 8px 12px;
-  color: var(--primary-dark);
-  background: #e8f6ef;
-  font-size: 13px;
-  font-weight: 780;
+.historyUpdateDate {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+  text-align: left;
 }
 
 .historySummaryGrid {

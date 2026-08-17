@@ -1929,7 +1929,6 @@ function HistoryView({
             </div>
             <p>總資產、Beta 與 0050 同日起始比較</p>
           </div>
-          <span className="historyDatePill">{summary.latestDate}</span>
         </div>
         <div className="historySummaryGrid">
           <HistoryMetric label="最新總資產" value={formatTwd(summary.latestTotalAssetsTwd)} />
@@ -1937,6 +1936,7 @@ function HistoryView({
           <HistoryMetric label="投組累積報酬" value={formatSignedPercent(summary.portfolioReturn)} />
           <HistoryMetric label="0050 累積報酬" value={formatSignedPercent(summary.benchmarkReturn)} />
         </div>
+        <p className="historyUpdateDate">更新日期：{summary.latestDate}</p>
       </section>
 
       <section className="appCard historyChartCard">
