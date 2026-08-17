@@ -218,6 +218,11 @@ p {
   gap: 7px;
 }
 
+.historyTitleRow {
+  min-height: 32px;
+  align-items: center;
+}
+
 .infoButton {
   position: relative;
   display: grid;

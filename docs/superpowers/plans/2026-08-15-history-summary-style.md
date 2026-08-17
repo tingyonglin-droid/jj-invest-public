@@ -199,7 +199,7 @@ Inspect the returned URL and verify target `preview`, status `Ready`, and an HTT
 - Consumes: the existing `.historyTitleRow` markup and `.cardTitleRow` flex alignment.
 - Produces: a 32px minimum history title-row height matching the rebalance title row created by its 40px information control and vertical negative margins.
 
-- [ ] **Step 1: Write the failing title-row height test**
+- [x] **Step 1: Write the failing title-row height test**
 
 Extend `uses the rebalance title structure and exact heading rhythm` with:
 
@@ -209,13 +209,13 @@ assert.match(styles, /\.historyTitleRow\s*\{[^}]*min-height:\s*32px;[^}]*align-i
 
 Production mutation caught: removing or changing the 32px title-row height, or failing to center the title within it.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `node --test tests/history-ui.test.js`
 
 Expected: FAIL only in `uses the rebalance title structure and exact heading rhythm` because `.historyTitleRow` has no dedicated height rule.
 
-- [ ] **Step 3: Add the minimal scoped CSS rule**
+- [x] **Step 3: Add the minimal scoped CSS rule**
 
 Add after `.operationTitleRow`:
 
@@ -226,13 +226,13 @@ Add after `.operationTitleRow`:
 }
 ```
 
-- [ ] **Step 4: Run focused and related tests and verify GREEN**
+- [x] **Step 4: Run focused and related tests and verify GREEN**
 
 Run: `node --test tests/history-ui.test.js tests/operation-ui.test.js`
 
 Expected: all tests PASS.
 
-- [ ] **Step 5: Run full verification**
+- [x] **Step 5: Run full verification**
 
 Run: `pnpm test`
 

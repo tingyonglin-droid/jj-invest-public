@@ -72,6 +72,7 @@ describe("history UI", () => {
     assert.match(pageSource, /className="cardTitleRow historyTitleRow">\s*<h2>歷史紀錄<\/h2>/s);
     assert.match(pageSource, /className="cardTitleRow historyTitleRow">\s*<h2>最近紀錄<\/h2>/s);
     assert.match(styles, /\.historySummaryCard \.cardTitleRow h2,\s*\.historyRecordsCard \.cardTitleRow h2\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
+    assert.match(styles, /\.historyTitleRow\s*\{[^}]*min-height:\s*32px;[^}]*align-items:\s*center;/s);
     assert.match(styles, /\.appCard\s*\{[^}]*padding:\s*18px 20px;/s);
     assert.match(styles, /\.cardHeaderRow p\s*\{[^}]*margin:\s*3px 0 0;/s);
   });
