@@ -439,3 +439,76 @@ pnpm dlx vercel deploy --yes
 ```
 
 Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
+
+### Task 5: Match settings title-row height to rebalance
+
+**Files:**
+- Modify: `tests/position-settings-ui.test.js`
+- Modify: `app/page.js:2712-2718`
+- Modify: `app/globals.css:2161-2182`
+
+**Interfaces:**
+- Consumes: `.cardTitleRow`, `.settingsIntro`, and the existing 18px/760 settings title typography.
+- Produces: `.settingsTitleRow` with a 32px minimum height and centered title, without changing the settings frame, subtitle, or tabs.
+
+- [ ] **Step 1: Write the failing settings title-row test**
+
+Extend `settings intro matches rebalance heading typography and subtitle gap` with:
+
+```js
+const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+assert.match(page, /className="cardTitleRow settingsTitleRow">\s*<p>參數設定<\/p>/s);
+assert.match(styles, /\.settingsTitleRow\s*\{[^}]*min-height:\s*32px;[^}]*align-items:\s*center;/s);
+```
+
+Production mutations caught: removing the shared settings title-row structure, changing its 32px height, or failing to center the title.
+
+- [ ] **Step 2: Run the focused test and verify RED**
+
+Run: `node --test tests/position-settings-ui.test.js`
+
+Expected: FAIL only in the settings intro alignment test because the shared wrapper and `.settingsTitleRow` rule do not exist.
+
+- [ ] **Step 3: Add the shared wrapper and scoped CSS**
+
+Replace the standalone settings title with:
+
+```jsx
+<div className="cardTitleRow settingsTitleRow">
+  <p>參數設定</p>
+</div>
+```
+
+Add near `.settingsIntro`:
+
+```css
+.settingsTitleRow {
+  min-height: 32px;
+  align-items: center;
+}
+```
+
+- [ ] **Step 4: Run focused and related tests and verify GREEN**
+
+Run: `node --test tests/position-settings-ui.test.js tests/history-ui.test.js tests/operation-ui.test.js`
+
+Expected: all tests PASS.
+
+- [ ] **Step 5: Run full verification**
+
+Run: `pnpm test`
+
+Run: `pnpm build`
+
+Expected: both commands exit 0 with no failures.
+
+- [ ] **Step 6: Commit and redeploy Preview**
+
+```bash
+git add tests/position-settings-ui.test.js app/page.js app/globals.css docs/superpowers/plans/2026-08-15-history-summary-style.md
+git commit -m "style: align settings title row spacing"
+pnpm dlx vercel deploy --yes
+```
+
+Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
