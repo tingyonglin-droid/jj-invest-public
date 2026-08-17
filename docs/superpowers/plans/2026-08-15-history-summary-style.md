@@ -189,7 +189,68 @@ pnpm dlx vercel deploy --yes
 
 Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
 
-### Task 4: Exactly align history and settings headings with rebalance
+### Task 4: Match history title-row height to rebalance
+
+**Files:**
+- Modify: `tests/history-ui.test.js`
+- Modify: `app/globals.css:207-215`
+
+**Interfaces:**
+- Consumes: the existing `.historyTitleRow` markup and `.cardTitleRow` flex alignment.
+- Produces: a 32px minimum history title-row height matching the rebalance title row created by its 40px information control and vertical negative margins.
+
+- [ ] **Step 1: Write the failing title-row height test**
+
+Extend `uses the rebalance title structure and exact heading rhythm` with:
+
+```js
+assert.match(styles, /\.historyTitleRow\s*\{[^}]*min-height:\s*32px;[^}]*align-items:\s*center;/s);
+```
+
+Production mutation caught: removing or changing the 32px title-row height, or failing to center the title within it.
+
+- [ ] **Step 2: Run the focused test and verify RED**
+
+Run: `node --test tests/history-ui.test.js`
+
+Expected: FAIL only in `uses the rebalance title structure and exact heading rhythm` because `.historyTitleRow` has no dedicated height rule.
+
+- [ ] **Step 3: Add the minimal scoped CSS rule**
+
+Add after `.operationTitleRow`:
+
+```css
+.historyTitleRow {
+  min-height: 32px;
+  align-items: center;
+}
+```
+
+- [ ] **Step 4: Run focused and related tests and verify GREEN**
+
+Run: `node --test tests/history-ui.test.js tests/operation-ui.test.js`
+
+Expected: all tests PASS.
+
+- [ ] **Step 5: Run full verification**
+
+Run: `pnpm test`
+
+Run: `pnpm build`
+
+Expected: both commands exit 0 with no failures.
+
+- [ ] **Step 6: Commit and redeploy Preview**
+
+```bash
+git add tests/history-ui.test.js app/globals.css docs/superpowers/plans/2026-08-15-history-summary-style.md
+git commit -m "style: align history title row spacing"
+pnpm dlx vercel deploy --yes
+```
+
+Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
+
+### Completed prerequisite: Exactly align history and settings headings with rebalance
 
 **Files:**
 - Modify: `tests/history-ui.test.js`
