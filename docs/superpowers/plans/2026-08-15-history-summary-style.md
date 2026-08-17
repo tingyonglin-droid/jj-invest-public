@@ -179,7 +179,7 @@ Run: `pnpm build`
 
 Expected: both commands exit 0 with no failures.
 
-- [ ] **Step 6: Commit and redeploy Preview**
+- [x] **Step 6: Commit and redeploy Preview**
 
 ```bash
 git add tests/history-ui.test.js app/globals.css docs/superpowers/plans/2026-08-15-history-summary-style.md
