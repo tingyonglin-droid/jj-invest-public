@@ -58,6 +58,7 @@ describe("history UI", () => {
     assert.match(pageSource, /activePointIndex/);
     assert.match(pageSource, /投組績效/);
     assert.match(pageSource, /投組 Beta/);
+    assert.match(pageSource, /top:\s*"112px"/);
   });
 
   it("styles stacked history charts with market-style Zoom controls", () => {

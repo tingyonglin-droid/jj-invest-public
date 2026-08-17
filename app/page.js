@@ -2077,7 +2077,7 @@ function HistoryStackedChart({ model }) {
           }`}
           style={{
             left: `${(performancePoint.x / model.performance.width) * 100}%`,
-            top: `${(performancePoint.y / model.performance.height) * 42}%`,
+            top: "112px",
           }}
         >
           <strong>{performancePoint.date}</strong>
