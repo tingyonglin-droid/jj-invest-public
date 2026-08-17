@@ -1285,62 +1285,80 @@ button.betaAction {
   line-height: 1.3;
 }
 
-.historyChartControls {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 18px;
+.historyZoomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.historyModeTabs,
-.historyRangeTabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.historyZoomControls {
+  display: flex;
+  align-items: center;
   gap: 6px;
-  border-radius: 18px;
-  padding: 6px;
-  background: #eef1f4;
 }
 
-.historyRangeTabs {
-  justify-self: end;
-  min-width: min(220px, 100%);
-  border-radius: 16px;
-  background: #f5f7f9;
-}
-
-.historyModeTabs button,
-.historyRangeTabs button {
-  min-height: 44px;
-  border: 0;
-  border-radius: 14px;
+.historyZoomControls > span,
+.historyChartDateRange {
   color: var(--muted);
-  background: transparent;
+  font-size: 12px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.historyZoomControls button {
+  min-width: 44px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--text);
+  background: #f1f4f6;
+  font-size: 13px;
   font-weight: 820;
 }
 
-.historyRangeTabs button {
-  min-height: 36px;
-  border-radius: 12px;
-  font-size: 13px;
-}
-
-.historyModeTabs button.active,
-.historyRangeTabs button.active {
-  color: var(--text);
+.historyZoomControls button[aria-pressed="true"] {
   background: var(--action-selected);
   box-shadow: 0 8px 18px rgba(17, 24, 33, 0.07);
 }
 
-.historyChartWrap {
+.historyChartStack {
   position: relative;
   display: grid;
   gap: 12px;
 }
 
+.historyChartPanel {
+  min-width: 0;
+}
+
+.historyChartPanel + .historyChartPanel {
+  margin-top: 4px;
+}
+
+.historyPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  margin: 0 8px 4px 44px;
+}
+
+.historyPanelHeader h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 840;
+}
+
 .historyChartSvg {
   width: 100%;
-  height: 220px;
   overflow: visible;
+}
+
+.historyChartPanel .historyChartSvg {
+  height: 168px;
 }
 
 .historyChartSvg .historyAxisLine {
@@ -1458,15 +1476,12 @@ button.betaAction {
 .historyLegend {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 740;
-}
-
-.historyLegend {
   justify-content: flex-start;
   flex-wrap: wrap;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 740;
 }
 
 .historyLegend span {
@@ -3580,8 +3595,36 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .historyChartSvg {
-    height: 170px;
+  .historyZoomRow {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .historyZoomControls {
+    gap: 4px;
+  }
+
+  .historyZoomControls > span {
+    font-size: 11px;
+  }
+
+  .historyZoomControls button {
+    min-width: 38px;
+    min-height: 38px;
+    padding-inline: 7px;
+  }
+
+  .historyChartDateRange {
+    padding-top: 12px;
+    font-size: 10px;
+  }
+
+  .historyPanelHeader {
+    margin-left: 38px;
+  }
+
+  .historyChartPanel .historyChartSvg {
+    height: 150px;
   }
 
   .historyRecord {

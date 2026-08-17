@@ -60,6 +60,19 @@ describe("history UI", () => {
     assert.match(pageSource, /投組 Beta/);
   });
 
+  it("styles stacked history charts with market-style Zoom controls", () => {
+    assert.match(
+      styles,
+      /\.historyZoomRow\s*\{[^}]*display:\s*flex;[^}]*justify-content:\s*space-between;/s,
+    );
+    assert.match(
+      styles,
+      /\.historyZoomControls button\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--action-selected\);/s,
+    );
+    assert.match(styles, /\.historyChartStack\s*\{[^}]*display:\s*grid;/s);
+    assert.match(styles, /\.historyChartPanel \+ \.historyChartPanel/);
+  });
+
   it("draws the 0050 performance line above the portfolio line when they overlap", () => {
     assert.match(
       pageSource,
