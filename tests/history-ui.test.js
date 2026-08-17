@@ -69,7 +69,7 @@ describe("history UI", () => {
   });
 
   it("matches rebalance heading size for history section titles only", () => {
-    assert.match(styles, /\.historySummaryCard \.cardHeaderRow h2,\s*\.historyRecordsCard \.cardHeaderRow h2\s*\{[^}]*font-size:\s*18px;/s);
+    assert.match(styles, /\.historySummaryCard \.cardHeaderRow h2,\s*\.historyRecordsCard \.cardHeaderRow h2\s*\{[^}]*font-size:\s*20px;[^}]*font-weight:\s*800;/s);
     assert.match(styles, /\.cardHeaderRow h2\s*\{[^}]*font-size:\s*16px;/s);
   });
 

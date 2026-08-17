@@ -1087,7 +1087,8 @@ button.betaAction {
 
 .historySummaryCard .cardHeaderRow h2,
 .historyRecordsCard .cardHeaderRow h2 {
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 800;
 }
 
 .cardHeaderRow p {

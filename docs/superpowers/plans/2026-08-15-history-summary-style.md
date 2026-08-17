@@ -188,3 +188,65 @@ pnpm dlx vercel deploy --yes
 ```
 
 Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
+
+### Task 4: Add visual compensation to short history headings
+
+**Files:**
+- Modify: `tests/history-ui.test.js`
+- Modify: `app/globals.css`
+
+**Interfaces:**
+- Consumes: the existing scoped history heading selector.
+- Produces: 20px, weight-800 history section headings without changing the rebalance or global card headings.
+
+- [x] **Step 1: Update the test expectation first**
+
+Change the scoped history heading assertion to require both approved values:
+
+```js
+assert.match(styles, /\.historySummaryCard \.cardHeaderRow h2,\s*\.historyRecordsCard \.cardHeaderRow h2\s*\{[^}]*font-size:\s*20px;[^}]*font-weight:\s*800;/s);
+```
+
+Keep the existing assertion that `.cardHeaderRow h2` remains 16px.
+
+- [x] **Step 2: Run the focused test and verify RED**
+
+Run: `node --test tests/history-ui.test.js`
+
+Expected: FAIL in the history heading visual-weight test because production CSS is still 18px with inherited weight 760.
+
+- [x] **Step 3: Apply the minimal CSS change**
+
+Update only the scoped rule:
+
+```css
+.historySummaryCard .cardHeaderRow h2,
+.historyRecordsCard .cardHeaderRow h2 {
+  font-size: 20px;
+  font-weight: 800;
+}
+```
+
+- [x] **Step 4: Run focused and related tests and verify GREEN**
+
+Run: `node --test tests/history-ui.test.js tests/operation-ui.test.js`
+
+Expected: all tests PASS.
+
+- [x] **Step 5: Run full verification**
+
+Run: `pnpm test`
+
+Run: `pnpm build`
+
+Expected: both commands exit 0 with no failures.
+
+- [ ] **Step 6: Commit and redeploy Preview**
+
+```bash
+git add tests/history-ui.test.js app/globals.css docs/superpowers/plans/2026-08-15-history-summary-style.md
+git commit -m "style: strengthen history section headings"
+pnpm dlx vercel deploy --yes
+```
+
+Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
