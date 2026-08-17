@@ -39,10 +39,11 @@ import {
 } from "../src/lib/cash-equivalents.js";
 import {
   addHistoryPerformanceAdjustment,
-  createHistoryChartModel,
+  createHistoryStackedChartModel,
   createHistorySnapshot,
   createHistorySummary,
   createPerformanceSeries,
+  filterHistoryRecordsByRange,
   getTaipeiDateKey,
   mergeDemoHistoryRecords,
   normalizeHistoryRecords,
@@ -345,8 +346,7 @@ export default function Home() {
   const [glossaryTopic, setGlossaryTopic] = useState(null);
   const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState("");
   const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
-  const [historyMode, setHistoryMode] = useState("performance");
-  const [historyRangeDays, setHistoryRangeDays] = useState("30");
+  const [historyRange, setHistoryRange] = useState("1M");
   const [benchmarkDrawdown, setBenchmarkDrawdown] = useState(null);
   const [backupStatus, setBackupStatus] = useState("");
   const [hasRebalanceRestorePoint, setHasRebalanceRestorePoint] = useState(false);
@@ -1262,8 +1262,7 @@ export default function Home() {
         {activeView === "history" && (
           <HistoryView
             hasRestorePoint={hasHistoryRestorePoint}
-            historyMode={historyMode}
-            historyRangeDays={historyRangeDays}
+            historyRange={historyRange}
             records={historyRecords}
             restoreStatus={historyRestoreStatus}
             onClearHistory={clearHistoryWithRestore}
@@ -1273,8 +1272,7 @@ export default function Home() {
                 ? () => setHistoryRecords((current) => mergeDemoHistoryRecords(current))
                 : null
             }
-            onModeChange={setHistoryMode}
-            onRangeChange={setHistoryRangeDays}
+            onRangeChange={setHistoryRange}
           />
         )}
 
@@ -1874,26 +1872,25 @@ function AllocationMetric({ color, label, current, target, valueTwd }) {
   );
 }
 
-function getHistoryChartRecords(records, rangeDays) {
-  const limit = Number(rangeDays) === 7 ? 7 : 30;
-  return records.slice(-limit);
-}
-
 function HistoryView({
   hasRestorePoint,
-  historyMode,
-  historyRangeDays,
+  historyRange,
   records,
   restoreStatus,
   onClearHistory,
-  onModeChange,
   onRangeChange,
   onRestorePreviousHistory,
   onSeedDemoHistory,
 }) {
   const summary = createHistorySummary(records);
-  const chartRecords = getHistoryChartRecords(records, historyRangeDays);
-  const chartModel = createHistoryChartModel(chartRecords, historyMode);
+  const chartRecords = filterHistoryRecordsByRange(records, historyRange);
+  const chartModel = createHistoryStackedChartModel(chartRecords);
+  const chartDateRange = chartRecords.length
+    ? `${chartRecords[0].date.slice(5).replace("-", "/")}–${chartRecords
+        .at(-1)
+        .date.slice(5)
+        .replace("-", "/")}`
+    : "";
   const series = createPerformanceSeries(records).slice().reverse();
   const hasRecords = records.length > 0;
 
@@ -1943,41 +1940,23 @@ function HistoryView({
       </section>
 
       <section className="appCard historyChartCard">
-        <div className="historyChartControls">
-          <div className="historyModeTabs" aria-label="歷史圖表切換">
-            <button
-              type="button"
-              className={historyMode === "performance" ? "active" : ""}
-              onClick={() => onModeChange("performance")}
-            >
-              績效
-            </button>
-            <button
-              type="button"
-              className={historyMode === "beta" ? "active" : ""}
-              onClick={() => onModeChange("beta")}
-            >
-              Beta
-            </button>
+        <div className="historyZoomRow">
+          <div className="historyZoomControls" aria-label="歷史顯示期間">
+            <span>Zoom</span>
+            {["1M", "3M", "6M", "1Y"].map((range) => (
+              <button
+                type="button"
+                key={range}
+                aria-pressed={historyRange === range}
+                onClick={() => onRangeChange(range)}
+              >
+                {range}
+              </button>
+            ))}
           </div>
-          <div className="historyRangeTabs" aria-label="歷史時間範圍">
-            <button
-              type="button"
-              className={historyRangeDays === "7" ? "active" : ""}
-              onClick={() => onRangeChange("7")}
-            >
-              7天
-            </button>
-            <button
-              type="button"
-              className={historyRangeDays === "30" ? "active" : ""}
-              onClick={() => onRangeChange("30")}
-            >
-              30天
-            </button>
-          </div>
+          <span className="historyChartDateRange">{chartDateRange}</span>
         </div>
-        <HistoryChart model={chartModel} />
+        <HistoryStackedChart model={chartModel} />
       </section>
 
       <section className="appCard historyRecordsCard">
@@ -2042,13 +2021,11 @@ function HistoryMetric({ label, value }) {
   );
 }
 
-function HistoryChart({ model }) {
-  const [activePointState, setActivePointState] = useState(null);
-  const activePointIndex =
-    activePointState?.mode === model.mode ? activePointState.index : null;
-  const activePoint =
-    activePointIndex === null ? null : model.dataPoints[activePointIndex] || null;
-  const setActivePointIndex = (index) => setActivePointState({ mode: model.mode, index });
+function HistoryStackedChart({ model }) {
+  const [activePointIndex, setActivePointIndex] = useState(null);
+  const performancePoint =
+    activePointIndex === null ? null : model.performance.dataPoints[activePointIndex] || null;
+  const betaPoint = activePointIndex === null ? null : model.beta.dataPoints[activePointIndex] || null;
 
   if (model.labels.length < 2) {
     return (
@@ -2059,14 +2036,73 @@ function HistoryChart({ model }) {
   }
 
   return (
-    <div className="historyChartWrap">
+    <div className="historyChartStack" onPointerLeave={() => setActivePointIndex(null)}>
+      <section className="historyChartPanel" aria-label="績效">
+        <div className="historyPanelHeader">
+          <h3>績效</h3>
+          <div className="historyLegend">
+            <span><i className="portfolio" />投組</span>
+            <span><i className="benchmark" />0050</span>
+          </div>
+        </div>
+        <HistoryChartPanel
+          model={model.performance}
+          activePointIndex={activePointIndex}
+          onActivePointChange={setActivePointIndex}
+          showDateAxis={false}
+        />
+      </section>
+      <section className="historyChartPanel" aria-label="Beta">
+        <div className="historyPanelHeader">
+          <h3>Beta</h3>
+          <div className="historyLegend">
+            <span><i className="portfolio" />投組 Beta</span>
+          </div>
+        </div>
+        <HistoryChartPanel
+          model={model.beta}
+          activePointIndex={activePointIndex}
+          onActivePointChange={setActivePointIndex}
+          showDateAxis={true}
+        />
+      </section>
+      {performancePoint && betaPoint ? (
+        <div
+          className={`historyTooltip ${
+            performancePoint.x > model.performance.width * 0.72
+              ? "alignRight"
+              : performancePoint.x < model.performance.width * 0.28
+                ? "alignLeft"
+                : ""
+          }`}
+          style={{
+            left: `${(performancePoint.x / model.performance.width) * 100}%`,
+            top: `${(performancePoint.y / model.performance.height) * 42}%`,
+          }}
+        >
+          <strong>{performancePoint.date}</strong>
+          <span>投組績效 {formatSignedPercent(performancePoint.portfolioReturn)}</span>
+          <span>
+            0050{" "}
+            {performancePoint.benchmarkReturn === null
+              ? "資料不足"
+              : formatSignedPercent(performancePoint.benchmarkReturn)}
+          </span>
+          <span>投組 Beta {formatNumber(betaPoint.currentBeta)}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function HistoryChartPanel({ model, activePointIndex, onActivePointChange, showDateAxis }) {
+  return (
       <svg
         className="historyChartSvg"
         viewBox={`0 0 ${model.width} ${model.height}`}
         role="img"
         aria-label={model.mode === "beta" ? "Beta 歷史曲線" : "投組與 0050 績效曲線"}
         preserveAspectRatio="none"
-        onPointerLeave={() => setActivePointState(null)}
       >
         {model.yTicks.map((tick) => (
           <g className="historyGridLine" key={tick.label}>
@@ -2084,29 +2120,26 @@ function HistoryChart({ model }) {
           y2={model.height - model.plot.bottom}
         />
         {model.mode === "beta" ? (
-          <>
-            <polyline className="historyLine tolerance" points={model.upperPoints} />
-            <polyline className="historyLine tolerance" points={model.lowerPoints} />
-            <polyline className="historyLine benchmark" points={model.targetPoints} />
-            <polyline className="historyLine portfolio" points={model.betaPoints} />
-          </>
+          <polyline className="historyLine portfolio" points={model.betaPoints} />
         ) : (
           <>
             <polyline className="historyLine portfolio" points={model.portfolioPoints} />
             <polyline className="historyLine benchmark performanceBenchmark" points={model.benchmarkPoints} />
           </>
         )}
-        {model.xTicks.map((tick) => (
-          <text
-            className="historyXAxisLabel"
-            key={`${tick.label}-${tick.x}`}
-            x={tick.x}
-            y={model.height - 4}
-            textAnchor={tick.anchor}
-          >
-            {tick.label}
-          </text>
-        ))}
+        {showDateAxis
+          ? model.xTicks.map((tick) => (
+              <text
+                className="historyXAxisLabel"
+                key={`${tick.label}-${tick.x}`}
+                x={tick.x}
+                y={model.height - 4}
+                textAnchor={tick.anchor}
+              >
+                {tick.label}
+              </text>
+            ))
+          : null}
         {model.dataPoints.map((point, index) => (
           <g className="historyHitPoint" key={point.date}>
             <line
@@ -2130,71 +2163,19 @@ function HistoryChart({ model }) {
               tabIndex="0"
               role="button"
               aria-label={`${point.date} 歷史數據`}
-              onFocus={() => setActivePointIndex(index)}
-              onPointerEnter={() => setActivePointIndex(index)}
-              onClick={() => setActivePointIndex(index)}
+              onFocus={() => onActivePointChange(index)}
+              onPointerEnter={() => onActivePointChange(index)}
+              onClick={() => onActivePointChange(index)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  setActivePointIndex(index);
+                  onActivePointChange(index);
                 }
               }}
             />
           </g>
         ))}
       </svg>
-      {activePoint ? (
-        <div
-          className={`historyTooltip ${
-            activePoint.x > model.width * 0.72
-              ? "alignRight"
-              : activePoint.x < model.width * 0.28
-                ? "alignLeft"
-                : ""
-          }`}
-          style={{
-            left: `${(activePoint.x / model.width) * 100}%`,
-            top: `${(activePoint.y / model.height) * 100}%`,
-          }}
-        >
-          <strong>{activePoint.date}</strong>
-          {model.mode === "beta" ? (
-            <>
-              <span>目前 Beta {formatNumber(activePoint.currentBeta)}</span>
-              <span>目標 {formatNumber(activePoint.targetBeta)}</span>
-              <span>
-                區間 {formatNumber(activePoint.betaLower)} ~ {formatNumber(activePoint.betaUpper)}
-              </span>
-            </>
-          ) : (
-            <>
-              <span>總資產 {formatTwd(activePoint.totalAssetsTwd)}</span>
-              <span>投組 {formatSignedPercent(activePoint.portfolioReturn)}</span>
-              <span>
-                0050{" "}
-                {activePoint.benchmarkReturn === null
-                  ? "資料不足"
-                  : formatSignedPercent(activePoint.benchmarkReturn)}
-              </span>
-            </>
-          )}
-        </div>
-      ) : null}
-      <div className="historyLegend">
-        {model.mode === "beta" ? (
-          <>
-            <span><i className="portfolio" />目前 Beta</span>
-            <span><i className="benchmark" />目標 Beta</span>
-            <span><i className="tolerance" />容忍區間</span>
-          </>
-        ) : (
-          <>
-            <span><i className="portfolio" />投組</span>
-            <span><i className="benchmark" />0050</span>
-          </>
-        )}
-      </div>
-    </div>
   );
 }
 

@@ -42,12 +42,22 @@ describe("history UI", () => {
     assert.match(pageSource, /aria-label=\{`\$\{point\.date\} 歷史數據`\}/);
   });
 
-  it("supports 7 and 30 day ranges for history charts", () => {
-    assert.match(pageSource, /useState\("30"\)/);
-    assert.match(pageSource, /7天/);
-    assert.match(pageSource, /30天/);
-    assert.match(pageSource, /chartRecords/);
-    assert.match(pageSource, /historyRangeDays/);
+  it("uses market-style Zoom ranges for both history charts", () => {
+    assert.match(pageSource, /useState\("1M"\)/);
+    assert.match(pageSource, /\["1M", "3M", "6M", "1Y"\]/);
+    assert.doesNotMatch(pageSource, />7天</);
+    assert.doesNotMatch(pageSource, />30天</);
+    assert.doesNotMatch(pageSource, /historyModeTabs/);
+  });
+
+  it("renders aligned performance and Beta panels with one shared interaction", () => {
+    assert.match(pageSource, /createHistoryStackedChartModel/);
+    assert.match(pageSource, /HistoryChartPanel/);
+    assert.match(pageSource, /showDateAxis=\{false\}/);
+    assert.match(pageSource, /showDateAxis=\{true\}/);
+    assert.match(pageSource, /activePointIndex/);
+    assert.match(pageSource, /投組績效/);
+    assert.match(pageSource, /投組 Beta/);
   });
 
   it("draws the 0050 performance line above the portfolio line when they overlap", () => {
