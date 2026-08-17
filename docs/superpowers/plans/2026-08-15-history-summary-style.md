@@ -189,7 +189,135 @@ pnpm dlx vercel deploy --yes
 
 Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
 
-### Task 4: Add visual compensation to short history headings
+### Task 4: Exactly align history and settings headings with rebalance
+
+**Files:**
+- Modify: `tests/history-ui.test.js`
+- Modify: `tests/position-settings-ui.test.js`
+- Modify: `app/page.js:1927-1987`
+- Modify: `app/globals.css:1082-1092, 2161-2182, 3504-3512`
+
+**Interfaces:**
+- Consumes: `.cardTitleRow`, `.cardHeaderRow h2`, `.cardHeaderRow p`, `.settingsIntro p`, and `.settingsIntro span`.
+- Produces: history and settings headings with the rebalance title's 18px/760 typography and a 3px subtitle gap, without changing data or interactions.
+
+- [ ] **Step 1: Write failing history heading alignment tests**
+
+Replace the existing history heading assertion with:
+
+```js
+it("uses the rebalance title structure and exact heading rhythm", () => {
+  assert.match(pageSource, /className="cardTitleRow historyTitleRow">\s*<h2>歷史紀錄<\/h2>/s);
+  assert.match(pageSource, /className="cardTitleRow historyTitleRow">\s*<h2>最近紀錄<\/h2>/s);
+  assert.match(styles, /\.historySummaryCard \.cardTitleRow h2,\s*\.historyRecordsCard \.cardTitleRow h2\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
+  assert.match(styles, /\.appCard\s*\{[^}]*padding:\s*18px 20px;/s);
+  assert.match(styles, /\.cardHeaderRow p\s*\{[^}]*margin:\s*3px 0 0;/s);
+});
+```
+
+Production mutations caught: removing either shared title row, reverting either heading to 20px/800, changing desktop card top padding, or changing the shared subtitle gap.
+
+- [ ] **Step 2: Write failing settings heading alignment tests**
+
+Add to `tests/position-settings-ui.test.js`:
+
+```js
+test("settings intro matches rebalance heading typography and subtitle gap", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.settingsIntro p\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
+  assert.match(styles, /\.settingsIntro span\s*\{[^}]*margin-top:\s*3px;/s);
+  assert.doesNotMatch(styles, /@media \(max-width:\s*480px\)[\s\S]*?\.settingsIntro p\s*\{/s);
+});
+```
+
+Production mutations caught: restoring 20px/820, restoring the 4px subtitle gap, or adding a mobile-only title override.
+
+- [ ] **Step 3: Run focused tests and verify RED**
+
+Run: `node --test tests/history-ui.test.js tests/position-settings-ui.test.js`
+
+Expected: FAIL because history lacks `historyTitleRow`, history is 20px/800, settings is 20px/820 with a 4px gap, and the mobile override still exists.
+
+- [ ] **Step 4: Apply the minimal history markup and CSS changes**
+
+Wrap each history heading in the same title-row structure used by rebalance:
+
+```jsx
+<div className="cardTitleRow historyTitleRow">
+  <h2>歷史紀錄</h2>
+</div>
+```
+
+and:
+
+```jsx
+<div className="cardTitleRow historyTitleRow">
+  <h2>最近紀錄</h2>
+</div>
+```
+
+Replace the current history heading override with:
+
+```css
+.historySummaryCard .cardTitleRow h2,
+.historyRecordsCard .cardTitleRow h2 {
+  font-size: 18px;
+  font-weight: 760;
+}
+```
+
+- [ ] **Step 5: Apply the minimal settings CSS changes**
+
+Update the existing rules to:
+
+```css
+.settingsIntro p {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 760;
+}
+
+.settingsIntro span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.45;
+}
+```
+
+Delete the `.settingsIntro p { font-size: 18px; }` override from the 480px media query.
+
+- [ ] **Step 6: Run focused and related tests and verify GREEN**
+
+Run: `node --test tests/history-ui.test.js tests/position-settings-ui.test.js tests/operation-ui.test.js`
+
+Expected: all tests PASS.
+
+- [ ] **Step 7: Run full verification**
+
+Run: `pnpm test`
+
+Run: `pnpm build`
+
+Expected: both commands exit 0 with no failures.
+
+- [ ] **Step 8: Commit and redeploy Preview**
+
+```bash
+git add tests/history-ui.test.js tests/position-settings-ui.test.js app/page.js app/globals.css docs/superpowers/plans/2026-08-15-history-summary-style.md
+git commit -m "style: align section heading rhythm"
+pnpm dlx vercel deploy --yes
+```
+
+Inspect the returned URL and verify target `preview`, status `Ready`, and an HTTP 200 response before reporting it.
+
+### Superseded task: Add visual compensation to short history headings
+
+This completed experiment is retained for history but is superseded by Task 4 above after visual review showed that 20px/800 overcompensated.
 
 **Files:**
 - Modify: `tests/history-ui.test.js`
