@@ -12,6 +12,7 @@
 - 「歷史紀錄」與「最近紀錄」兩個區段標題改用與「再平衡參數設定」完全相同的 18px、字重 760，不再加入視覺補償。
 - 歷史標題使用與再平衡相同的 `.cardTitleRow` 標題列結構，確保標題行盒與副標題的排列方式一致。
 - 外層卡片上方內距維持共用 `.appCard` 的 18px；標題與下一行副標題維持共用 `.cardHeaderRow p` 的 3px 上間距。
+- 設定頁「參數設定」標題同步改為 18px、字重 760，副標題上間距由 4px 改為 3px，並移除手機版重複指定的標題字級。
 - 桌面維持四欄，手機維持兩欄。
 
 ## 不變更
@@ -19,17 +20,19 @@
 - 除了為兩個歷史標題補上共用標題列容器，不改變歷史頁外層卡片、副標、日期標籤、圖表或最近紀錄內容。
 - 不改變再平衡頁的任何樣式。
 - 不改變其他使用 `.cardHeaderRow` 的卡片標題。
+- 不改變設定頁外層框、分類頁籤、表單內容或響應式版型。
 - 不改變歷史資料、計算、儲存或互動行為。
 - 本次不抽取跨頁共用元件或進行其他重構。
 
 ## 實作方式
 
-調整 `app/globals.css` 中 `.historyMetric`、`.historyMetric span` 與 `.historyMetric strong`，使其視覺值精準對齊 `.operationSummaryGrid > div` 及其文字規則。歷史標題改用與再平衡相同的 `.cardTitleRow` 結構，並以歷史頁專用 selector 明確鎖定 18px、字重 760。標題仍沿用 `.appCard` 的 18px 上方內距與 `.cardHeaderRow p` 的 3px 副標題間距，不修改再平衡標題或其他全域卡片標題。
+調整 `app/globals.css` 中 `.historyMetric`、`.historyMetric span` 與 `.historyMetric strong`，使其視覺值精準對齊 `.operationSummaryGrid > div` 及其文字規則。歷史標題改用與再平衡相同的 `.cardTitleRow` 結構，並以歷史頁專用 selector 明確鎖定 18px、字重 760。標題仍沿用 `.appCard` 的 18px 上方內距與 `.cardHeaderRow p` 的 3px 副標題間距。設定頁 `.settingsIntro p` 同步使用 18px、字重 760，`.settingsIntro span` 使用 3px 上間距，並刪除 480px 斷點內多餘的標題字級覆寫；不修改再平衡標題或其他全域卡片標題。
 
 ## 驗證
 
 - 更新或新增 UI 測試，鎖定歷史摘要格的白底、邊框、圓角和文字規格。
 - 鎖定兩個歷史區段標題為 18px、字重 760，並確認標題使用 `.cardTitleRow`、卡片上方內距為 18px、標題到副標題為 3px。
+- 鎖定設定頁標題為 18px、字重 760、副標題上間距為 3px，並確認手機版沒有另外覆寫標題字級。
 - 確認全域卡片標題與再平衡標題仍維持原值。
 - 執行歷史頁及相關樣式測試。
 - 執行完整測試，確認沒有功能回歸。
