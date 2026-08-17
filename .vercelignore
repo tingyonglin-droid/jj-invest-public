@@ -1,1 +1,6 @@
 reels-beta-update/
+.next/
+node_modules/
+.superpowers/
+ig-app-intro/
+reels-betree-reintroduction/
