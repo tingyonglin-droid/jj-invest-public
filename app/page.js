@@ -2716,7 +2716,9 @@ function SettingsAccordions({
     <section className="settingsStack" aria-label="參數設定">
       <div className="settingsIntro">
         <div>
-          <p>參數設定</p>
+          <div className="cardTitleRow settingsTitleRow">
+            <p>參數設定</p>
+          </div>
           <span>調整持股、現金與 Beta 試算條件</span>
         </div>
       </div>

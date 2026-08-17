@@ -2171,6 +2171,11 @@ button.betaAction {
   padding: 2px 4px 0;
 }
 
+.settingsTitleRow {
+  min-height: 32px;
+  align-items: center;
+}
+
 .settingsIntro p {
   margin: 0;
   color: var(--text);

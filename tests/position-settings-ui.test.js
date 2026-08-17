@@ -42,8 +42,11 @@ test("holding editors use compact two-column fields and asset tones", async () =
 });
 
 test("settings intro matches rebalance heading typography and subtitle gap", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
+  assert.match(page, /className="cardTitleRow settingsTitleRow">\s*<p>參數設定<\/p>/s);
+  assert.match(styles, /\.settingsTitleRow\s*\{[^}]*min-height:\s*32px;[^}]*align-items:\s*center;/s);
   assert.match(styles, /\.settingsIntro p\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
   assert.match(styles, /\.settingsIntro span\s*\{[^}]*margin-top:\s*3px;/s);
   assert.doesNotMatch(styles, /@media \(max-width:\s*480px\)[\s\S]*?\.settingsIntro p\s*\{/s);
