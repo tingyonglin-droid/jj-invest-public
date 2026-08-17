@@ -5,9 +5,11 @@ import {
   addHistoryPerformanceAdjustment,
   createDemoHistoryRecords,
   createHistoryChartModel,
+  createHistoryStackedChartModel,
   createHistorySnapshot,
   createHistorySummary,
   createPerformanceSeries,
+  filterHistoryRecordsByRange,
   getTaipeiDateKey,
   mergeDemoHistoryRecords,
   selectBenchmark0050SnapshotPrice,
@@ -240,6 +242,55 @@ describe("history snapshots", () => {
     );
     assert.ok(betaChart.minValue > 0.9);
     assert.ok(betaChart.maxValue < 1.5);
+  });
+
+  it("filters history with calendar Zoom ranges ending on the latest record", () => {
+    const records = [
+      { date: "2025-08-17" },
+      { date: "2026-02-17" },
+      { date: "2026-05-17" },
+      { date: "2026-07-16" },
+      { date: "2026-07-17" },
+      { date: "2026-08-17" },
+    ];
+
+    assert.deepEqual(filterHistoryRecordsByRange(records, "1M").map(({ date }) => date), [
+      "2026-07-17",
+      "2026-08-17",
+    ]);
+    assert.equal(filterHistoryRecordsByRange(records, "3M")[0].date, "2026-05-17");
+    assert.equal(filterHistoryRecordsByRange(records, "6M")[0].date, "2026-02-17");
+    assert.equal(filterHistoryRecordsByRange(records, "1Y")[0].date, "2025-08-17");
+    assert.deepEqual(
+      filterHistoryRecordsByRange(records, "unknown"),
+      filterHistoryRecordsByRange(records, "1M"),
+    );
+  });
+
+  it("clamps history calendar ranges to the last valid day of the target month", () => {
+    const records = [{ date: "2026-02-27" }, { date: "2026-02-28" }, { date: "2026-03-31" }];
+
+    assert.deepEqual(filterHistoryRecordsByRange(records, "1M").map(({ date }) => date), [
+      "2026-02-28",
+      "2026-03-31",
+    ]);
+  });
+
+  it("creates aligned time-proportional performance and Beta models", () => {
+    const records = [
+      { date: "2026-07-17", totalAssetsTwd: 100, benchmark0050Price: 100, currentBeta: 1.1, targetBeta: 1.2, betaLower: 1.08, betaUpper: 1.32 },
+      { date: "2026-07-28", totalAssetsTwd: 103, benchmark0050Price: 101, currentBeta: 1.18, targetBeta: 1.2, betaLower: 1.08, betaUpper: 1.32 },
+      { date: "2026-08-17", totalAssetsTwd: 106, benchmark0050Price: 104, currentBeta: 1.24, targetBeta: 1.2, betaLower: 1.08, betaUpper: 1.32 },
+    ];
+    const stacked = createHistoryStackedChartModel(records);
+
+    assert.deepEqual(stacked.performance.labels, stacked.beta.labels);
+    assert.deepEqual(
+      stacked.performance.dataPoints.map(({ date, x }) => [date, x]),
+      stacked.beta.dataPoints.map(({ date, x }) => [date, x]),
+    );
+    assert.ok(stacked.performance.dataPoints[1].x < stacked.performance.width / 2);
+    assert.notEqual(stacked.performance.minValue, stacked.beta.minValue);
   });
 
   it("creates Taipei date keys", () => {

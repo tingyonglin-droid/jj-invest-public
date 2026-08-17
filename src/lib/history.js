@@ -228,28 +228,68 @@ const CHART_PLOT = {
   bottom: 34,
 };
 
-function createPoints(values, plot, minValue, maxValue) {
+const HISTORY_RANGE_MONTHS = Object.freeze({
+  "1M": 1,
+  "3M": 3,
+  "6M": 6,
+  "1Y": 12,
+});
+
+function subtractCalendarMonths(dateText, months) {
+  const [year, month, day] = dateText.split("-").map(Number);
+  const targetMonthIndex = year * 12 + month - 1 - months;
+  const targetYear = Math.floor(targetMonthIndex / 12);
+  const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
+  const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+
+  return `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-${String(
+    Math.min(day, lastDay),
+  ).padStart(2, "0")}`;
+}
+
+export function filterHistoryRecordsByRange(records, range = "1M") {
+  const normalized = normalizeHistoryRecords(records);
+  const latestDate = normalized.at(-1)?.date;
+  if (!latestDate) {
+    return [];
+  }
+
+  const months = HISTORY_RANGE_MONTHS[range] || HISTORY_RANGE_MONTHS["1M"];
+  const startKey = subtractCalendarMonths(latestDate, months);
+  return normalized.filter((record) => record.date >= startKey);
+}
+
+function createDateXPositions(records, plot) {
+  if (!records.length) {
+    return [];
+  }
+
+  const times = records.map((record) => Date.parse(`${record.date}T00:00:00Z`));
+  const first = times[0];
+  const span = times.at(-1) - first || 1;
+  return times.map((time) => roundNumber(plot.left + ((time - first) / span) * plot.width, 2));
+}
+
+function createPoints(values, xPositions, plot, minValue, maxValue) {
   if (!values.length) {
     return "";
   }
 
   const span = maxValue - minValue || 1;
-  const denominator = Math.max(values.length - 1, 1);
   return values
     .map((value, index) => {
-      const x = plot.left + (index / denominator) * plot.width;
+      const x = xPositions[index];
       const y = plot.top + plot.height - ((value - minValue) / span) * plot.height;
       return `${roundNumber(x, 2)},${roundNumber(y, 2)}`;
     })
     .join(" ");
 }
 
-function getPointCoordinate(index, count, value, plot, minValue, maxValue) {
+function getPointCoordinate(x, value, plot, minValue, maxValue) {
   const span = maxValue - minValue || 1;
-  const denominator = Math.max(count - 1, 1);
 
   return {
-    x: roundNumber(plot.left + (index / denominator) * plot.width, 2),
+    x,
     y: roundNumber(plot.top + plot.height - ((value - minValue) / span) * plot.height, 2),
   };
 }
@@ -308,6 +348,7 @@ export function createHistoryChartModel(records, mode = "performance") {
   };
   const normalized = normalizeHistoryRecords(records);
   const labels = normalized.map((record) => record.date.slice(5));
+  const xPositions = createDateXPositions(normalized, plot);
 
   if (mode === "beta") {
     const betaValues = normalized.map((record) => record.currentBeta);
@@ -332,17 +373,17 @@ export function createHistoryChartModel(records, mode = "performance") {
       maxValue,
       plot,
       ...ticks,
-      betaPoints: createPoints(betaValues, plot, minValue, maxValue),
-      targetPoints: createPoints(targetValues, plot, minValue, maxValue),
-      lowerPoints: createPoints(lowerValues, plot, minValue, maxValue),
-      upperPoints: createPoints(upperValues, plot, minValue, maxValue),
+      betaPoints: createPoints(betaValues, xPositions, plot, minValue, maxValue),
+      targetPoints: createPoints(targetValues, xPositions, plot, minValue, maxValue),
+      lowerPoints: createPoints(lowerValues, xPositions, plot, minValue, maxValue),
+      upperPoints: createPoints(upperValues, xPositions, plot, minValue, maxValue),
       dataPoints: normalized.map((record, index) => ({
         date: record.date,
         currentBeta: record.currentBeta,
         targetBeta: record.targetBeta,
         betaLower: record.betaLower,
         betaUpper: record.betaUpper,
-        ...getPointCoordinate(index, normalized.length, record.currentBeta, plot, minValue, maxValue),
+        ...getPointCoordinate(xPositions[index], record.currentBeta, plot, minValue, maxValue),
       })),
     };
   }
@@ -363,22 +404,32 @@ export function createHistoryChartModel(records, mode = "performance") {
     maxValue,
     plot,
     ...ticks,
-    portfolioPoints: createPoints(portfolioValues, plot, minValue, maxValue),
-    benchmarkPoints: createPoints(benchmarkValues, plot, minValue, maxValue),
+    portfolioPoints: createPoints(portfolioValues, xPositions, plot, minValue, maxValue),
+    benchmarkPoints: createPoints(benchmarkValues, xPositions, plot, minValue, maxValue),
     dataPoints: series.map((record, index) => ({
       date: record.date,
       portfolioReturn: record.portfolioReturn,
       benchmarkReturn: record.benchmarkReturn,
       totalAssetsTwd: record.totalAssetsTwd,
       ...getPointCoordinate(
-        index,
-        series.length,
+        xPositions[index],
         record.portfolioReturn ?? 0,
         plot,
         minValue,
         maxValue,
       ),
     })),
+  };
+}
+
+export function createHistoryStackedChartModel(records) {
+  const performance = createHistoryChartModel(records, "performance");
+  const beta = createHistoryChartModel(records, "beta");
+
+  return {
+    labels: performance.labels,
+    performance,
+    beta,
   };
 }
 
