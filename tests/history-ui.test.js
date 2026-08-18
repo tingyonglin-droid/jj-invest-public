@@ -145,6 +145,22 @@ describe("history UI", () => {
     );
   });
 
+  it("keeps recent history records collapsed by default", () => {
+    assert.match(
+      pageSource,
+      /<details className="appCard historyRecordsCard">\s*<summary className="cardHeaderRow historyRecordsSummary">[\s\S]*?<h2>最近紀錄<\/h2>[\s\S]*?<p>同一天更新會覆蓋為最新快照<\/p>[\s\S]*?<div className="historyRecordsBody">[\s\S]*?className="historyRecordsList"/s,
+    );
+    assert.doesNotMatch(
+      pageSource,
+      /<details className="appCard historyRecordsCard"\s+open/,
+    );
+    assert.match(
+      styles,
+      /\.historyRecordsSummary\s*\{[^}]*cursor:\s*pointer;[^}]*list-style:\s*none;/s,
+    );
+    assert.match(styles, /\.historyRecordsCard\[open\] \.historyRecordsSummary::after/);
+  });
+
   it("shows full app backup controls in settings", () => {
     assert.match(pageSource, /資料備份/);
     assert.match(pageSource, /匯出完整備份/);

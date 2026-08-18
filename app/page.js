@@ -1967,55 +1967,57 @@ function HistoryView({
         <HistoryStackedChart model={chartModel} />
       </section>
 
-      <section className="appCard historyRecordsCard">
-        <div className="cardHeaderRow">
+      <details className="appCard historyRecordsCard">
+        <summary className="cardHeaderRow historyRecordsSummary">
           <div>
             <div className="cardTitleRow historyTitleRow">
               <h2>最近紀錄</h2>
             </div>
             <p>同一天更新會覆蓋為最新快照</p>
           </div>
-        </div>
-        <div className="historyRecordsList">
-          {series.slice(0, 14).map((record) => (
-            <article className="historyRecord" key={record.date}>
-              <div>
-                <strong>{record.date}</strong>
-                <span>Beta {formatNumber(record.currentBeta)}</span>
-              </div>
-              <div>
-                <strong>{formatTwd(record.totalAssetsTwd)}</strong>
-                <span>
-                  投組 {formatSignedPercent(record.portfolioReturn)} · 0050{" "}
-                  {record.benchmarkReturn === null
-                    ? "資料不足"
-                    : formatSignedPercent(record.benchmarkReturn)}
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="historyActions">
-          {onSeedDemoHistory ? (
-            <button type="button" className="secondaryButton" onClick={onSeedDemoHistory}>
-              載入示範曲線
+        </summary>
+        <div className="historyRecordsBody">
+          <div className="historyRecordsList">
+            {series.slice(0, 14).map((record) => (
+              <article className="historyRecord" key={record.date}>
+                <div>
+                  <strong>{record.date}</strong>
+                  <span>Beta {formatNumber(record.currentBeta)}</span>
+                </div>
+                <div>
+                  <strong>{formatTwd(record.totalAssetsTwd)}</strong>
+                  <span>
+                    投組 {formatSignedPercent(record.portfolioReturn)} · 0050{" "}
+                    {record.benchmarkReturn === null
+                      ? "資料不足"
+                      : formatSignedPercent(record.benchmarkReturn)}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="historyActions">
+            {onSeedDemoHistory ? (
+              <button type="button" className="secondaryButton" onClick={onSeedDemoHistory}>
+                載入示範曲線
+              </button>
+            ) : null}
+            <button type="button" className="dangerTextButton" onClick={onClearHistory}>
+              清除歷史紀錄
             </button>
-          ) : null}
-          <button type="button" className="dangerTextButton" onClick={onClearHistory}>
-            清除歷史紀錄
-          </button>
-          {hasRestorePoint ? (
-            <button
-              type="button"
-              className="secondaryButton restoreButton"
-              onClick={onRestorePreviousHistory}
-            >
-              復原上一步
-            </button>
-          ) : null}
+            {hasRestorePoint ? (
+              <button
+                type="button"
+                className="secondaryButton restoreButton"
+                onClick={onRestorePreviousHistory}
+              >
+                復原上一步
+              </button>
+            ) : null}
+          </div>
+          {restoreStatus ? <p className="historyRestoreStatus">{restoreStatus}</p> : null}
         </div>
-        {restoreStatus ? <p className="historyRestoreStatus">{restoreStatus}</p> : null}
-      </section>
+      </details>
     </section>
   );
 }

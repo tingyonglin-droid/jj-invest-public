@@ -1223,6 +1223,37 @@ button.betaAction {
   margin-bottom: 0;
 }
 
+.historyRecordsSummary {
+  margin-bottom: 0;
+  cursor: pointer;
+  list-style: none;
+  touch-action: manipulation;
+}
+
+.historyRecordsSummary::-webkit-details-marker {
+  display: none;
+}
+
+.historyRecordsSummary::after {
+  content: "›";
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--muted);
+  font-size: 26px;
+  font-weight: 520;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 180ms ease;
+}
+
+.historyRecordsCard[open] .historyRecordsSummary::after {
+  transform: rotate(-90deg);
+}
+
+.historyRecordsBody {
+  margin-top: 10px;
+}
+
 .historyEmptyCard {
   display: grid;
   gap: 8px;
