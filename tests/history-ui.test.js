@@ -124,6 +124,14 @@ describe("history UI", () => {
       /<h2>績效與 Beta 走勢<\/h2>[\s\S]*className="historyZoomRow"/,
     );
     assert.match(styles, /\.historyStack\s*\{[^}]*gap:\s*12px;/s);
+    assert.match(
+      styles,
+      /@media \(max-width: 760px\)[\s\S]*\.historyStack\s*\{[^}]*gap:\s*10px;/s,
+    );
+    assert.match(
+      styles,
+      /@media \(max-width: 760px\)[\s\S]*\.historySummaryCard,[\s\S]*\.historyRecordsCard,[\s\S]*\.historyEmptyCard\s*\{[^}]*margin-bottom:\s*0;/s,
+    );
   });
 
   it("shows full app backup controls in settings", () => {

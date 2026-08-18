@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- History card spacing must be exactly 12px, matching the overview page.
+- History card spacing must match the overview page at each breakpoint: 12px on desktop and 10px at 760px or below.
 - The chart title copy must be exactly「績效與 Beta 走勢」.
 - The title must be left aligned and reuse the history page heading typography.
 - Zoom controls and the date range must remain beneath the new title.
@@ -165,7 +165,7 @@ Expected: Next.js production build succeeds.
 
 Start the local app, open the history page, and verify at desktop width and approximately 390px CSS width:
 
-- all three card-to-card gaps measure 12px;
+- both card-to-card gaps measure 12px on desktop and 10px at approximately 390px CSS width;
 -「績效與 Beta 走勢」is the first element in the chart card;
 - the heading matches「歷史紀錄」and「最近紀錄」typography;
 - Zoom and the date range remain below the heading;

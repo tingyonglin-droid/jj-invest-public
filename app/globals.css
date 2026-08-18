@@ -3137,6 +3137,17 @@ select {
     border-radius: 18px;
   }
 
+  .historyStack {
+    gap: 10px;
+  }
+
+  .historySummaryCard,
+  .historyChartCard,
+  .historyRecordsCard,
+  .historyEmptyCard {
+    margin-bottom: 0;
+  }
+
   .brandLockup :where(p, h1) {
     font-size: 20px;
   }
