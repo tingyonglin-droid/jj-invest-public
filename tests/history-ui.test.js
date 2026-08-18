@@ -114,6 +114,18 @@ describe("history UI", () => {
     assert.doesNotMatch(styles, /\.historyDatePill/);
   });
 
+  it("matches overview card spacing and labels the combined history chart", () => {
+    assert.match(
+      pageSource,
+      /className="appCard historyChartCard">\s*<div className="cardTitleRow historyTitleRow">\s*<h2>績效與 Beta 走勢<\/h2>/s,
+    );
+    assert.match(
+      pageSource,
+      /<h2>績效與 Beta 走勢<\/h2>[\s\S]*className="historyZoomRow"/,
+    );
+    assert.match(styles, /\.historyStack\s*\{[^}]*gap:\s*12px;/s);
+  });
+
   it("shows full app backup controls in settings", () => {
     assert.match(pageSource, /資料備份/);
     assert.match(pageSource, /匯出完整備份/);
