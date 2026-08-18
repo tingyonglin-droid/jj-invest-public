@@ -1940,6 +1940,9 @@ function HistoryView({
       </section>
 
       <section className="appCard historyChartCard">
+        <div className="cardTitleRow historyTitleRow">
+          <h2>績效與 Beta 走勢</h2>
+        </div>
         <div className="historyZoomRow">
           <div className="historyZoomControls" aria-label="歷史顯示期間">
             <span>Zoom</span>

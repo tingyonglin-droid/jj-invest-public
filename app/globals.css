@@ -1091,6 +1091,7 @@ button.betaAction {
 }
 
 .historySummaryCard .cardTitleRow h2,
+.historyChartCard .cardTitleRow h2,
 .historyRecordsCard .cardTitleRow h2 {
   font-size: 18px;
   font-weight: 760;
@@ -1212,7 +1213,7 @@ button.betaAction {
 
 .historyStack {
   display: grid;
-  gap: 18px;
+  gap: 12px;
 }
 
 .historySummaryCard,
