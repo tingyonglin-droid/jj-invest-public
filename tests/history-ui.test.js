@@ -117,7 +117,7 @@ describe("history UI", () => {
   it("matches overview card spacing and labels the combined history chart", () => {
     assert.match(
       pageSource,
-      /className="appCard historyChartCard">\s*<div className="cardTitleRow historyTitleRow">\s*<h2>績效與 Beta 走勢<\/h2>/s,
+      /className="appCard historyChartCard">[\s\S]*?<div className="cardTitleRow historyTitleRow">\s*<h2>績效與 Beta 走勢<\/h2>/s,
     );
     assert.match(
       pageSource,
@@ -131,6 +131,17 @@ describe("history UI", () => {
     assert.match(
       styles,
       /@media \(max-width: 760px\)[\s\S]*\.historySummaryCard,[\s\S]*\.historyRecordsCard,[\s\S]*\.historyEmptyCard\s*\{[^}]*margin-bottom:\s*0;/s,
+    );
+  });
+
+  it("explains the combined history chart with the standard card subtitle", () => {
+    assert.match(
+      pageSource,
+      /className="appCard historyChartCard">\s*<div className="cardHeaderRow">\s*<div>\s*<div className="cardTitleRow historyTitleRow">\s*<h2>績效與 Beta 走勢<\/h2>\s*<\/div>\s*<p>比較投資組合與0050 累積績效與 Beta 變化<\/p>/s,
+    );
+    assert.match(
+      pageSource,
+      /比較投資組合與0050 累積績效與 Beta 變化<\/p>[\s\S]*className="historyZoomRow"/,
     );
   });
 
