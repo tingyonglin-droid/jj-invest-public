@@ -273,4 +273,25 @@ describe("portfolio calculations", () => {
     assert.equal(invalid.issues[0].code, "INVALID_LEVERAGED_WEIGHTS");
     assert.equal(invalid.issues[0].settingsPage, "positions");
   });
+
+  it("validates custom sleeve weights from configured positions while quotes refresh", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "a", tickerInput: "00631L", shares: 1000, assetBeta: 2, targetWeightPct: 35 },
+        { id: "b", tickerInput: "00685L", shares: 1000, assetBeta: 2, targetWeightPct: 45 },
+        { id: "c", tickerInput: "QLD", shares: 1000, assetBeta: 2, targetWeightPct: 20 },
+      ],
+      quotes: [quotes[0]],
+      cashTwd: 60000,
+      leveragedTargetPct: 60,
+      originalTargetPct: 0,
+      tolerancePct: 10,
+      allocationModes: { leveraged: "custom", original: "auto" },
+    });
+
+    assert.equal(
+      result.issues.some((issue) => issue.code === "INVALID_LEVERAGED_WEIGHTS"),
+      false,
+    );
+  });
 });

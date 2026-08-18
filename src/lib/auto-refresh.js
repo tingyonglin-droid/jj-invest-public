@@ -3,6 +3,28 @@ import { normalizeTicker } from "./market-data.js";
 export const AUTO_REFRESH_INTERVAL_MS = 60_000;
 export const QUOTE_RETRY_DELAYS_MS = [2_000, 5_000, 15_000];
 
+export function createLatestQuoteRequestCoordinator() {
+  let latestRequestId = 0;
+  let activeController = null;
+
+  return {
+    begin() {
+      activeController?.abort();
+      activeController = new AbortController();
+      const requestId = ++latestRequestId;
+      return {
+        signal: activeController.signal,
+        isCurrent: () => requestId === latestRequestId,
+      };
+    },
+    invalidate() {
+      latestRequestId += 1;
+      activeController?.abort();
+      activeController = null;
+    },
+  };
+}
+
 export function getVisibleCalculationErrors(errors, hasReceivedQuoteResponse) {
   return hasReceivedQuoteResponse ? errors : [];
 }

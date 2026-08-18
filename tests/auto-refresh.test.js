@@ -11,6 +11,20 @@ import {
 } from "../src/lib/auto-refresh.js";
 
 describe("auto refresh policy", () => {
+  it("makes an imported portfolio quote request supersede the prior request", async () => {
+    const autoRefresh = await import("../src/lib/auto-refresh.js");
+    assert.equal(typeof autoRefresh.createLatestQuoteRequestCoordinator, "function");
+
+    const coordinator = autoRefresh.createLatestQuoteRequestCoordinator();
+    const prior = coordinator.begin();
+    const imported = coordinator.begin();
+
+    assert.equal(prior.signal.aborted, true);
+    assert.equal(prior.isCurrent(), false);
+    assert.equal(imported.signal.aborted, false);
+    assert.equal(imported.isCurrent(), true);
+  });
+
   it("uses short bounded retry delays", () => {
     assert.deepEqual(QUOTE_RETRY_DELAYS_MS, [2_000, 5_000, 15_000]);
   });

@@ -115,8 +115,8 @@ export function calculatePortfolio({
   const targetCashRatio = roundRatio(1 - targetLeveragedRatio - targetOriginalRatio);
   const targetBetaValue = roundRatio(targetLeveragedRatio * 2 + targetOriginalRatio);
   const rowsByType = {
-    leveraged: validRows.filter((row) => getAssetType(row.assetBeta) === "leveraged"),
-    original: validRows.filter((row) => getAssetType(row.assetBeta) === "original"),
+    leveraged: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "leveraged"),
+    original: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "original"),
   };
   const targetWeightTotals = Object.fromEntries(
     Object.entries(rowsByType).map(([assetType, rows]) => [

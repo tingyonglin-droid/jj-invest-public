@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OverviewCardHeader } from "../src/components/overview-card-header.js";
 import {
   AUTO_REFRESH_INTERVAL_MS,
+  createLatestQuoteRequestCoordinator,
   createQuoteRetryController,
   getVisibleCalculationErrors,
   hasCompletePriorQuoteResult,
@@ -355,7 +356,7 @@ export default function Home() {
   const [historyRestoreStatus, setHistoryRestoreStatus] = useState("");
   const [cashChangeReason, setCashChangeReason] = useState("external");
   const quoteResultRef = useRef(emptyQuoteResult);
-  const requestInFlightRef = useRef(false);
+  const quoteRequestCoordinatorRef = useRef(createLatestQuoteRequestCoordinator());
   const retryControllerRef = useRef(null);
   const analyticsClient = useMemo(
     () =>
@@ -527,23 +528,25 @@ export default function Home() {
       setRequestError("請至少輸入一個標的代號。");
       return;
     }
-    if (requestInFlightRef.current) {
-      return;
-    }
-
     if (!isRetry) {
       retryControllerRef.current?.reset();
     }
-    requestInFlightRef.current = true;
+    const request = quoteRequestCoordinatorRef.current.begin();
     setStatus("loading");
     setRequestError("");
 
     try {
-      const response = await fetch(`/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`);
+      const response = await fetch(
+        `/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`,
+        { signal: request.signal },
+      );
       if (!response.ok) {
         throw new Error(`報價 API 回應 ${response.status}`);
       }
       const payload = await response.json();
+      if (!request.isCurrent()) {
+        return;
+      }
       setHasReceivedQuoteResponse(true);
       const merged = mergeQuoteResults(quoteResultRef.current, payload);
       quoteResultRef.current = merged.result;
@@ -583,6 +586,9 @@ export default function Home() {
         }
       }
     } catch (error) {
+      if (!request.isCurrent() || error?.name === "AbortError") {
+        return;
+      }
       const hasPriorData = hasCompletePriorQuoteResult(quoteResultRef.current, tickers);
       if (hasPriorData) {
         retryControllerRef.current?.schedule();
@@ -592,8 +598,6 @@ export default function Home() {
         retryControllerRef.current?.schedule();
         setStatus("error");
       }
-    } finally {
-      requestInFlightRef.current = false;
     }
   }, [analyticsClient, formState, tickers]);
 
@@ -1161,6 +1165,13 @@ export default function Home() {
       try {
         const backupText = await file.text();
         const backup = parseAppBackup(backupText, DEFAULT_STATE);
+        quoteRequestCoordinatorRef.current.invalidate();
+        quoteResultRef.current = emptyQuoteResult;
+        setQuoteResult(emptyQuoteResult);
+        setHasReceivedQuoteResponse(false);
+        setLastUpdatedAt(null);
+        setStatus("idle");
+        setRequestError("");
         setFormState(normalizeStoredState(backup.settings));
         setHistoryRecords((current) => mergeImportedHistory(current, backup.history));
         setBackupStatus("已匯入完整備份，設定已更新，歷史紀錄已合併。");
