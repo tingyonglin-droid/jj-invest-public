@@ -72,6 +72,15 @@ test("beta guidance waits for a configured holding before showing calculated all
   assert.doesNotMatch(page, /className="weightGuardBeta"/);
 });
 
+test("calculated allocation places its ratios on a separate line", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(
+    page,
+    /<strong>\s*<span>依目前持股推算配置<\/span>\s*<span className="weightGuardRatios">/s,
+  );
+});
+
 test("settings intro matches rebalance heading typography and subtitle gap", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

@@ -2753,8 +2753,14 @@ button.betaAction {
 }
 
 .weightGuardSummary strong {
+  display: grid;
+  gap: 2px;
   font-size: 15px;
   line-height: 1.4;
+}
+
+.weightGuardRatios {
+  font-variant-numeric: tabular-nums;
 }
 
 .weightGuardSummary > span {

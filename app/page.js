@@ -3021,9 +3021,12 @@ function SettingsAccordions({
             ) : betaGuardIsValid ? (
                 <div className="weightGuardSummary">
                   <strong>
-                    依目前持股推算配置：槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
-                    {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
-                    {formatPercent(calculation.afterCashRatio)}
+                    <span>依目前持股推算配置</span>
+                    <span className="weightGuardRatios">
+                      槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
+                      {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
+                      {formatPercent(calculation.afterCashRatio)}
+                    </span>
                   </strong>
                   <span>
                     {hasConfiguredLeveragedPositions
