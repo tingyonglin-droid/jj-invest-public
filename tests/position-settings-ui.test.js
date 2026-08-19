@@ -73,7 +73,6 @@ test("beta guidance waits for a configured holding before showing calculated all
   assert.match(page, /positionGroups\.leveraged\.length > 0/);
   assert.match(page, /id: "position-1",\s*tickerInput: ""/s);
   assert.doesNotMatch(page, /className="weightGuardBeta"/);
-  assert.match(page, /hasConfiguredPositions && calculation\.errors\.length > 0/);
   assert.match(
     page,
     /className="betaSetupStep"[\s\S]*?先設定目標 Beta[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至現金頁填寫可用資金/s,
@@ -101,6 +100,17 @@ test("beta settings configure original allocation without a redundant leveraged 
   assert.doesNotMatch(page, /<strong>槓桿配置<\/strong>/);
   assert.match(page, /目前可達 Beta/);
   assert.match(page, /現金部位包含/);
+  assert.match(page, /完成下方設定後，將顯示推算配置/);
+  assert.match(page, /className="fieldError">原形標的目前為 0 股，請設定原形目標比例/);
+  assert.match(page, /className="settingsTabErrorDot"/);
+  assert.doesNotMatch(page, /className="settingsErrorSummary"/);
+});
+
+test("settings keep calculation errors local while preserving global quote errors", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /activeView !== "settings" && pageCalculationErrors\.length > 0/);
+  assert.match(page, /requestError \|\|[\s\S]*quoteResult\.fx\.error \|\|[\s\S]*quoteErrors\.length > 0/s);
 });
 
 test("cash-equivalent settings clarify that real cash is within the cash sleeve", async () => {

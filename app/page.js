@@ -1269,7 +1269,7 @@ export default function Home() {
       {(requestError ||
         quoteResult.fx.error ||
         quoteErrors.length > 0 ||
-        pageCalculationErrors.length > 0) && (
+        (activeView !== "settings" && pageCalculationErrors.length > 0)) && (
         <div className="alertCard" role="alert">
           {requestError && <p>{requestError}</p>}
           {quoteResult.fx.error && <p>匯率：{quoteResult.fx.error}</p>}
@@ -2805,6 +2805,9 @@ function SettingsAccordions({
     realCashTargetPct: formState.realCashTargetPct,
   });
   const [activeSettingsPage, setActiveSettingsPage] = useState(initialPage);
+  const settingsPagesWithErrors = new Set(
+    calculation.issues.map((issue) => issue.settingsPage).filter(Boolean),
+  );
   const targetRealCashRatio = calculation.totalAssetsTwd > 0
     ? calculation.targetRealCashTwd / calculation.totalAssetsTwd
     : 0;
@@ -2843,20 +2846,15 @@ function SettingsAccordions({
               onClick={() => setActiveSettingsPage(item.id)}
               aria-current={activeSettingsPage === item.id ? "page" : undefined}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {settingsPagesWithErrors.has(item.id) && (
+                <i className="settingsTabErrorDot" aria-label={`${item.label}有待修正設定`} />
+              )}
             </button>
           ))}
         </nav>
 
         <div className="settingsBody">
-          {hasConfiguredPositions && calculation.errors.length > 0 ? (
-            <div className="settingsErrorSummary" role="alert">
-              <strong>請修正以下設定</strong>
-              <ul>
-                {calculation.errors.map((error) => <li key={error}>{error}</li>)}
-              </ul>
-            </div>
-          ) : null}
           {activeSettingsPage === "cash" && (
             <>
               <div className="positionEditor cashEditor cash" aria-label="現金設定">
@@ -3124,7 +3122,7 @@ function SettingsAccordions({
                   </span>
                 </div>
             ) : (
-              <span>{calculation.errors.join(" ")}</span>
+              <span>完成下方設定後，將顯示推算配置。</span>
             )}
           </div>
           <div className="positionEditor betaParameterGroup">
@@ -3142,6 +3140,9 @@ function SettingsAccordions({
                 placeholder="1.0 / 1.2 / 1.4 / 1.6"
                 onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
               />
+              {formState.targetBeta === "" && (
+                <small className="fieldError">請輸入目標 Beta。</small>
+              )}
             </label>
             <p className="hint">Beta 是目標，持股是工具，現金是結果；更換標的或曝險倍數不會改變目標。</p>
           </div>
@@ -3199,7 +3200,7 @@ function SettingsAccordions({
               </>
             ) : (
               <>
-                <p className="hint">原形標的目前為 0 股，請設定原形目標比例。</p>
+                <p className="fieldError">原形標的目前為 0 股，請設定原形目標比例。</p>
                 <label>
                   <span>原形目標比例 %</span>
                   <input

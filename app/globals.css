@@ -2439,6 +2439,20 @@ button.betaAction {
   box-shadow: 0 6px 18px rgba(17, 24, 33, 0.08);
 }
 
+.settingsSubTabs button {
+  position: relative;
+}
+
+.settingsTabErrorDot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--danger);
+}
+
 .settingsPanel summary {
   display: flex;
   align-items: center;
