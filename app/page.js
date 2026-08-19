@@ -93,6 +93,10 @@ import {
   getTickerDisplayText,
   getTickerPlaceholder,
 } from "../src/lib/presentation.js";
+import {
+  isQuoteableTickerInput,
+  normalizeLegacyGhostPosition,
+} from "../src/lib/stored-state.js";
 
 const STORAGE_KEY = "jj-invest-public-overview-v1";
 const HISTORY_STORAGE_KEY = "jj-invest-public-history-v1";
@@ -242,11 +246,16 @@ function normalizeStoredState(state) {
       leveraged: modes.leveraged === "custom" ? "custom" : "auto",
       original: modes.original === "custom" ? "custom" : "auto",
     },
-    positions: (state.positions || DEFAULT_STATE.positions).map((position) => ({
-      ...position,
-      assetBeta: Number.isFinite(Number(position.assetBeta)) ? Number(position.assetBeta) : 2,
-      targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
-    })),
+    positions: (state.positions || DEFAULT_STATE.positions).map((position) => {
+      const normalizedPosition = normalizeLegacyGhostPosition(position);
+      return {
+        ...normalizedPosition,
+        assetBeta: Number.isFinite(Number(normalizedPosition.assetBeta))
+          ? Number(normalizedPosition.assetBeta)
+          : 2,
+        targetWeightPct: parseNumericInput(normalizedPosition.targetWeightPct ?? 0),
+      };
+    }),
   };
 }
 
@@ -377,7 +386,7 @@ export default function Home() {
     () =>
       [...formState.positions, ...formState.cashEquivalentPositions]
         .map((position) => position.tickerInput)
-        .filter((ticker) => String(ticker || "").trim()),
+        .filter(isQuoteableTickerInput),
     [formState.positions, formState.cashEquivalentPositions],
   );
 
