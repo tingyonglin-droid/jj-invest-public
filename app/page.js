@@ -86,6 +86,7 @@ import {
 import {
   getActionText,
   getEstimatedShares,
+  formatExposureMultiplier,
   getPositionDisplayName,
   getTickerDefaultAssetBeta,
   getTickerDisplayText,
@@ -2548,7 +2549,14 @@ function HoldingRow({ item, onToggleSelection, precision }) {
           />
         </label>
         <div className="holdingIdentity">
-          <strong>{displayTicker}</strong>
+          <div className="holdingTickerLine">
+            <strong>{displayTicker}</strong>
+            {getHoldingAssetType(item.assetBeta) === "leveraged" && (
+              <span className="exposureMultiplierBadge">
+                {formatExposureMultiplier(item.assetBeta)}
+              </span>
+            )}
+          </div>
           <span>{getPositionDisplayName(item.normalizedTicker, item.assetBeta)}</span>
           <em>市值 {formatTwd(item.currentValueTwd)}</em>
           <em>股價 {formatQuotePrice(item.price, item.currency)} · 更新 {formatQuoteDate(item.date)}</em>

@@ -9,6 +9,7 @@ import {
   getTickerPlaceholder,
   getTickerBadgeText,
   getTickerDefaultAssetBeta,
+  formatExposureMultiplier,
 } from "../src/lib/presentation.js";
 
 describe("presentation helpers", () => {
@@ -50,6 +51,12 @@ describe("presentation helpers", () => {
     assert.equal(getTickerDefaultAssetBeta("00631L"), 2);
     assert.equal(getTickerDefaultAssetBeta("00631L.TW"), 2);
     assert.equal(getTickerDefaultAssetBeta("UNKNOWN"), null);
+  });
+
+  it("formats compact exposure multiplier labels", () => {
+    assert.equal(formatExposureMultiplier(1.5), "1.5×");
+    assert.equal(formatExposureMultiplier(2), "2×");
+    assert.equal(formatExposureMultiplier(3), "3×");
   });
 
   it("shows asset-specific ticker examples in settings", () => {

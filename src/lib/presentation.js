@@ -58,6 +58,15 @@ export function getTickerDisplayText(normalizedTicker) {
     .replace(/\.(?:TW|TWO)$/, "");
 }
 
+export function formatExposureMultiplier(assetBeta) {
+  const multiplier = Number(assetBeta);
+  if (!Number.isFinite(multiplier)) {
+    return "";
+  }
+
+  return `${Number.isInteger(multiplier) ? multiplier : multiplier.toFixed(1)}×`;
+}
+
 export function getTickerPlaceholder(assetType) {
   return TICKER_PLACEHOLDERS[assetType] || "輸入股票或 ETF 代號";
 }

@@ -106,6 +106,16 @@ test("rebalance rows show simple ticker text without circular badges", async () 
   assert.doesNotMatch(styles, /\.tickerBadge/);
 });
 
+test("rebalance rows show a compact exposure multiplier beside each leveraged ticker", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(page, /className="holdingTickerLine"/);
+  assert.match(page, /className="exposureMultiplierBadge"/);
+  assert.match(page, /formatExposureMultiplier\(item\.assetBeta\)/);
+  assert.match(styles, /\.exposureMultiplierBadge\s*\{[^}]*font-size:\s*12px;/s);
+});
+
 test("rebalance parameters use compact rows and conventional stepper order", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

@@ -9,6 +9,7 @@
   --primary: #78867d;
   --primary-dark: #5f6c64;
   --asset-leveraged: #967c9d;
+  --asset-leveraged-ink: #66506d;
   --asset-original: #78917e;
   --asset-cash: #7891a5;
   --asset-leveraged-soft: #f5f2f5;
@@ -2014,10 +2015,35 @@ button.betaAction {
   min-width: 0;
 }
 
+.holdingTickerLine {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
 .holdingIdentity strong {
   overflow-wrap: anywhere;
   font-size: 16px;
   font-weight: 820;
+}
+
+.exposureMultiplierBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--asset-leveraged-soft);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.holdingIdentity span.exposureMultiplierBadge {
+  color: var(--asset-leveraged-ink);
+  font-weight: 780;
 }
 
 .holdingIdentity span,
