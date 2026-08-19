@@ -2808,6 +2808,10 @@ function SettingsAccordions({
   const settingsPagesWithErrors = new Set(
     calculation.issues.map((issue) => issue.settingsPage).filter(Boolean),
   );
+  const betaBlockingIssue = calculation.issues.find((issue) =>
+    issue.code === "TARGET_BETA_UNREACHABLE"
+    || issue.code === "TARGET_BETA_UNREACHABLE_WITHOUT_LEVERAGE",
+  );
   const targetRealCashRatio = calculation.totalAssetsTwd > 0
     ? calculation.targetRealCashTwd / calculation.totalAssetsTwd
     : 0;
@@ -3122,7 +3126,9 @@ function SettingsAccordions({
                   </span>
                 </div>
             ) : (
-              <span>完成下方設定後，將顯示推算配置。</span>
+              <span>
+                {betaBlockingIssue ? betaBlockingIssue.message : "完成下方設定後，將顯示推算配置。"}
+              </span>
             )}
           </div>
           <div className="positionEditor betaParameterGroup">

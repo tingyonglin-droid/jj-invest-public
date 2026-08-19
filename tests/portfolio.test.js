@@ -489,4 +489,23 @@ describe("portfolio calculations", () => {
 
     assert.equal(result.issues.some((issue) => issue.code === "ORIGINAL_TARGET_REQUIRED"), true);
   });
+
+  it("explains when preserving a fully funded original sleeve blocks a leveraged purchase", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "double", tickerInput: "00631L", shares: 0, assetBeta: 2 },
+        { id: "original", tickerInput: "QLD", shares: 100, assetBeta: 1 },
+      ],
+      quotes,
+      cashTwd: 0,
+      targetBeta: 1.2,
+      originalAllocationMode: "current",
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.issues.some((issue) =>
+      issue.code === "TARGET_BETA_UNREACHABLE"
+      && issue.message === "維持目前原形比例 100% 時，最高只能達到 Beta 1.00；請改用自訂目標比例。"
+    ), true);
+  });
 });

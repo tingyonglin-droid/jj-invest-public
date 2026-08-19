@@ -252,6 +252,8 @@ export function calculatePortfolio({
       "TARGET_BETA_UNREACHABLE",
       targetLeveragedRatio < -RATIO_TOLERANCE
         ? "原形比例過高，無法達成目前的目標 Beta。"
+        : originalAllocationMode === "current"
+          ? `維持目前原形比例 ${Number((targetOriginalRatio * 100).toFixed(2))}% 時，最高只能達到 Beta ${maximumReachableBeta.toFixed(2)}；請改用自訂目標比例。`
         : `目標 Beta 過高；目前配置最高可達 ${maximumReachableBeta.toFixed(2)}。`,
       "beta",
     );
