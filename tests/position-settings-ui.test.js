@@ -61,7 +61,7 @@ test("beta parameters keep target beta fixed and present allocation as a result"
   assert.match(page, /targetBeta: ""/);
   assert.match(page, /Beta 是目標，持股是工具，現金是結果/);
   assert.doesNotMatch(page, /槓桿目標比例 %/);
-  assert.doesNotMatch(page, /原形目標比例 %/);
+  assert.match(page, /原形目標比例 %/);
 });
 
 test("beta guidance waits for a configured holding before showing calculated allocation", async () => {
@@ -87,6 +87,26 @@ test("calculated allocation places its ratios on a separate line", async () => {
     page,
     /<strong>\s*<span>依目前持股推算配置<\/span>\s*<span className="weightGuardRatios">/s,
   );
+});
+
+test("beta settings explain original and leveraged allocation states", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /原形配置/);
+  assert.match(page, /維持目前比例/);
+  assert.match(page, /自訂目標比例/);
+  assert.match(page, /尚未新增原形標的/);
+  assert.match(page, /請設定原形目標比例/);
+  assert.match(page, /槓桿配置/);
+  assert.match(page, /目前可達 Beta/);
+  assert.match(page, /現金部位包含/);
+});
+
+test("cash-equivalent settings clarify that real cash is within the cash sleeve", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /現金部位內的真實現金比例/);
+  assert.match(page, /只分配現金部位，不代表占總資產的比例/);
 });
 
 test("settings intro matches rebalance heading typography and subtitle gap", async () => {

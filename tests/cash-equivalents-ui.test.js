@@ -8,8 +8,8 @@ test("cash settings expose automatic and custom cash-equivalent allocation", () 
   assert.match(page, /類現金標的/);
   assert.match(page, /自動配置/);
   assert.match(page, /自訂比例/);
-  assert.match(page, /真實現金保留比例/);
-  assert.match(page, /占現金＋類現金部位/);
+  assert.match(page, /現金部位內的真實現金比例/);
+  assert.match(page, /只分配現金部位，不代表占總資產的比例/);
   assert.match(page, /新增類現金標的/);
   assert.match(page, /類現金 ETF 仍有價格波動，並非保本現金/);
 });

@@ -22,6 +22,7 @@ const settings = {
   targetBeta: 1.2,
   tolerancePct: 10,
   originalTargetPct: 0,
+  originalAllocationMode: "current",
   allocationModes: { leveraged: "custom", original: "auto" },
   cashEquivalentPositions: [],
   cashEquivalentMode: "auto",

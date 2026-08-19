@@ -44,6 +44,7 @@ export function calculatePortfolio({
   quotes,
   cashTwd,
   targetBeta,
+  originalAllocationMode = "current",
   leveragedTargetPct = 0,
   originalTargetPct = 0,
   tolerancePct,
@@ -128,6 +129,9 @@ export function calculatePortfolio({
     leveraged: normalizedPositions.filter((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "leveraged"),
     original: normalizedPositions.filter((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "original"),
   };
+  const hasConfiguredOriginalPosition = rowsByType.original.some(
+    (row) => String(row.tickerInput || "").trim(),
+  );
   const targetWeightTotals = Object.fromEntries(
     Object.entries(rowsByType).map(([assetType, rows]) => [
       assetType,
@@ -167,11 +171,18 @@ export function calculatePortfolio({
   const explicitTargetBeta = toNumber(targetBeta);
   const hasLeveragedRows = validRows.some((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "leveraged");
   const hasOriginalRows = validRows.some((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "original");
+  const usesCustomOriginalTarget = originalAllocationMode === "custom";
+  const customOriginalTargetIsValid = originalTargetPct !== ""
+    && Number.isFinite(Number(originalTargetPct))
+    && Number(originalTargetPct) >= 0
+    && Number(originalTargetPct) <= 100;
   const targetOriginalRatio = roundRatio(
     hasExplicitTargetBeta
-      ? hasLeveragedRows
-        ? hasOriginalRows && totalAssetsTwd > 0 ? originalValueTwd / totalAssetsTwd : 0
-        : hasOriginalRows ? explicitTargetBeta : 0
+      ? usesCustomOriginalTarget
+        ? legacyOriginalTargetRatio
+        : hasLeveragedRows
+          ? hasOriginalRows && totalAssetsTwd > 0 ? originalValueTwd / totalAssetsTwd : 0
+          : hasOriginalRows ? explicitTargetBeta : 0
       : legacyOriginalTargetRatio,
   );
   const targetLeveragedRatio = roundRatio(
@@ -185,6 +196,12 @@ export function calculatePortfolio({
       ? explicitTargetBeta
       : targetLeveragedRatio * targetLeveragedBeta + targetOriginalRatio,
   );
+  const minimumReachableBeta = roundRatio(targetOriginalRatio);
+  const maximumReachableBeta = roundRatio(
+    hasLeveragedRows
+      ? targetOriginalRatio + (1 - targetOriginalRatio) * targetLeveragedBeta
+      : targetOriginalRatio,
+  );
 
   if (hasExplicitTargetBeta && (explicitTargetBeta < 0 || explicitTargetBeta > 3)) {
     addIssue(
@@ -196,6 +213,27 @@ export function calculatePortfolio({
 
   if (targetBeta === "") {
     addIssue("MISSING_TARGET_BETA", "請輸入目標 Beta。", "beta");
+  }
+
+  if (usesCustomOriginalTarget && !customOriginalTargetIsValid) {
+    addIssue(
+      "INVALID_ORIGINAL_TARGET",
+      "原形目標比例必須介於 0～100%。",
+      "beta",
+    );
+  }
+
+  if (
+    originalAllocationMode === "current"
+    && hasConfiguredOriginalPosition
+    && originalValueTwd <= 0
+    && hasLeveragedRows
+  ) {
+    addIssue(
+      "ORIGINAL_TARGET_REQUIRED",
+      "原形標的目前為 0 股，請設定原形目標比例。",
+      "beta",
+    );
   }
 
   if (hasExplicitTargetBeta && !hasLeveragedRows && !hasOriginalRows && explicitTargetBeta > 0) {
@@ -212,7 +250,21 @@ export function calculatePortfolio({
   ) {
     addIssue(
       "TARGET_BETA_UNREACHABLE",
-      `目前持股組合無法達成目標 Beta ${targetBetaValue.toFixed(2)}。`,
+      targetLeveragedRatio < -RATIO_TOLERANCE
+        ? "原形比例過高，無法達成目前的目標 Beta。"
+        : `目標 Beta 過高；目前配置最高可達 ${maximumReachableBeta.toFixed(2)}。`,
+      "beta",
+    );
+  }
+
+  if (
+    hasExplicitTargetBeta
+    && !hasLeveragedRows
+    && Math.abs(explicitTargetBeta - targetOriginalRatio) > RATIO_TOLERANCE
+  ) {
+    addIssue(
+      "TARGET_BETA_UNREACHABLE_WITHOUT_LEVERAGE",
+      `沒有槓桿標的時，目前配置只能達到 Beta ${targetOriginalRatio.toFixed(2)}。`,
       "beta",
     );
   }
@@ -367,6 +419,8 @@ export function calculatePortfolio({
     currentBeta,
     targetBeta: targetBetaValue,
     targetLeveragedBeta,
+    minimumReachableBeta,
+    maximumReachableBeta,
     tolerancePct: toNumber(tolerancePct),
     betaDrift,
     betaLower,

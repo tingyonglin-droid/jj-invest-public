@@ -25,6 +25,7 @@ const settings = {
   cashUsd: 1000,
   leveragedTargetPct: 40,
   originalTargetPct: 40,
+  originalAllocationMode: "current",
   targetBeta: 1.2,
   tolerancePct: 10,
 };
@@ -75,6 +76,7 @@ describe("app backup", () => {
     assert.equal(parsed.settings.positions[0].shares, 1000);
     assert.equal(parsed.settings.positions[0].targetWeightPct, 100);
     assert.equal(parsed.settings.targetBeta, 1.2);
+    assert.equal(parsed.settings.originalAllocationMode, "current");
     assert.deepEqual(parsed.settings.allocationModes, {
       leveraged: "custom",
       original: "auto",

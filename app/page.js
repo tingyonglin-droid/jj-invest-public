@@ -122,6 +122,7 @@ const DEFAULT_STATE = {
   cashEquivalentMode: "auto",
   realCashTargetPct: 10,
   targetBeta: "",
+  originalAllocationMode: "current",
   leveragedTargetPct: 60,
   originalTargetPct: 0,
   tolerancePct: 10,
@@ -242,6 +243,7 @@ function normalizeStoredState(state) {
       targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
     })),
     originalTargetPct: parseNumericInput(state.originalTargetPct ?? DEFAULT_STATE.originalTargetPct),
+    originalAllocationMode: state.originalAllocationMode === "custom" ? "custom" : "current",
     targetBeta: parseNumericInput(state.targetBeta ?? DEFAULT_STATE.targetBeta),
     allocationModes: {
       leveraged: modes.leveraged === "custom" ? "custom" : "auto",
@@ -415,6 +417,7 @@ export default function Home() {
         quotes: quoteResult.quotes,
         cashTwd: cashValueTwd,
         targetBeta: formState.targetBeta,
+        originalAllocationMode: formState.originalAllocationMode,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
@@ -586,6 +589,7 @@ export default function Home() {
         quotes: merged.result.quotes,
         cashTwd: nextCashValueTwd,
         targetBeta: formState.targetBeta,
+        originalAllocationMode: formState.originalAllocationMode,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
@@ -859,6 +863,12 @@ export default function Home() {
 
   function updateSetting(field, value) {
     setFormState((current) => {
+      if (field === "originalAllocationMode") {
+        return {
+          ...current,
+          originalAllocationMode: value === "custom" ? "custom" : "current",
+        };
+      }
       if (field === "cashEquivalentMode") {
         return {
           ...current,
@@ -895,6 +905,7 @@ export default function Home() {
       return {
         ...current,
         [field]: nextValue,
+        ...(field === "originalTargetPct" ? { originalAllocationMode: "custom" } : {}),
       };
     });
   }
@@ -2782,7 +2793,11 @@ function SettingsAccordions({
   );
   const hasConfiguredLeveragedPositions = positionGroups.leveraged.length > 0
     && positionGroups.leveraged.some((position) => String(position.tickerInput || "").trim());
-  const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
+  const hasOriginalPositions = positionGroups.original.length > 0;
+  const hasConfiguredOriginalPositions = positionGroups.original.some(
+    (position) => String(position.tickerInput || "").trim(),
+  );
+  const hasFundedOriginalPositions = hasConfiguredOriginalPositions && calculation.originalValueTwd > 0;
   const betaGuardIsValid = calculation.errors.length === 0;
   const cashEquivalentStatus = getCashEquivalentTargetStatus({
     mode: formState.cashEquivalentMode,
@@ -2790,6 +2805,18 @@ function SettingsAccordions({
     realCashTargetPct: formState.realCashTargetPct,
   });
   const [activeSettingsPage, setActiveSettingsPage] = useState(initialPage);
+  const targetRealCashRatio = calculation.totalAssetsTwd > 0
+    ? calculation.targetRealCashTwd / calculation.totalAssetsTwd
+    : 0;
+  const targetCashEquivalentRatio = Math.max(calculation.afterCashRatio - targetRealCashRatio, 0);
+
+  function setOriginalAllocationMode(mode) {
+    if (mode === "custom") {
+      onUpdateSetting("originalTargetPct", calculation.originalRatio * 100);
+      return;
+    }
+    onUpdateSetting("originalAllocationMode", "current");
+  }
 
   return (
     <section className="settingsStack" aria-label="參數設定">
@@ -2935,7 +2962,7 @@ function SettingsAccordions({
                   </div>
                 </div>
                 <label>
-                  <span>真實現金保留比例 %（占現金＋類現金部位）</span>
+                  <span>現金部位內的真實現金比例 %</span>
                   <input
                     type="number"
                     min="0"
@@ -2945,6 +2972,7 @@ function SettingsAccordions({
                     onChange={(event) => onUpdateSetting("realCashTargetPct", event.target.value)}
                   />
                 </label>
+                <p className="hint">此比例只分配現金部位，不代表占總資產的比例。</p>
                 {formState.cashEquivalentPositions.map((position, index) => (
                   <div className="positionEditor cashEquivalentEditor" key={position.id}>
                     <div className="positionTitle">
@@ -3080,6 +3108,16 @@ function SettingsAccordions({
                       ? "原形持股維持目前比例。"
                       : "剩餘資產保留為現金。"}
                   </span>
+                  {formState.cashEquivalentPositions.length > 0 && (
+                    <span>
+                      現金部位包含：真實現金 {formatPercent(targetRealCashRatio)}／類現金標的{" "}
+                      {formatPercent(targetCashEquivalentRatio)}
+                    </span>
+                  )}
+                  <span>
+                    目前可達 Beta：{formatNumber(calculation.minimumReachableBeta)}～
+                    {formatNumber(calculation.maximumReachableBeta)}
+                  </span>
                 </div>
             ) : (
               <span>{calculation.errors.join(" ")}</span>
@@ -3102,6 +3140,97 @@ function SettingsAccordions({
               />
             </label>
             <p className="hint">Beta 是目標，持股是工具，現金是結果；更換標的或曝險倍數不會改變目標。</p>
+          </div>
+          <div className="positionEditor betaParameterGroup secondary">
+            <div className="positionTitle">
+              <strong>原形配置</strong>
+            </div>
+            {!hasConfiguredOriginalPositions ? (
+              <>
+                <p className="hint">尚未新增原形標的，目前原形比例為 0%。</p>
+                <button
+                  type="button"
+                  className="secondaryButton fullWidth"
+                  onClick={() => setActiveSettingsPage("positions")}
+                >
+                  前往持股新增原形
+                </button>
+              </>
+            ) : hasFundedOriginalPositions ? (
+              <>
+                <div className="allocationModeControl" role="radiogroup" aria-label="原形配置方式">
+                  <span>配置方式</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={formState.originalAllocationMode === "current" ? "active" : ""}
+                      onClick={() => setOriginalAllocationMode("current")}
+                    >
+                      維持目前比例
+                    </button>
+                    <button
+                      type="button"
+                      className={formState.originalAllocationMode === "custom" ? "active" : ""}
+                      onClick={() => setOriginalAllocationMode("custom")}
+                    >
+                      自訂目標比例
+                    </button>
+                  </div>
+                </div>
+                {formState.originalAllocationMode === "current" ? (
+                  <p className="hint">目前原形占總資產 {formatPercent(calculation.originalRatio)}。</p>
+                ) : (
+                  <label>
+                    <span>原形目標比例 %</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={formState.originalTargetPct}
+                      onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
+                    />
+                  </label>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="hint">原形標的目前為 0 股，請設定原形目標比例。</p>
+                <label>
+                  <span>原形目標比例 %</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={formState.originalTargetPct}
+                    onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
+                  />
+                </label>
+              </>
+            )}
+          </div>
+          <div className="positionEditor betaParameterGroup secondary">
+            <div className="positionTitle">
+              <strong>槓桿配置</strong>
+            </div>
+            {!hasConfiguredLeveragedPositions ? (
+              <>
+                <p className="hint">尚未新增槓桿標的；目標 Beta 需要槓桿時請先新增。</p>
+                <button
+                  type="button"
+                  className="secondaryButton fullWidth"
+                  onClick={() => setActiveSettingsPage("positions")}
+                >
+                  前往持股新增槓桿
+                </button>
+              </>
+            ) : (
+              <p className="hint">
+                平均曝險倍數 {formatExposureMultiplier(calculation.targetLeveragedBeta)}；系統依目標 Beta
+                與原形比例推算槓桿配置為 {formatPercent(calculation.targetLeveragedRatio)}。
+              </p>
+            )}
           </div>
           <div className="positionEditor betaParameterGroup secondary">
             <div className="positionTitle">

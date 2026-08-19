@@ -102,6 +102,7 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
     cashUsd: toInteger(source.cashUsd),
     leveragedTargetPct,
     originalTargetPct,
+    originalAllocationMode: source.originalAllocationMode === "custom" ? "custom" : "current",
     targetBeta,
     tolerancePct: toNumber(source.tolerancePct, fallback.tolerancePct ?? 10),
   };

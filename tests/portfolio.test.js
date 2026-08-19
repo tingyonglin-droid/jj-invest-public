@@ -452,4 +452,41 @@ describe("portfolio calculations", () => {
 
     assert.equal(result.issues.some((issue) => issue.code === "MISSING_TARGET_BETA"), true);
   });
+
+  it("derives leveraged and cash allocation from a custom original target", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "double", tickerInput: "QLD", shares: 10, assetBeta: 2 },
+        { id: "original", tickerInput: "QQQ", shares: 10, assetBeta: 1 },
+      ],
+      quotes,
+      cashTwd: 10000,
+      targetBeta: 1.2,
+      originalAllocationMode: "custom",
+      originalTargetPct: 30,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.targetOriginalRatio, 0.3);
+    assert.equal(result.targetLeveragedRatio, 0.45);
+    assert.equal(result.afterCashRatio, 0.25);
+    assert.equal(result.minimumReachableBeta, 0.3);
+    assert.equal(result.maximumReachableBeta, 1.7);
+  });
+
+  it("requires a target for an unfunded original holding", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "double", tickerInput: "QLD", shares: 10, assetBeta: 2 },
+        { id: "original", tickerInput: "QQQ", shares: 0, assetBeta: 1 },
+      ],
+      quotes,
+      cashTwd: 10000,
+      targetBeta: 1.2,
+      originalAllocationMode: "current",
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.issues.some((issue) => issue.code === "ORIGINAL_TARGET_REQUIRED"), true);
+  });
 });
