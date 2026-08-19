@@ -89,7 +89,7 @@ test("calculated allocation places its ratios on a separate line", async () => {
   );
 });
 
-test("beta settings explain original and leveraged allocation states", async () => {
+test("beta settings configure original allocation without a redundant leveraged card", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
   assert.match(page, /原形配置/);
@@ -97,7 +97,7 @@ test("beta settings explain original and leveraged allocation states", async () 
   assert.match(page, /自訂目標比例/);
   assert.match(page, /尚未新增原形標的/);
   assert.match(page, /請設定原形目標比例/);
-  assert.match(page, /槓桿配置/);
+  assert.doesNotMatch(page, /<strong>槓桿配置<\/strong>/);
   assert.match(page, /目前可達 Beta/);
   assert.match(page, /現金部位包含/);
 });

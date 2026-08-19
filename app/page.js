@@ -3212,28 +3212,6 @@ function SettingsAccordions({
           </div>
           <div className="positionEditor betaParameterGroup secondary">
             <div className="positionTitle">
-              <strong>槓桿配置</strong>
-            </div>
-            {!hasConfiguredLeveragedPositions ? (
-              <>
-                <p className="hint">尚未新增槓桿標的；目標 Beta 需要槓桿時請先新增。</p>
-                <button
-                  type="button"
-                  className="secondaryButton fullWidth"
-                  onClick={() => setActiveSettingsPage("positions")}
-                >
-                  前往持股新增槓桿
-                </button>
-              </>
-            ) : (
-              <p className="hint">
-                平均曝險倍數 {formatExposureMultiplier(calculation.targetLeveragedBeta)}；系統依目標 Beta
-                與原形比例推算槓桿配置為 {formatPercent(calculation.targetLeveragedRatio)}。
-              </p>
-            )}
-          </div>
-          <div className="positionEditor betaParameterGroup secondary">
-            <div className="positionTitle">
               <strong>再平衡容忍度</strong>
             </div>
             <label>
