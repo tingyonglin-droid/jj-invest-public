@@ -4,7 +4,7 @@ const TICKER_NAMES = Object.fromEntries(
   supportedTickers.flatMap((item) => item.symbols.map((symbol) => [symbol, item.name])),
 );
 const TICKER_DEFAULT_BETAS = Object.fromEntries(
-  supportedTickers.flatMap((item) => item.symbols.map((symbol) => [
+  supportedTickers.flatMap((item) => [item.ticker, ...item.symbols].map((symbol) => [
     symbol,
     Number(item.assetBeta ?? (item.category === "original" ? 1 : item.category === "leveraged" ? 2 : 0)),
   ])),
@@ -17,7 +17,7 @@ const TICKER_BADGES = {
 };
 
 const TICKER_PLACEHOLDERS = {
-  leveraged: "SOXL / QLD / 00631L / 00685L",
+  leveraged: "00631L / 00685L / QLD / SOXL",
   original: "0050 / 006208 / VOO / QQQ",
   cashEquivalent: "00865B / 00859B / SGOV / BSV",
 };

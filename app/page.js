@@ -1786,7 +1786,7 @@ function GlossaryDialog({ topic, onClose }) {
               <article className="glossaryItem">
                 <span>槓桿</span>
                 <p>槓桿標的是曝險倍數大於 1 的標的，可為 1.5×、2× 或 3×。</p>
-                <p>例如 00631L、QLD、SOXL 這類標的。倍數是產品的單日目標，持有多日可能因波動與複利效果偏離。</p>
+                <p>例如 00631L、QLD、SOXL、NTSD 這類標的。部分產品採單日槓桿目標，部分產品採資本效率型總曝險；持有多日可能因波動與複利效果偏離。</p>
               </article>
 
               <article className="glossaryItem">

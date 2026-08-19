@@ -44,12 +44,16 @@ describe("presentation helpers", () => {
 
   it("provides a known ticker multiplier without preventing manual overrides", () => {
     assert.equal(getTickerDefaultAssetBeta("SOXL"), 3);
+    assert.equal(getTickerDefaultAssetBeta("TQQQ"), 3);
+    assert.equal(getTickerDefaultAssetBeta("NTSD"), 1.5);
     assert.equal(getTickerDefaultAssetBeta("QLD"), 2);
+    assert.equal(getTickerDefaultAssetBeta("00631L"), 2);
+    assert.equal(getTickerDefaultAssetBeta("00631L.TW"), 2);
     assert.equal(getTickerDefaultAssetBeta("UNKNOWN"), null);
   });
 
   it("shows asset-specific ticker examples in settings", () => {
-    assert.equal(getTickerPlaceholder("leveraged"), "SOXL / QLD / 00631L / 00685L");
+    assert.equal(getTickerPlaceholder("leveraged"), "00631L / 00685L / QLD / SOXL");
     assert.equal(getTickerPlaceholder("original"), "0050 / 006208 / VOO / QQQ");
     assert.equal(getTickerPlaceholder("cashEquivalent"), "00865B / 00859B / SGOV / BSV");
   });

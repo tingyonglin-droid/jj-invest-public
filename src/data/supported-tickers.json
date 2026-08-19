@@ -81,6 +81,94 @@
     "verifiedAt": "2026-08-19"
   },
   {
+    "ticker": "TQQQ",
+    "symbols": ["TQQQ"],
+    "name": "ProShares UltraPro QQQ",
+    "category": "leveraged",
+    "assetBeta": 3,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
+    "ticker": "UPRO",
+    "symbols": ["UPRO"],
+    "name": "ProShares UltraPro S&P500",
+    "category": "leveraged",
+    "assetBeta": 3,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
+    "ticker": "SPXL",
+    "symbols": ["SPXL"],
+    "name": "Direxion Daily S&P 500 Bull 3X ETF",
+    "category": "leveraged",
+    "assetBeta": 3,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
+    "ticker": "TECL",
+    "symbols": ["TECL"],
+    "name": "Direxion Daily Technology Bull 3X ETF",
+    "category": "leveraged",
+    "assetBeta": 3,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
+    "ticker": "TNA",
+    "symbols": ["TNA"],
+    "name": "Direxion Daily Small Cap Bull 3X ETF",
+    "category": "leveraged",
+    "assetBeta": 3,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
+    "ticker": "FAS",
+    "symbols": ["FAS"],
+    "name": "Direxion Daily Financial Bull 3X ETF",
+    "category": "leveraged",
+    "assetBeta": 3,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
+    "ticker": "UDOW",
+    "symbols": ["UDOW"],
+    "name": "ProShares UltraPro Dow30",
+    "category": "leveraged",
+    "assetBeta": 3,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
+    "ticker": "NTSD",
+    "symbols": ["NTSD"],
+    "name": "WisdomTree Efficient U.S. Plus International Equity Fund",
+    "category": "leveraged",
+    "assetBeta": 1.5,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-19"
+  },
+  {
     "ticker": "0050",
     "symbols": ["0050.TW"],
     "name": "元大台灣50",

@@ -25,6 +25,7 @@ test("allocation glossary explains leveraged, original, and cash assets", async 
 
   assert.match(page, /槓桿標的是曝險倍數大於 1 的標的/);
   assert.match(page, /持有多日可能因波動與複利效果偏離/);
+  assert.match(page, /部分產品採單日槓桿目標，部分產品採資本效率型總曝險/);
   assert.match(page, /原形是 Beta 約 1 的非槓桿標的/);
   assert.match(page, /現金桶是台幣現金、美金現金換算台幣，以及類現金 ETF 市值的加總/);
   assert.match(page, /類現金 ETF 的 Beta 以 0 計算/);

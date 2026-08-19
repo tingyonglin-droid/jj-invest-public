@@ -2,7 +2,7 @@
 
 > 本文件由 `src/data/supported-tickers.json` 自動產生。App 的標的名稱也直接讀取同一份 JSON。
 
-目前共 54 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
+目前共 62 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
 
 ## 槓桿
 
@@ -16,6 +16,14 @@
 | QLD | ProShares Ultra QQQ | US | QLD | Yahoo Finance | 2026-08-11 |
 | USD | ProShares Ultra Semiconductors | US | USD | Yahoo Finance | 2026-08-11 |
 | SOXL | Direxion Daily Semiconductor Bull 3X ETF | US | SOXL | Yahoo Finance | 2026-08-19 |
+| TQQQ | ProShares UltraPro QQQ | US | TQQQ | Yahoo Finance | 2026-08-19 |
+| UPRO | ProShares UltraPro S&P500 | US | UPRO | Yahoo Finance | 2026-08-19 |
+| SPXL | Direxion Daily S&P 500 Bull 3X ETF | US | SPXL | Yahoo Finance | 2026-08-19 |
+| TECL | Direxion Daily Technology Bull 3X ETF | US | TECL | Yahoo Finance | 2026-08-19 |
+| TNA | Direxion Daily Small Cap Bull 3X ETF | US | TNA | Yahoo Finance | 2026-08-19 |
+| FAS | Direxion Daily Financial Bull 3X ETF | US | FAS | Yahoo Finance | 2026-08-19 |
+| UDOW | ProShares UltraPro Dow30 | US | UDOW | Yahoo Finance | 2026-08-19 |
+| NTSD | WisdomTree Efficient U.S. Plus International Equity Fund | US | NTSD | Yahoo Finance | 2026-08-19 |
 | 00647L | 元大S&P500正2 | TWSE | 00647L.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | 00670L | 富邦NASDAQ正2 | TWSE | 00670L.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | SPUU | Direxion Daily S&P 500 Bull 2X ETF | US | SPUU | Yahoo Finance | 2026-08-11 |
