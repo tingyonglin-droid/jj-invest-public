@@ -358,6 +358,36 @@ describe("portfolio calculations", () => {
     assert.equal(result.afterCashRatio, 0.3425);
   });
 
+  it("uses original holdings and cash when no leveraged holding is available", () => {
+    const result = calculatePortfolio({
+      positions: [{ id: "original", tickerInput: "VOO", shares: 10, assetBeta: 1 }],
+      quotes: [{ ...quotes[1], inputTicker: "VOO", normalizedTicker: "VOO", priceTwd: 1000 }],
+      cashTwd: 90000,
+      targetBeta: 0.8,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.isValid, true);
+    assert.equal(result.targetBeta, 0.8);
+    assert.equal(result.targetOriginalRatio, 0.8);
+    assert.equal(result.targetLeveragedRatio, 0);
+    assert.equal(result.afterCashRatio, 0.2);
+  });
+
+  it("reports that original-only holdings cannot reach beta above one", () => {
+    const result = calculatePortfolio({
+      positions: [{ id: "original", tickerInput: "VOO", shares: 10, assetBeta: 1 }],
+      quotes: [{ ...quotes[1], inputTicker: "VOO", normalizedTicker: "VOO", priceTwd: 1000 }],
+      cashTwd: 90000,
+      targetBeta: 1.2,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.targetBeta, 1.2);
+    assert.equal(result.isValid, false);
+    assert.equal(result.issues.some((issue) => issue.code === "TARGET_BETA_UNREACHABLE"), true);
+  });
+
   it("reports when the available holdings cannot reach the fixed target beta", () => {
     const result = calculatePortfolio({
       positions: [{ id: "one-half", tickerInput: "NTSD", shares: 100, assetBeta: 1.5 }],

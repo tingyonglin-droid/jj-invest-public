@@ -150,14 +150,18 @@ export function calculatePortfolio({
   );
   const hasExplicitTargetBeta = Number.isFinite(Number(targetBeta));
   const explicitTargetBeta = toNumber(targetBeta);
+  const hasLeveragedRows = validRows.some((row) => getAssetType(row.assetBeta) === "leveraged");
+  const hasOriginalRows = validRows.some((row) => getAssetType(row.assetBeta) === "original");
   const targetOriginalRatio = roundRatio(
     hasExplicitTargetBeta
-      ? totalAssetsTwd > 0 ? originalValueTwd / totalAssetsTwd : 0
+      ? hasLeveragedRows
+        ? hasOriginalRows && totalAssetsTwd > 0 ? originalValueTwd / totalAssetsTwd : 0
+        : hasOriginalRows ? explicitTargetBeta : 0
       : legacyOriginalTargetRatio,
   );
   const targetLeveragedRatio = roundRatio(
     hasExplicitTargetBeta
-      ? (explicitTargetBeta - targetOriginalRatio) / targetLeveragedBeta
+      ? hasLeveragedRows ? (explicitTargetBeta - targetOriginalRatio) / targetLeveragedBeta : 0
       : legacyLeveragedTargetRatio,
   );
   const targetCashRatio = roundRatio(1 - targetLeveragedRatio - targetOriginalRatio);
@@ -172,6 +176,14 @@ export function calculatePortfolio({
       "INVALID_TARGET_BETA",
       "目標 Beta 必須介於 0～3。",
       "beta",
+    );
+  }
+
+  if (hasExplicitTargetBeta && !hasLeveragedRows && !hasOriginalRows && explicitTargetBeta > 0) {
+    addIssue(
+      "MISSING_TARGET_POSITION",
+      "請新增至少一檔原形或槓桿標的。",
+      "positions",
     );
   }
 

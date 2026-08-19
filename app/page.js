@@ -105,7 +105,7 @@ const DEFAULT_STATE = {
   positions: [
     {
       id: "position-1",
-      tickerInput: "00631L",
+      tickerInput: "",
       shares: 0,
       assetBeta: 2,
       targetWeightPct: 0,
@@ -2739,6 +2739,11 @@ function SettingsAccordions({
   onUpdateAllocationMode,
 }) {
   const positionGroups = getPositionGroups(formState.positions);
+  const hasConfiguredPositions = formState.positions.some(
+    (position) => String(position.tickerInput || "").trim(),
+  );
+  const hasConfiguredLeveragedPositions = positionGroups.leveraged.length > 0
+    && positionGroups.leveraged.some((position) => String(position.tickerInput || "").trim());
   const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
   const betaGuardIsValid = calculation.errors.length === 0;
   const cashEquivalentStatus = getCashEquivalentTargetStatus({
@@ -3008,26 +3013,27 @@ function SettingsAccordions({
           {activeSettingsPage === "beta" && (
             <>
           <div className={`weightGuard ${betaGuardIsValid ? "ok" : "error"}`}>
-            {betaGuardIsValid ? (
-              <>
+            {!hasConfiguredPositions ? (
+              <div className="weightGuardSummary">
+                <strong>先設定目標 Beta</strong>
+                <span>新增至少一檔原形或槓桿標的，系統會依曝險倍數推算持股與現金配置。</span>
+              </div>
+            ) : betaGuardIsValid ? (
                 <div className="weightGuardSummary">
                   <strong>
-                    達標配置：槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
+                    依目前持股推算配置：槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
                     {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
                     {formatPercent(calculation.afterCashRatio)}
                   </strong>
                   <span>
-                    槓桿平均 {formatExposureMultiplier(calculation.targetLeveragedBeta)}；
-                    原形持股維持目前比例。
+                    {hasConfiguredLeveragedPositions
+                      ? `槓桿平均 ${formatExposureMultiplier(calculation.targetLeveragedBeta)}；`
+                      : ""}
+                    {hasConfiguredLeveragedPositions && hasOriginalPositions
+                      ? "原形持股維持目前比例。"
+                      : "剩餘資產保留為現金。"}
                   </span>
                 </div>
-                <div className="weightGuardBeta" aria-label={`目標 Beta 設定 ${formatNumber(calculation.targetBeta, 1)}`}>
-                  <span className="weightGuardBetaLabel">目標Beta設定</span>
-                  <strong className="weightGuardBetaValue">
-                    {formatNumber(calculation.targetBeta, 1)}
-                  </strong>
-                </div>
-              </>
             ) : (
               <span>{calculation.errors.join(" ")}</span>
             )}

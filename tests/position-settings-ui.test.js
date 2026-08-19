@@ -61,6 +61,17 @@ test("beta parameters keep target beta fixed and present allocation as a result"
   assert.doesNotMatch(page, /原形目標比例 %/);
 });
 
+test("beta guidance waits for a configured holding before showing calculated allocation", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /const hasConfiguredPositions =/);
+  assert.match(page, /新增至少一檔原形或槓桿標的/);
+  assert.match(page, /依目前持股推算配置/);
+  assert.match(page, /positionGroups\.leveraged\.length > 0/);
+  assert.match(page, /id: "position-1",\s*tickerInput: ""/s);
+  assert.doesNotMatch(page, /className="weightGuardBeta"/);
+});
+
 test("settings intro matches rebalance heading typography and subtitle gap", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
