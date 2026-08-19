@@ -3089,6 +3089,10 @@ function SettingsAccordions({
                   <strong><span>2</span>接下來至持股頁新增持股</strong>
                   <p>請新增至少一檔槓桿或原形標的。</p>
                 </div>
+                <div className="betaSetupStep">
+                  <strong><span>3</span>接下來至現金頁填寫可用資金</strong>
+                  <p>輸入目前可用的新台幣或美金現金；若有類現金 ETF，也可一併新增。</p>
+                </div>
               </div>
             ) : betaGuardIsValid ? (
                 <div className="weightGuardSummary">

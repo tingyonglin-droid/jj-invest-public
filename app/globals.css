@@ -2767,6 +2767,7 @@ button.betaAction {
   align-items: center;
   gap: 8px;
   font-size: 15px;
+  line-height: 22px;
 }
 
 .betaSetupStep strong > span {
@@ -2778,7 +2779,9 @@ button.betaAction {
   color: #fff;
   background: var(--primary-dark);
   font-size: 12px;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
+  flex: 0 0 22px;
 }
 
 .betaSetupStep p {

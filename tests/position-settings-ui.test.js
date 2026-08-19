@@ -76,8 +76,9 @@ test("beta guidance waits for a configured holding before showing calculated all
   assert.match(page, /hasConfiguredPositions && calculation\.errors\.length > 0/);
   assert.match(
     page,
-    /className="betaSetupStep"[\s\S]*?先設定目標 Beta[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股/s,
+    /className="betaSetupStep"[\s\S]*?先設定目標 Beta[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至現金頁填寫可用資金/s,
   );
+  assert.match(page, /若有類現金 ETF，也可一併新增/);
 });
 
 test("calculated allocation places its ratios on a separate line", async () => {
@@ -116,6 +117,7 @@ test("settings intro matches rebalance heading typography and subtitle gap", asy
   assert.match(page, /className="cardTitleRow settingsTitleRow">\s*<p>參數設定<\/p>/s);
   assert.match(styles, /\.settingsTitleRow\s*\{[^}]*min-height:\s*32px;[^}]*align-items:\s*center;/s);
   assert.match(styles, /\.settingsIntro p\s*\{[^}]*font-size:\s*18px;[^}]*font-weight:\s*760;/s);
+  assert.match(styles, /\.betaSetupStep strong\s*\{[^}]*line-height:\s*22px;/s);
   assert.match(styles, /\.settingsIntro span\s*\{[^}]*margin-top:\s*3px;/s);
   assert.doesNotMatch(styles, /@media \(max-width:\s*480px\)[\s\S]*?\.settingsIntro p\s*\{/s);
 });
