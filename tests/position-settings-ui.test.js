@@ -96,13 +96,17 @@ test("beta settings configure original allocation without a redundant leveraged 
   assert.match(page, /維持目前比例/);
   assert.match(page, /自訂目標比例/);
   assert.match(page, /尚未新增原形標的/);
-  assert.match(page, /請設定原形目標比例/);
   assert.doesNotMatch(page, /<strong>槓桿配置<\/strong>/);
   assert.match(page, /目前可達 Beta/);
   assert.match(page, /現金部位包含/);
   assert.match(page, /完成下方設定後，將顯示推算配置/);
   assert.match(page, /betaBlockingIssue \? betaBlockingIssue\.message/);
-  assert.match(page, /className="fieldError">原形標的目前為 0 股，請設定原形目標比例/);
+  assert.match(page, /className="fieldError">\{originalTargetIssue\.message\}/);
+  assert.match(
+    page,
+    /originalTargetIssue && \([\s\S]*?originalTargetIssue\.message/s,
+  );
+  assert.match(page, /原形使用自訂目標比例/);
   assert.match(page, /className="settingsTabErrorDot"/);
   assert.doesNotMatch(page, /className="settingsErrorSummary"/);
 });

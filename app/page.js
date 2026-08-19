@@ -2812,6 +2812,9 @@ function SettingsAccordions({
     issue.code === "TARGET_BETA_UNREACHABLE"
     || issue.code === "TARGET_BETA_UNREACHABLE_WITHOUT_LEVERAGE",
   );
+  const originalTargetIssue = calculation.issues.find((issue) =>
+    issue.code === "ORIGINAL_TARGET_REQUIRED" || issue.code === "INVALID_ORIGINAL_TARGET",
+  );
   const targetRealCashRatio = calculation.totalAssetsTwd > 0
     ? calculation.targetRealCashTwd / calculation.totalAssetsTwd
     : 0;
@@ -3111,7 +3114,9 @@ function SettingsAccordions({
                       ? `槓桿平均 ${formatExposureMultiplier(calculation.targetLeveragedBeta)}；`
                       : ""}
                     {hasConfiguredLeveragedPositions && hasOriginalPositions
-                      ? "原形持股維持目前比例。"
+                      ? formState.originalAllocationMode === "custom"
+                        ? "原形使用自訂目標比例。"
+                        : "原形持股維持目前比例。"
                       : "剩餘資產保留為現金。"}
                   </span>
                   {formState.cashEquivalentPositions.length > 0 && (
@@ -3206,7 +3211,9 @@ function SettingsAccordions({
               </>
             ) : (
               <>
-                <p className="fieldError">原形標的目前為 0 股，請設定原形目標比例。</p>
+                {originalTargetIssue && (
+                  <p className="fieldError">{originalTargetIssue.message}</p>
+                )}
                 <label>
                   <span>原形目標比例 %</span>
                   <input
