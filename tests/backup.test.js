@@ -25,6 +25,7 @@ const settings = {
   cashUsd: 1000,
   leveragedTargetPct: 40,
   originalTargetPct: 40,
+  targetBeta: 1.2,
   tolerancePct: 10,
 };
 
@@ -73,6 +74,7 @@ describe("app backup", () => {
     assert.equal(parsed.settings.cashUsd, 999);
     assert.equal(parsed.settings.positions[0].shares, 1000);
     assert.equal(parsed.settings.positions[0].targetWeightPct, 100);
+    assert.equal(parsed.settings.targetBeta, 1.2);
     assert.deepEqual(parsed.settings.allocationModes, {
       leveraged: "custom",
       original: "auto",
@@ -94,6 +96,41 @@ describe("app backup", () => {
       original: "auto",
     });
     assert.equal(parsed.settings.positions[0].targetWeightPct, 0);
+    assert.equal(parsed.settings.targetBeta, 1.2);
+  });
+
+  it("migrates a legacy target from its configured leveraged multipliers", () => {
+    const parsed = parseAppBackup(JSON.stringify({
+      app: "jj-invest-public",
+      version: 1,
+      settings: {
+        positions: [
+          { id: "double", tickerInput: "QLD", shares: 1, assetBeta: 2 },
+          { id: "triple", tickerInput: "SOXL", shares: 1, assetBeta: 3 },
+        ],
+        leveragedTargetPct: 40,
+        originalTargetPct: 20,
+        allocationModes: { leveraged: "auto", original: "auto" },
+      },
+      history: [],
+    }));
+
+    assert.equal(parsed.settings.targetBeta, 1.2);
+  });
+
+  it("prefers a legacy backup's derived target over the current fallback target", () => {
+    const parsed = parseAppBackup(JSON.stringify({
+      app: "jj-invest-public",
+      version: 1,
+      settings: {
+        positions: [{ id: "triple", tickerInput: "SOXL", shares: 1, assetBeta: 3 }],
+        leveragedTargetPct: 40,
+        originalTargetPct: 0,
+      },
+      history: [],
+    }), { targetBeta: 0.8 });
+
+    assert.equal(parsed.settings.targetBeta, 1.2);
   });
 
   it("preserves configurable leveraged multipliers in backups", () => {

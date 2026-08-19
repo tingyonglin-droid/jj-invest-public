@@ -14,6 +14,7 @@ import {
 } from "../src/lib/auto-refresh.js";
 import {
   createAppBackup,
+  deriveLegacyTargetBeta,
   mergeImportedHistory,
   parseAppBackup,
 } from "../src/lib/backup.js";
@@ -115,6 +116,7 @@ const DEFAULT_STATE = {
   cashEquivalentPositions: [],
   cashEquivalentMode: "auto",
   realCashTargetPct: 10,
+  targetBeta: 1.2,
   leveragedTargetPct: 60,
   originalTargetPct: 0,
   tolerancePct: 10,
@@ -235,6 +237,7 @@ function normalizeStoredState(state) {
       targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
     })),
     originalTargetPct: parseNumericInput(state.originalTargetPct ?? DEFAULT_STATE.originalTargetPct),
+    targetBeta: parseNumericInput(state.targetBeta ?? DEFAULT_STATE.targetBeta),
     allocationModes: {
       leveraged: modes.leveraged === "custom" ? "custom" : "auto",
       original: modes.original === "custom" ? "custom" : "auto",
@@ -280,9 +283,11 @@ function useStoredState() {
       try {
         const saved = window.localStorage.getItem(STORAGE_KEY);
         if (saved) {
+          const parsedState = JSON.parse(saved);
           setState(normalizeStoredState({
             ...DEFAULT_STATE,
-            ...JSON.parse(saved),
+            ...parsedState,
+            targetBeta: parsedState.targetBeta ?? deriveLegacyTargetBeta(parsedState),
           }));
         }
       } catch {
@@ -394,6 +399,7 @@ export default function Home() {
         cashEquivalentPositions: formState.cashEquivalentPositions,
         quotes: quoteResult.quotes,
         cashTwd: cashValueTwd,
+        targetBeta: formState.targetBeta,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
@@ -564,6 +570,7 @@ export default function Home() {
         cashEquivalentPositions: formState.cashEquivalentPositions,
         quotes: merged.result.quotes,
         cashTwd: nextCashValueTwd,
+        targetBeta: formState.targetBeta,
         leveragedTargetPct: formState.leveragedTargetPct,
         originalTargetPct: formState.originalTargetPct,
         tolerancePct: formState.tolerancePct,
@@ -2732,7 +2739,6 @@ function SettingsAccordions({
   onUpdateAllocationMode,
 }) {
   const positionGroups = getPositionGroups(formState.positions);
-  const hasOriginalTarget = Number(formState.originalTargetPct) > 0;
   const hasOriginalPositions = formState.positions.some((position) => Number(position.assetBeta) === 1);
   const betaGuardIsValid = calculation.errors.length === 0;
   const cashEquivalentStatus = getCashEquivalentTargetStatus({
@@ -2971,10 +2977,10 @@ function SettingsAccordions({
                   mode={formState.allocationModes.leveraged}
                   onUpdateAllocationMode={onUpdateAllocationMode}
                 />
-                {(hasOriginalTarget || hasOriginalPositions) && (
+                {hasOriginalPositions && (
                   <PositionSection
                     addLabel="新增原形"
-                    emptyText="原形目標比例大於 0 時，請新增至少一個原形標的。"
+                    emptyText="尚未設定原形標的。"
                     formState={formState}
                     onAddPosition={() => onAddPosition(1)}
                     onRemovePosition={onRemovePosition}
@@ -2986,7 +2992,7 @@ function SettingsAccordions({
                     onUpdateAllocationMode={onUpdateAllocationMode}
                   />
                 )}
-                {!hasOriginalTarget && !hasOriginalPositions && (
+                {!hasOriginalPositions && (
                   <button
                     type="button"
                     className="secondaryButton fullWidth"
@@ -3006,11 +3012,14 @@ function SettingsAccordions({
               <>
                 <div className="weightGuardSummary">
                   <strong>
-                    推算目標：槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
+                    達標配置：槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
                     {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
                     {formatPercent(calculation.afterCashRatio)}
                   </strong>
-                  <span>依照下方槓桿與原形目標比例，以及各檔曝險倍數即時計算。</span>
+                  <span>
+                    槓桿平均 {formatExposureMultiplier(calculation.targetLeveragedBeta)}；
+                    原形持股維持目前比例。
+                  </span>
                 </div>
                 <div className="weightGuardBeta" aria-label={`目標 Beta 設定 ${formatNumber(calculation.targetBeta, 1)}`}>
                   <span className="weightGuardBetaLabel">目標Beta設定</span>
@@ -3025,33 +3034,20 @@ function SettingsAccordions({
           </div>
           <div className="positionEditor betaParameterGroup">
             <div className="positionTitle">
-              <strong>資產配置目標</strong>
+              <strong>Beta 目標</strong>
             </div>
-            <div className="twoCol">
-              <label>
-                <span>槓桿目標比例 %</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={formState.leveragedTargetPct}
-                  onChange={(event) => onUpdateSetting("leveragedTargetPct", event.target.value)}
-                />
-              </label>
-              <label>
-                <span>原形目標比例 %</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={formState.originalTargetPct}
-                  onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
-                />
-              </label>
-            </div>
-            <p className="hint">現金比例 = 100% − 槓桿% − 原形%；目標 Beta 會依各檔曝險倍數加權計算。</p>
+            <label>
+              <span>目標 Beta</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max="3"
+                value={formState.targetBeta}
+                onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
+              />
+            </label>
+            <p className="hint">Beta 是目標，持股是工具，現金是結果；更換標的或曝險倍數不會改變目標。</p>
           </div>
           <div className="positionEditor betaParameterGroup secondary">
             <div className="positionTitle">

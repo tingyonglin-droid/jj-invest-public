@@ -320,6 +320,58 @@ describe("portfolio calculations", () => {
     assert.equal(result.afterBeta, 1.44);
   });
 
+  it("keeps an explicit target beta fixed when leveraged multipliers change", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "double", tickerInput: "QLD", shares: 100, assetBeta: 2 },
+        { id: "triple", tickerInput: "SOXL", shares: 100, assetBeta: 3 },
+      ],
+      quotes: [
+        { ...quotes[1], inputTicker: "QLD", normalizedTicker: "QLD", priceTwd: 100 },
+        { ...quotes[1], inputTicker: "SOXL", normalizedTicker: "SOXL", priceTwd: 100 },
+      ],
+      cashTwd: 80000,
+      targetBeta: 1,
+      tolerancePct: 10,
+      allocationModes: { leveraged: "auto", original: "auto" },
+    });
+
+    assert.equal(result.targetBeta, 1);
+    assert.equal(result.targetLeveragedBeta, 2.5);
+    assert.equal(result.targetLeveragedRatio, 0.4);
+    assert.equal(result.targetOriginalRatio, 0);
+    assert.equal(result.afterCashRatio, 0.6);
+  });
+
+  it("preserves the current original sleeve and derives leveraged and cash ratios", () => {
+    const result = calculatePortfolio({
+      positions,
+      quotes,
+      cashTwd: 28500,
+      targetBeta: 1,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.targetBeta, 1);
+    assert.equal(result.targetOriginalRatio, 0.315);
+    assert.equal(result.targetLeveragedRatio, 0.3425);
+    assert.equal(result.afterCashRatio, 0.3425);
+  });
+
+  it("reports when the available holdings cannot reach the fixed target beta", () => {
+    const result = calculatePortfolio({
+      positions: [{ id: "one-half", tickerInput: "NTSD", shares: 100, assetBeta: 1.5 }],
+      quotes: [{ ...quotes[1], inputTicker: "NTSD", normalizedTicker: "NTSD", priceTwd: 100 }],
+      cashTwd: 90000,
+      targetBeta: 2,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.targetBeta, 2);
+    assert.equal(result.isValid, false);
+    assert.equal(result.issues.some((issue) => issue.code === "TARGET_BETA_UNREACHABLE"), true);
+  });
+
   it("rejects exposure multipliers outside 1x to 3x or beyond one decimal place", () => {
     const result = calculatePortfolio({
       positions: [

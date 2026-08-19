@@ -36,6 +36,7 @@ export function calculatePortfolio({
   cashEquivalentPositions = [],
   quotes,
   cashTwd,
+  targetBeta,
   leveragedTargetPct = 0,
   originalTargetPct = 0,
   tolerancePct,
@@ -111,13 +112,11 @@ export function calculatePortfolio({
   const realCashTwd = roundMoney(toNumber(cashTwd));
   const cashSleeveValueTwd = roundMoney(realCashTwd + cashEquivalentValueTwd);
   const totalAssetsTwd = roundMoney(stockValueTwd + cashSleeveValueTwd);
-  const originalTargetRatio = Math.min(Math.max(toNumber(originalTargetPct) / 100, 0), 1);
-  const targetLeveragedRatio = Math.min(
+  const legacyOriginalTargetRatio = Math.min(Math.max(toNumber(originalTargetPct) / 100, 0), 1);
+  const legacyLeveragedTargetRatio = Math.min(
     Math.max(toNumber(leveragedTargetPct) / 100, 0),
     1,
   );
-  const targetOriginalRatio = roundRatio(originalTargetRatio);
-  const targetCashRatio = roundRatio(1 - targetLeveragedRatio - targetOriginalRatio);
   const rowsByType = {
     leveraged: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "leveraged"),
     original: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "original"),
@@ -149,11 +148,45 @@ export function calculatePortfolio({
           )
         : leveragedRows.reduce((sum, row) => sum + row.assetBeta, 0) / leveragedRows.length,
   );
+  const hasExplicitTargetBeta = Number.isFinite(Number(targetBeta));
+  const explicitTargetBeta = toNumber(targetBeta);
+  const targetOriginalRatio = roundRatio(
+    hasExplicitTargetBeta
+      ? totalAssetsTwd > 0 ? originalValueTwd / totalAssetsTwd : 0
+      : legacyOriginalTargetRatio,
+  );
+  const targetLeveragedRatio = roundRatio(
+    hasExplicitTargetBeta
+      ? (explicitTargetBeta - targetOriginalRatio) / targetLeveragedBeta
+      : legacyLeveragedTargetRatio,
+  );
+  const targetCashRatio = roundRatio(1 - targetLeveragedRatio - targetOriginalRatio);
   const targetBetaValue = roundRatio(
-    targetLeveragedRatio * targetLeveragedBeta + targetOriginalRatio,
+    hasExplicitTargetBeta
+      ? explicitTargetBeta
+      : targetLeveragedRatio * targetLeveragedBeta + targetOriginalRatio,
   );
 
-  if (targetCashRatio < -RATIO_TOLERANCE) {
+  if (hasExplicitTargetBeta && (explicitTargetBeta < 0 || explicitTargetBeta > 3)) {
+    addIssue(
+      "INVALID_TARGET_BETA",
+      "目標 Beta 必須介於 0～3。",
+      "beta",
+    );
+  }
+
+  if (
+    hasExplicitTargetBeta &&
+    (targetLeveragedRatio < -RATIO_TOLERANCE || targetCashRatio < -RATIO_TOLERANCE)
+  ) {
+    addIssue(
+      "TARGET_BETA_UNREACHABLE",
+      `目前持股組合無法達成目標 Beta ${targetBetaValue.toFixed(2)}。`,
+      "beta",
+    );
+  }
+
+  if (!hasExplicitTargetBeta && targetCashRatio < -RATIO_TOLERANCE) {
     addIssue(
       "TARGET_TOTAL_EXCEEDED",
       "槓桿與原形目標比例合計不能超過 100%。",
@@ -312,8 +345,8 @@ export function calculatePortfolio({
     afterCashRatio,
     targetLeveragedRatio,
     targetOriginalRatio,
-    leveragedTargetPct: toNumber(leveragedTargetPct),
-    originalTargetPct: toNumber(originalTargetPct),
+    leveragedTargetPct: roundRatio(Math.max(targetLeveragedRatio, 0) * 100),
+    originalTargetPct: roundRatio(Math.max(targetOriginalRatio, 0) * 100),
     leveragedTradeAmountTwd,
     originalTradeAmountTwd,
     cashTradeAmountTwd,

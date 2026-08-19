@@ -49,7 +49,16 @@ test("leveraged holding editors expose a bounded multiplier and updated labels",
   assert.match(page, /max="3"/);
   assert.match(page, /step="0\.1"/);
   assert.match(page, /新增槓桿/);
-  assert.match(page, /槓桿目標比例 %/);
+});
+
+test("beta parameters keep target beta fixed and present allocation as a result", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /<span>目標 Beta<\/span>/);
+  assert.match(page, /onUpdateSetting\("targetBeta"/);
+  assert.match(page, /Beta 是目標，持股是工具，現金是結果/);
+  assert.doesNotMatch(page, /槓桿目標比例 %/);
+  assert.doesNotMatch(page, /原形目標比例 %/);
 });
 
 test("settings intro matches rebalance heading typography and subtitle gap", async () => {

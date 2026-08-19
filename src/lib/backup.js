@@ -13,6 +13,32 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+export function deriveLegacyTargetBeta(settings = {}) {
+  const positions = Array.isArray(settings.positions) ? settings.positions : [];
+  const leveragedPositions = positions.filter((position) => toNumber(position.assetBeta, 2) > 1);
+  const weightTotal = leveragedPositions.reduce(
+    (sum, position) => sum + Math.max(toNumber(position.targetWeightPct), 0),
+    0,
+  );
+  const usesCustomWeights = settings.allocationModes?.leveraged === "custom" && weightTotal > 0;
+  const leveragedBeta = leveragedPositions.length === 0
+    ? 2
+    : usesCustomWeights
+      ? leveragedPositions.reduce(
+          (sum, position) =>
+            sum + toNumber(position.assetBeta, 2) * (Math.max(toNumber(position.targetWeightPct), 0) / weightTotal),
+          0,
+        )
+      : leveragedPositions.reduce(
+          (sum, position) => sum + toNumber(position.assetBeta, 2),
+          0,
+        ) / leveragedPositions.length;
+
+  const targetBeta = toNumber(settings.originalTargetPct) / 100
+    + toNumber(settings.leveragedTargetPct, 60) / 100 * leveragedBeta;
+  return Math.round((targetBeta + Number.EPSILON) * 10000) / 10000;
+}
+
 export function normalizeBackupSettings(settings, fallbackSettings = {}) {
   const source = settings && typeof settings === "object" ? settings : {};
   const fallback = fallbackSettings && typeof fallbackSettings === "object" ? fallbackSettings : {};
@@ -22,6 +48,18 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
     : Number.isFinite(Number(source.targetBeta))
       ? toNumber(source.targetBeta - originalTargetPct / 100) * 50
       : fallback.leveragedTargetPct ?? 60;
+  const hasLegacyTargetInputs = Array.isArray(source.positions)
+    || Number.isFinite(Number(source.leveragedTargetPct))
+    || Number.isFinite(Number(source.originalTargetPct));
+  const targetBeta = Number.isFinite(Number(source.targetBeta))
+    ? toNumber(source.targetBeta)
+    : hasLegacyTargetInputs
+      ? deriveLegacyTargetBeta({
+          ...source,
+          leveragedTargetPct,
+          originalTargetPct,
+        })
+      : toNumber(fallback.targetBeta, 1.2);
   const sourceModes = source.allocationModes && typeof source.allocationModes === "object"
     ? source.allocationModes
     : {};
@@ -64,6 +102,7 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
     cashUsd: toInteger(source.cashUsd),
     leveragedTargetPct,
     originalTargetPct,
+    targetBeta,
     tolerancePct: toNumber(source.tolerancePct, fallback.tolerancePct ?? 10),
   };
 }

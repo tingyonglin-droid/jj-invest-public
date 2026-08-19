@@ -19,6 +19,7 @@ const settings = {
   cashTwd: 100000,
   cashUsd: 500,
   leveragedTargetPct: 60,
+  targetBeta: 1.2,
   tolerancePct: 10,
   originalTargetPct: 0,
   allocationModes: { leveraged: "custom", original: "auto" },
