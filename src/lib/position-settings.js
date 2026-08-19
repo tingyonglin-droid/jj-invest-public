@@ -1,5 +1,5 @@
 function isOriginalPosition(position) {
-  return Number(position?.assetBeta) === 1;
+  return Number(position?.assetBeta) <= 1;
 }
 
 export function getPositionGroups(positions) {

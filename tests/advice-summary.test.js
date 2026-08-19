@@ -32,7 +32,7 @@ describe("advice summary helpers", () => {
       {
         headline: "提高曝險",
         classActions: [
-          "正二：買入 NT$289,600",
+          "槓桿：買入 NT$289,600",
           "原形：賣出 NT$447,962",
           "現金：增加 NT$158,362",
         ],

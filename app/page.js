@@ -87,6 +87,7 @@ import {
   getActionText,
   getEstimatedShares,
   getPositionDisplayName,
+  getTickerDefaultAssetBeta,
   getTickerDisplayText,
   getTickerPlaceholder,
 } from "../src/lib/presentation.js";
@@ -239,7 +240,7 @@ function normalizeStoredState(state) {
     },
     positions: (state.positions || DEFAULT_STATE.positions).map((position) => ({
       ...position,
-      assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
+      assetBeta: Number.isFinite(Number(position.assetBeta)) ? Number(position.assetBeta) : 2,
       targetWeightPct: parseNumericInput(position.targetWeightPct ?? 0),
     })),
   };
@@ -436,6 +437,7 @@ export default function Home() {
         totalAssetsTwd: calculation.totalAssetsTwd,
         targetBeta: rebalanceTargetBeta,
         originalTargetRatio: calculation.targetOriginalRatio,
+        leveragedBeta: calculation.targetLeveragedBeta,
         precision: rebalancePrecision,
         allocationModes: formState.allocationModes,
       });
@@ -497,6 +499,7 @@ export default function Home() {
     [
       calculation.recommendations,
       calculation.targetOriginalRatio,
+      calculation.targetLeveragedBeta,
       calculation.totalAssetsTwd,
       rebalanceTargetBeta,
       rebalancePrecision,
@@ -881,6 +884,9 @@ export default function Home() {
           ? {
               ...position,
               [field]: field === "tickerInput" ? value : parseNumericInput(value),
+              ...(field === "tickerInput" && getTickerDefaultAssetBeta(value) > 1
+                ? { assetBeta: getTickerDefaultAssetBeta(value) }
+                : {}),
             }
           : position,
       ),
@@ -1778,9 +1784,9 @@ function GlossaryDialog({ topic, onClose }) {
           ) : (
             <>
               <article className="glossaryItem">
-                <span>正二</span>
-                <p>正二是 Beta 約 2 的槓桿型標的，目標是提供約兩倍市場曝險。</p>
-                <p>例如 00631L、00685L、QLD 這類標的。</p>
+                <span>槓桿</span>
+                <p>槓桿標的是曝險倍數大於 1 的標的，可為 1.5×、2× 或 3×。</p>
+                <p>例如 00631L、QLD、SOXL 這類標的。倍數是產品的單日目標，持有多日可能因波動與複利效果偏離。</p>
               </article>
 
               <article className="glossaryItem">
@@ -1793,7 +1799,7 @@ function GlossaryDialog({ topic, onClose }) {
                 <span>現金</span>
                 <p>現金桶是台幣現金、美金現金換算台幣，以及類現金 ETF 市值的加總。</p>
                 <p>類現金 ETF 的 Beta 以 0 計算，會參與現金桶與再平衡，但仍有價格波動。</p>
-                <p>資產配置比例會把正二、原形與現金＋類現金一起納入總資產計算。</p>
+                <p>資產配置比例會把槓桿、原形與現金＋類現金一起納入總資產計算。</p>
               </article>
             </>
           )}
@@ -1814,8 +1820,8 @@ function AllocationCard({ calculation, onOpenGlossary }) {
     <section className="appCard allocationCard">
       <OverviewCardHeader
         title="資產配置比例"
-        subtitle="正二、原形與現金＋類現金配置"
-        infoLabel="查看正二、原形與現金＋類現金說明"
+        subtitle="槓桿、原形與現金＋類現金配置"
+        infoLabel="查看槓桿、原形與現金＋類現金說明"
         onInfo={onOpenGlossary}
       />
       <div className="allocationTotal">
@@ -1830,7 +1836,7 @@ function AllocationCard({ calculation, onOpenGlossary }) {
       <div className="allocationLegend">
         <AllocationMetric
           color="purple"
-          label="正二"
+          label="槓桿"
           current={calculation.leveragedRatio}
           target={calculation.targetLeveragedRatio}
           valueTwd={calculation.leveragedValueTwd}
@@ -1862,7 +1868,7 @@ function AllocationBar({ leveragedRatio, originalRatio, cashRatio }) {
   return (
     <div
       className="allocationBar"
-      aria-label={`正二 ${formatPercent(safeLeveragedRatio)}，原形 ${formatPercent(safeOriginalRatio)}，現金 ${formatPercent(safeCashRatio)}`}
+      aria-label={`槓桿 ${formatPercent(safeLeveragedRatio)}，原形 ${formatPercent(safeOriginalRatio)}，現金 ${formatPercent(safeCashRatio)}`}
     >
       <span className="allocationLeveraged" style={{ width: `${safeLeveragedRatio * 100}%` }} />
       <span className="allocationOriginal" style={{ width: `${safeOriginalRatio * 100}%` }} />
@@ -2270,7 +2276,7 @@ function OperationsView({
           <strong>{formatNumber(appliedAfterBeta)}</strong>
         </div>
         <div>
-          <span>正二</span>
+          <span>槓桿</span>
           <strong>{formatNetTradeAmount(appliedSummary.leveragedNetAmountTwd)}</strong>
         </div>
         <div>
@@ -2303,7 +2309,7 @@ function OperationsView({
             <input
               type="number"
               min="0"
-              max="2"
+              max="3"
               step="0.01"
               value={rebalanceTargetBeta}
               onChange={(event) => onTargetBetaChange(event.target.value)}
@@ -2311,7 +2317,7 @@ function OperationsView({
             <button
               type="button"
               aria-label="提高再平衡 Beta 0.01"
-              disabled={Number(rebalanceTargetBeta) >= 2}
+              disabled={Number(rebalanceTargetBeta) >= 3}
               onClick={() => onTargetBetaChange(
                 adjustOperationTargetBeta(rebalanceTargetBeta, 0.01),
               )}
@@ -2426,7 +2432,7 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
           onToggleSelection={onToggleSelection}
           precision={precision}
           tone="leveraged"
-          title="正二再平衡清單"
+          title="槓桿再平衡清單"
           totalAssetsTwd={totalAssetsTwd}
         />
         <HoldingGroup
@@ -2456,7 +2462,7 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
 }
 
 function getHoldingAssetType(assetBeta) {
-  return Number(assetBeta) >= 1.5 ? "leveraged" : "original";
+  return Number(assetBeta) > 1 ? "leveraged" : "original";
 }
 
 function HoldingGroup({ items, onToggleSelection, precision, title, tone, totalAssetsTwd }) {
@@ -2653,6 +2659,20 @@ function PositionSection({
                 />
               </label>
             </div>
+            {assetType === "leveraged" && (
+              <label className="positionEditorAllocationField">
+                <span>曝險倍數</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={position.assetBeta}
+                  aria-invalid={Number(position.assetBeta) < 1 || Number(position.assetBeta) > 3}
+                  onChange={(event) => onUpdatePosition(position.id, "assetBeta", event.target.value)}
+                />
+              </label>
+            )}
             {mode === "custom" && (
               <label className="positionEditorAllocationField">
                 <span>同類資產內目標比例 %</span>
@@ -2925,20 +2945,20 @@ function SettingsAccordions({
               <div className="settingsSummaryLine">
                 <strong>{formState.positions.length} 筆標的</strong>
                 <span>
-                  正二 {positionGroups.leveraged.length} 檔
+                  槓桿 {positionGroups.leveraged.length} 檔
                   {hasOriginalPositions ? ` / 原形 ${positionGroups.original.length} 檔` : ""}
                 </span>
               </div>
               <div className="positionSections">
                 <PositionSection
-                  addLabel="新增正二"
-                  emptyText="尚未設定正二標的。"
+                  addLabel="新增槓桿"
+                  emptyText="尚未設定槓桿標的。"
                   formState={formState}
                   onAddPosition={() => onAddPosition(2)}
                   onRemovePosition={onRemovePosition}
                   onUpdatePosition={onUpdatePosition}
                   positions={positionGroups.leveraged}
-                  title="正二"
+                  title="槓桿"
                   assetType="leveraged"
                   mode={formState.allocationModes.leveraged}
                   onUpdateAllocationMode={onUpdateAllocationMode}
@@ -2978,11 +2998,11 @@ function SettingsAccordions({
               <>
                 <div className="weightGuardSummary">
                   <strong>
-                    推算目標：正二 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
+                    推算目標：槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
                     {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
                     {formatPercent(calculation.afterCashRatio)}
                   </strong>
-                  <span>依照下方正二與原形目標比例即時計算。</span>
+                  <span>依照下方槓桿與原形目標比例，以及各檔曝險倍數即時計算。</span>
                 </div>
                 <div className="weightGuardBeta" aria-label={`目標 Beta 設定 ${formatNumber(calculation.targetBeta, 1)}`}>
                   <span className="weightGuardBetaLabel">目標Beta設定</span>
@@ -3001,7 +3021,7 @@ function SettingsAccordions({
             </div>
             <div className="twoCol">
               <label>
-                <span>正二目標比例 %</span>
+                <span>槓桿目標比例 %</span>
                 <input
                   type="number"
                   step="0.1"
@@ -3023,7 +3043,7 @@ function SettingsAccordions({
                 />
               </label>
             </div>
-            <p className="hint">現金比例 = 100% − 正二% − 原形%，會自動換算成對應的 Beta。</p>
+            <p className="hint">現金比例 = 100% − 槓桿% − 原形%；目標 Beta 會依各檔曝險倍數加權計算。</p>
           </div>
           <div className="positionEditor betaParameterGroup secondary">
             <div className="positionTitle">

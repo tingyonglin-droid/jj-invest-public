@@ -16,7 +16,7 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(page, /容忍區間/);
   assert.match(page, /目前 Beta/);
   assert.match(page, /再平衡後 Beta/);
-  assert.match(page, /正二/);
+  assert.match(page, /槓桿/);
   assert.match(page, /原形/);
   assert.match(page, /現金/);
   assert.match(page, /淨買入/);
@@ -79,7 +79,7 @@ test("operations list separates leveraged and original holdings", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
-  assert.match(page, /正二再平衡清單/);
+  assert.match(page, /槓桿再平衡清單/);
   assert.match(page, /原形再平衡清單/);
   assert.match(page, /調整後市值/);
   assert.match(page, /目前 \{formatPercent\(allocationRatio\)\}/);

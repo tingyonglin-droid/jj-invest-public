@@ -1,5 +1,5 @@
 const SCALE_MIN = 0;
-const SCALE_MAX = 2;
+const SCALE_MAX = 3;
 
 function roundPct(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;

@@ -83,7 +83,7 @@ describe("operation rebalance", () => {
   it("adjusts the operation target beta in 0.01 steps within the supported range", () => {
     assert.equal(adjustOperationTargetBeta(1, 0.01), 1.01);
     assert.equal(adjustOperationTargetBeta(1, -0.01), 0.99);
-    assert.equal(adjustOperationTargetBeta(2, 0.01), 2);
+    assert.equal(adjustOperationTargetBeta(3, 0.01), 3);
     assert.equal(adjustOperationTargetBeta(0, -0.01), 0);
   });
 
@@ -111,6 +111,45 @@ describe("operation rebalance", () => {
     assert.equal(result.recommendations[1].targetValueTwd, 35000);
     assert.equal(result.recommendations[2].targetValueTwd, 20000);
     assert.equal(result.summary.totalAmountTwd, 40000);
+  });
+
+  it("derives the leveraged sleeve size from its weighted multiplier", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        { ...recommendations[0], assetBeta: 3, currentValueTwd: 30000 },
+        { ...recommendations[2], currentValueTwd: 20000 },
+      ],
+      selectedIds: ["leveraged-a", "original-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.4,
+      originalTargetRatio: 0.2,
+      leveragedBeta: 3,
+    });
+
+    assert.equal(result.recommendations[0].targetValueTwd, 40000);
+    assert.equal(result.recommendations[1].targetValueTwd, 20000);
+    assert.equal(result.afterBeta, 1.4);
+  });
+
+  it("smart rebalancing can target beta above two for 3x holdings", () => {
+    const result = createOperationRebalance({
+      recommendations: [{
+        ...recommendations[0],
+        assetBeta: 3,
+        shares: 0,
+        currentValueTwd: 0,
+        priceTwd: 100,
+      }],
+      selectedIds: ["leveraged-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 2.4,
+      originalTargetRatio: 0,
+      leveragedBeta: 3,
+      precision: "shares",
+    });
+
+    assert.equal(result.appliedAfterBeta, 2.4);
+    assert.ok(result.correctedTargetBeta > 2);
   });
 
   it("buys every selected holding in a sleeve when that sleeve needs more exposure", () => {

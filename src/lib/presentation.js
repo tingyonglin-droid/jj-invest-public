@@ -3,6 +3,12 @@ import supportedTickers from "../data/supported-tickers.json" with { type: "json
 const TICKER_NAMES = Object.fromEntries(
   supportedTickers.flatMap((item) => item.symbols.map((symbol) => [symbol, item.name])),
 );
+const TICKER_DEFAULT_BETAS = Object.fromEntries(
+  supportedTickers.flatMap((item) => item.symbols.map((symbol) => [
+    symbol,
+    Number(item.assetBeta ?? (item.category === "original" ? 1 : item.category === "leveraged" ? 2 : 0)),
+  ])),
+);
 
 const TICKER_BADGES = {
   "00631L.TW": "2x",
@@ -11,7 +17,7 @@ const TICKER_BADGES = {
 };
 
 const TICKER_PLACEHOLDERS = {
-  leveraged: "00631L / 00685L / SSO / QLD",
+  leveraged: "SOXL / QLD / 00631L / 00685L",
   original: "0050 / 006208 / VOO / QQQ",
   cashEquivalent: "00865B / 00859B / SGOV / BSV",
 };
@@ -33,7 +39,12 @@ export function getPositionDisplayName(normalizedTicker, assetBeta = 2) {
   if (Number(assetBeta) === 0) {
     return "類現金標的";
   }
-  return Number(assetBeta) === 1 ? "原形標的" : "正二標的";
+  return Number(assetBeta) === 1 ? "原形標的" : "槓桿標的";
+}
+
+export function getTickerDefaultAssetBeta(tickerInput) {
+  const tickerKey = String(tickerInput || "").trim().toUpperCase();
+  return Number.isFinite(TICKER_DEFAULT_BETAS[tickerKey]) ? TICKER_DEFAULT_BETAS[tickerKey] : null;
 }
 
 export function getTickerBadgeText(normalizedTicker) {

@@ -35,6 +35,7 @@ describe("supported ticker registry", () => {
     assert.deepEqual(byTicker.get("00864B").symbols, ["00864B.TW", "00864B.TWO"]);
     assert.equal(byTicker.get("009816").name, "凱基台灣TOP50");
     assert.equal(byTicker.get("USD").name, "ProShares Ultra Semiconductors");
+    assert.equal(byTicker.get("SOXL").name, "Direxion Daily Semiconductor Bull 3X ETF");
   });
 
   it("includes every approved ETF with its verified display name", () => {

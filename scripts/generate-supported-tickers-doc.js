@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const CATEGORY_LABELS = {
-  leveraged: "正二",
+  leveraged: "槓桿",
   original: "原形",
   cashEquivalent: "類現金",
 };

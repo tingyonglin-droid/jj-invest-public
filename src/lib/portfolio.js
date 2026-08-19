@@ -23,7 +23,12 @@ function toNumber(value, fallback = 0) {
 }
 
 function getAssetType(assetBeta) {
-  return toNumber(assetBeta) >= 1.5 ? "leveraged" : "original";
+  return toNumber(assetBeta) > 1 ? "leveraged" : "original";
+}
+
+function isValidAssetBeta(assetBeta) {
+  const beta = Number(assetBeta);
+  return Number.isFinite(beta) && beta >= 1 && beta <= 3 && Math.abs(beta * 10 - Math.round(beta * 10)) < 0.0000001;
 }
 
 export function calculatePortfolio({
@@ -113,7 +118,6 @@ export function calculatePortfolio({
   );
   const targetOriginalRatio = roundRatio(originalTargetRatio);
   const targetCashRatio = roundRatio(1 - targetLeveragedRatio - targetOriginalRatio);
-  const targetBetaValue = roundRatio(targetLeveragedRatio * 2 + targetOriginalRatio);
   const rowsByType = {
     leveraged: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "leveraged"),
     original: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "original"),
@@ -124,11 +128,35 @@ export function calculatePortfolio({
       rows.reduce((sum, row) => sum + row.targetWeightPct, 0),
     ]),
   );
+  normalizedPositions.forEach((position) => {
+    if (!isValidAssetBeta(position.assetBeta)) {
+      addIssue(
+        "INVALID_ASSET_BETA",
+        `${position.tickerInput || "未命名標的"}的曝險倍數必須介於 1～3，且最多一位小數。`,
+        "positions",
+      );
+    }
+  });
+  const leveragedRows = rowsByType.leveraged;
+  const leveragedWeightTotal = targetWeightTotals.leveraged;
+  const targetLeveragedBeta = roundRatio(
+    leveragedRows.length === 0
+      ? 2
+      : allocationModes.leveraged === "custom" && leveragedWeightTotal > 0
+        ? leveragedRows.reduce(
+            (sum, row) => sum + row.assetBeta * (row.targetWeightPct / leveragedWeightTotal),
+            0,
+          )
+        : leveragedRows.reduce((sum, row) => sum + row.assetBeta, 0) / leveragedRows.length,
+  );
+  const targetBetaValue = roundRatio(
+    targetLeveragedRatio * targetLeveragedBeta + targetOriginalRatio,
+  );
 
   if (targetCashRatio < -RATIO_TOLERANCE) {
     addIssue(
       "TARGET_TOTAL_EXCEEDED",
-      "正二與原形目標比例合計不能超過 100%。",
+      "槓桿與原形目標比例合計不能超過 100%。",
       "beta",
     );
   }
@@ -149,7 +177,7 @@ export function calculatePortfolio({
   if (targetLeveragedRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "leveraged")) {
     addIssue(
       "MISSING_LEVERAGED_POSITION",
-      "正二目標比例大於 0 時，請新增至少一個正二標的。",
+      "槓桿目標比例大於 0 時，請新增至少一個槓桿標的。",
       "positions",
     );
   }
@@ -167,7 +195,7 @@ export function calculatePortfolio({
       mode: allocationModes[assetType],
       positions: rows,
     }).isValid) {
-      const label = assetType === "leveraged" ? "正二" : "原形";
+      const label = assetType === "leveraged" ? "槓桿" : "原形";
       addIssue(
         assetType === "leveraged" ? "INVALID_LEVERAGED_WEIGHTS" : "INVALID_ORIGINAL_WEIGHTS",
         `${label}標的目標比例合計必須等於 100%。`,
@@ -274,6 +302,7 @@ export function calculatePortfolio({
     cashRatio: totalAssetsTwd > 0 ? cashSleeveValueTwd / totalAssetsTwd : 0,
     currentBeta,
     targetBeta: targetBetaValue,
+    targetLeveragedBeta,
     tolerancePct: toNumber(tolerancePct),
     betaDrift,
     betaLower,

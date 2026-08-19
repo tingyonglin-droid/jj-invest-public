@@ -4,7 +4,7 @@ const MONEY_PRECISION = 100;
 const RATIO_PRECISION = 10000;
 const SMART_SEARCH_STEP = 0.001;
 const SMART_SEARCH_MIN = 0;
-const SMART_SEARCH_MAX = 2;
+const SMART_SEARCH_MAX = 3;
 
 function toNumber(value, fallback = 0) {
   const number = Number(value);
@@ -30,11 +30,11 @@ function getAction(amount) {
 }
 
 function getAssetType(assetBeta) {
-  return toNumber(assetBeta) >= 1.5 ? "leveraged" : "original";
+  return toNumber(assetBeta) > 1 ? "leveraged" : "original";
 }
 
 export function adjustOperationTargetBeta(value, delta) {
-  const nextValue = Math.min(Math.max(toNumber(value) + toNumber(delta), 0), 2);
+  const nextValue = Math.min(Math.max(toNumber(value) + toNumber(delta), 0), 3);
   return Math.round((nextValue + Number.EPSILON) * 100) / 100;
 }
 
@@ -131,6 +131,7 @@ export function createOperationRebalance({
   totalAssetsTwd,
   targetBeta,
   originalTargetRatio,
+  leveragedBeta = 2,
   precision = null,
   allocationModes = {},
 }) {
@@ -141,6 +142,7 @@ export function createOperationRebalance({
       totalAssetsTwd,
       targetBeta,
       originalTargetRatio,
+      leveragedBeta,
       precision,
       allocationModes,
     });
@@ -152,6 +154,7 @@ export function createOperationRebalance({
     totalAssetsTwd,
     targetBeta,
     originalTargetRatio,
+    leveragedBeta,
     allocationModes,
   });
 }
@@ -162,6 +165,7 @@ function createSmartOperationRebalance({
   totalAssetsTwd,
   targetBeta,
   originalTargetRatio,
+  leveragedBeta,
   precision,
   allocationModes,
 }) {
@@ -181,6 +185,7 @@ function createSmartOperationRebalance({
       totalAssetsTwd,
       targetBeta: candidateBeta,
       originalTargetRatio,
+      leveragedBeta,
       allocationModes,
     });
     const appliedAfterBeta = calculateAppliedAfterBeta({
@@ -215,6 +220,7 @@ function createSmartOperationRebalance({
     totalAssetsTwd,
     targetBeta,
     originalTargetRatio,
+    leveragedBeta,
     allocationModes,
   });
 }
@@ -254,12 +260,14 @@ function createOperationRebalanceForTarget({
   totalAssetsTwd,
   targetBeta,
   originalTargetRatio,
+  leveragedBeta = 2,
   allocationModes = {},
 }) {
   const selectedSet = new Set(selectedIds.map(String));
   const totalAssets = toNumber(totalAssetsTwd);
   const originalRatio = Math.min(Math.max(toNumber(originalTargetRatio), 0), 1);
-  const leveragedRatio = roundRatio((toNumber(targetBeta) - originalRatio) / 2);
+  const multiplier = Math.max(toNumber(leveragedBeta, 2), 1.1);
+  const leveragedRatio = roundRatio((toNumber(targetBeta) - originalRatio) / multiplier);
   const targetRatios = {
     leveraged: Math.max(leveragedRatio, 0),
     original: Math.max(originalRatio, 0),

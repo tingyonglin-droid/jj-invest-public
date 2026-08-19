@@ -25,7 +25,7 @@ export function createAdviceDisplay({
     return {
       headline: betaBoundaryLabel === "低於下限" ? "提高曝險" : "降低曝險",
       classActions: [
-        createClassActionText("正二", leveragedTradeAmountTwd),
+        createClassActionText("槓桿", leveragedTradeAmountTwd),
         createClassActionText("原形", originalTradeAmountTwd),
         createClassActionText("現金", cashTradeAmountTwd, {
           increaseWord: "增加",
@@ -38,7 +38,7 @@ export function createAdviceDisplay({
 
   return {
     headline: "無需操作",
-    classActions: ["正二：無需調整", "原形：無需調整", "現金：無需調整"],
+    classActions: ["槓桿：無需調整", "原形：無需調整", "現金：無需調整"],
     tone: "none",
   };
 }

@@ -2,9 +2,9 @@
 
 > 本文件由 `src/data/supported-tickers.json` 自動產生。App 的標的名稱也直接讀取同一份 JSON。
 
-目前共 53 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
+目前共 54 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
 
-## 正二
+## 槓桿
 
 | 輸入代號 | 顯示名稱 | 市場 | 支援符號 | 報價順序 | 驗證日期 |
 |---|---|---|---|---|---|
@@ -15,6 +15,7 @@
 | SSO | ProShares Ultra S&P500 | US | SSO | Yahoo Finance | 2026-08-11 |
 | QLD | ProShares Ultra QQQ | US | QLD | Yahoo Finance | 2026-08-11 |
 | USD | ProShares Ultra Semiconductors | US | USD | Yahoo Finance | 2026-08-11 |
+| SOXL | Direxion Daily Semiconductor Bull 3X ETF | US | SOXL | Yahoo Finance | 2026-08-19 |
 | 00647L | 元大S&P500正2 | TWSE | 00647L.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | 00670L | 富邦NASDAQ正2 | TWSE | 00670L.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | SPUU | Direxion Daily S&P 500 Bull 2X ETF | US | SPUU | Yahoo Finance | 2026-08-11 |

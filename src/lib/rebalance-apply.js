@@ -155,7 +155,7 @@ export function getAppliedRebalanceSummary({ recommendations, precision = "share
       const appliedAmountTwd = appliedDeltaShares * toNumber(recommendation.priceTwd);
       const sleeveKey = recommendation.assetType === "cashEquivalent"
         ? "cashEquivalentNetAmountTwd"
-        : toNumber(recommendation.assetBeta) >= 1.5
+        : toNumber(recommendation.assetBeta) > 1
           ? "leveragedNetAmountTwd"
           : "originalNetAmountTwd";
 

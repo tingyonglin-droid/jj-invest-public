@@ -31,7 +31,7 @@ test("cash-equivalent controls support ticker, shares, and custom targets", () =
 test("operation list places cash equivalents after original holdings", () => {
   assert.match(
     page,
-    /title="正二再平衡清單"[\s\S]*title="原形再平衡清單"[\s\S]*title="類現金再平衡清單"/,
+    /title="槓桿再平衡清單"[\s\S]*title="原形再平衡清單"[\s\S]*title="類現金再平衡清單"/,
   );
 });
 

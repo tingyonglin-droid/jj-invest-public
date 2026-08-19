@@ -41,6 +41,17 @@ test("holding editors use compact two-column fields and asset tones", async () =
   assert.match(styles, /@media \(max-width: 420px\)[\s\S]*\.positionEditorPrimaryFields/s);
 });
 
+test("leveraged holding editors expose a bounded multiplier and updated labels", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /曝險倍數/);
+  assert.match(page, /min="1"/);
+  assert.match(page, /max="3"/);
+  assert.match(page, /step="0\.1"/);
+  assert.match(page, /新增槓桿/);
+  assert.match(page, /槓桿目標比例 %/);
+});
+
 test("settings intro matches rebalance heading typography and subtitle gap", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

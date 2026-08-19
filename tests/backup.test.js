@@ -96,6 +96,23 @@ describe("app backup", () => {
     assert.equal(parsed.settings.positions[0].targetWeightPct, 0);
   });
 
+  it("preserves configurable leveraged multipliers in backups", () => {
+    const parsed = parseAppBackup(JSON.stringify({
+      app: "jj-invest-public",
+      version: 1,
+      settings: {
+        ...settings,
+        positions: [
+          { id: "one-half", tickerInput: "TEST", shares: 1, assetBeta: 1.5 },
+          { id: "triple", tickerInput: "SOXL", shares: 1, assetBeta: 3 },
+        ],
+      },
+      history: [],
+    }));
+
+    assert.deepEqual(parsed.settings.positions.map((position) => position.assetBeta), [1.5, 3]);
+  });
+
   it("keeps an imported automatic mode when fallback settings are custom", () => {
     const parsed = parseAppBackup(JSON.stringify({
       app: "jj-invest-public",

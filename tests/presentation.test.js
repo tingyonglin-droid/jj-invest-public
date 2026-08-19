@@ -8,6 +8,7 @@ import {
   getTickerDisplayText,
   getTickerPlaceholder,
   getTickerBadgeText,
+  getTickerDefaultAssetBeta,
 } from "../src/lib/presentation.js";
 
 describe("presentation helpers", () => {
@@ -33,15 +34,22 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("SOXX", 1), "iShares Semiconductor ETF");
     assert.equal(getPositionDisplayName("USD", 2), "ProShares Ultra Semiconductors");
     assert.equal(getPositionDisplayName("QLD"), "ProShares Ultra QQQ");
+    assert.equal(getPositionDisplayName("SOXL", 3), "Direxion Daily Semiconductor Bull 3X ETF");
   });
 
   it("falls back to generic asset labels by asset beta", () => {
     assert.equal(getPositionDisplayName("2330.TW", 1), "原形標的");
-    assert.equal(getPositionDisplayName("2330.TW", 2), "正二標的");
+    assert.equal(getPositionDisplayName("2330.TW", 2), "槓桿標的");
+  });
+
+  it("provides a known ticker multiplier without preventing manual overrides", () => {
+    assert.equal(getTickerDefaultAssetBeta("SOXL"), 3);
+    assert.equal(getTickerDefaultAssetBeta("QLD"), 2);
+    assert.equal(getTickerDefaultAssetBeta("UNKNOWN"), null);
   });
 
   it("shows asset-specific ticker examples in settings", () => {
-    assert.equal(getTickerPlaceholder("leveraged"), "00631L / 00685L / SSO / QLD");
+    assert.equal(getTickerPlaceholder("leveraged"), "SOXL / QLD / 00631L / 00685L");
     assert.equal(getTickerPlaceholder("original"), "0050 / 006208 / VOO / QQQ");
     assert.equal(getTickerPlaceholder("cashEquivalent"), "00865B / 00859B / SGOV / BSV");
   });

@@ -176,10 +176,10 @@ describe("portfolio calculations", () => {
     });
 
     assert.equal(result.isValid, false);
-    assert.equal(result.errors[0], "正二與原形目標比例合計不能超過 100%。");
+    assert.equal(result.errors[0], "槓桿與原形目標比例合計不能超過 100%。");
     assert.deepEqual(result.issues[0], {
       code: "TARGET_TOTAL_EXCEEDED",
-      message: "正二與原形目標比例合計不能超過 100%。",
+      message: "槓桿與原形目標比例合計不能超過 100%。",
       settingsPage: "beta",
     });
   });
@@ -269,7 +269,7 @@ describe("portfolio calculations", () => {
       allocationModes: { leveraged: "custom", original: "auto" },
     });
     assert.equal(invalid.isValid, false);
-    assert.match(invalid.errors[0], /正二.*100%/);
+    assert.match(invalid.errors[0], /槓桿.*100%/);
     assert.equal(invalid.issues[0].code, "INVALID_LEVERAGED_WEIGHTS");
     assert.equal(invalid.issues[0].settingsPage, "positions");
   });
@@ -293,5 +293,49 @@ describe("portfolio calculations", () => {
       result.issues.some((issue) => issue.code === "INVALID_LEVERAGED_WEIGHTS"),
       false,
     );
+  });
+
+  it("weights the target beta by each leveraged holding multiplier", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "one-half", tickerInput: "SSO", shares: 100, assetBeta: 1.5, targetWeightPct: 20 },
+        { id: "double", tickerInput: "QLD", shares: 100, assetBeta: 2, targetWeightPct: 30 },
+        { id: "triple", tickerInput: "SOXL", shares: 100, assetBeta: 3, targetWeightPct: 50 },
+      ],
+      quotes: [
+        { ...quotes[1], inputTicker: "SSO", normalizedTicker: "SSO", priceTwd: 100 },
+        { ...quotes[1], inputTicker: "QLD", normalizedTicker: "QLD", priceTwd: 100 },
+        { ...quotes[1], inputTicker: "SOXL", normalizedTicker: "SOXL", priceTwd: 100 },
+      ],
+      cashTwd: 70000,
+      leveragedTargetPct: 60,
+      originalTargetPct: 0,
+      tolerancePct: 10,
+      allocationModes: { leveraged: "custom", original: "auto" },
+    });
+
+    assert.equal(result.isValid, true);
+    assert.equal(result.targetLeveragedBeta, 2.4);
+    assert.equal(result.targetBeta, 1.44);
+    assert.equal(result.afterBeta, 1.44);
+  });
+
+  it("rejects exposure multipliers outside 1x to 3x or beyond one decimal place", () => {
+    const result = calculatePortfolio({
+      positions: [
+        { id: "too-high", tickerInput: "SOXL", shares: 1, assetBeta: 3.1 },
+        { id: "too-precise", tickerInput: "QLD", shares: 1, assetBeta: 1.55 },
+      ],
+      quotes: [
+        { ...quotes[1], inputTicker: "SOXL", normalizedTicker: "SOXL" },
+        quotes[1],
+      ],
+      cashTwd: 0,
+      leveragedTargetPct: 100,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.isValid, false);
+    assert.equal(result.issues.filter((issue) => issue.code === "INVALID_ASSET_BETA").length, 2);
   });
 });

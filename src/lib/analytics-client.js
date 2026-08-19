@@ -78,7 +78,7 @@ export function getMarketFromTicker(ticker) {
 }
 
 export function getAssetType(assetBeta) {
-  if (Number(assetBeta) === 2) {
+  if (Number(assetBeta) > 1) {
     return "leveraged";
   }
   if (Number(assetBeta) === 1) {

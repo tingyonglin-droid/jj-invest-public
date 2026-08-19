@@ -42,7 +42,7 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
           id: String(position.id || `position-${index + 1}`),
           tickerInput: String(position.tickerInput || ""),
           shares: toInteger(position.shares),
-          assetBeta: Number(position.assetBeta) === 1 ? 1 : 2,
+          assetBeta: Number.isFinite(Number(position.assetBeta)) ? Number(position.assetBeta) : 2,
           targetWeightPct: toNumber(position.targetWeightPct),
         }))
       : fallback.positions || [],
