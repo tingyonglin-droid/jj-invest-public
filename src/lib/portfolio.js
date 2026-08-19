@@ -22,8 +22,15 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
-function getAssetType(assetBeta) {
+function getAssetType(assetBeta, assetTypeHint) {
+  if (assetBeta === "" || assetBeta == null) {
+    return assetTypeHint === "leveraged" ? "leveraged" : "original";
+  }
   return toNumber(assetBeta) > 1 ? "leveraged" : "original";
+}
+
+function getEffectiveAssetBeta(position) {
+  return toNumber(position.assetBeta, position.assetTypeHint === "leveraged" ? 2 : 1);
 }
 
 function isValidAssetBeta(assetBeta) {
@@ -51,7 +58,7 @@ export function calculatePortfolio({
     ...position,
     normalizedTicker: normalizeTicker(position.tickerInput),
     shares: toNumber(position.shares),
-    assetBeta: toNumber(position.assetBeta),
+    assetBeta: position.assetBeta === "" ? "" : toNumber(position.assetBeta),
     targetWeightPct: toNumber(position.targetWeightPct),
   }));
   const normalizedCashEquivalentPositions = cashEquivalentPositions.map((position) => ({
@@ -96,13 +103,13 @@ export function calculatePortfolio({
   );
   const leveragedValueTwd = roundMoney(
     validRows.reduce(
-      (sum, row) => sum + (getAssetType(row.assetBeta) === "leveraged" ? row.currentValueTwd : 0),
+      (sum, row) => sum + (getAssetType(row.assetBeta, row.assetTypeHint) === "leveraged" ? row.currentValueTwd : 0),
       0,
     ),
   );
   const originalValueTwd = roundMoney(
     validRows.reduce(
-      (sum, row) => sum + (getAssetType(row.assetBeta) === "original" ? row.currentValueTwd : 0),
+      (sum, row) => sum + (getAssetType(row.assetBeta, row.assetTypeHint) === "original" ? row.currentValueTwd : 0),
       0,
     ),
   );
@@ -118,8 +125,8 @@ export function calculatePortfolio({
     1,
   );
   const rowsByType = {
-    leveraged: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "leveraged"),
-    original: normalizedPositions.filter((row) => getAssetType(row.assetBeta) === "original"),
+    leveraged: normalizedPositions.filter((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "leveraged"),
+    original: normalizedPositions.filter((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "original"),
   };
   const targetWeightTotals = Object.fromEntries(
     Object.entries(rowsByType).map(([assetType, rows]) => [
@@ -128,6 +135,14 @@ export function calculatePortfolio({
     ]),
   );
   normalizedPositions.forEach((position) => {
+    if (position.tickerInput && position.assetBeta === "") {
+      addIssue(
+        "MISSING_ASSET_BETA",
+        `${position.tickerInput} 請輸入曝險倍數。`,
+        "positions",
+      );
+      return;
+    }
     if (!isValidAssetBeta(position.assetBeta)) {
       addIssue(
         "INVALID_ASSET_BETA",
@@ -143,15 +158,15 @@ export function calculatePortfolio({
       ? 2
       : allocationModes.leveraged === "custom" && leveragedWeightTotal > 0
         ? leveragedRows.reduce(
-            (sum, row) => sum + row.assetBeta * (row.targetWeightPct / leveragedWeightTotal),
+            (sum, row) => sum + getEffectiveAssetBeta(row) * (row.targetWeightPct / leveragedWeightTotal),
             0,
           )
-        : leveragedRows.reduce((sum, row) => sum + row.assetBeta, 0) / leveragedRows.length,
+        : leveragedRows.reduce((sum, row) => sum + getEffectiveAssetBeta(row), 0) / leveragedRows.length,
   );
-  const hasExplicitTargetBeta = Number.isFinite(Number(targetBeta));
+  const hasExplicitTargetBeta = targetBeta !== "" && targetBeta != null && Number.isFinite(Number(targetBeta));
   const explicitTargetBeta = toNumber(targetBeta);
-  const hasLeveragedRows = validRows.some((row) => getAssetType(row.assetBeta) === "leveraged");
-  const hasOriginalRows = validRows.some((row) => getAssetType(row.assetBeta) === "original");
+  const hasLeveragedRows = validRows.some((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "leveraged");
+  const hasOriginalRows = validRows.some((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "original");
   const targetOriginalRatio = roundRatio(
     hasExplicitTargetBeta
       ? hasLeveragedRows
@@ -177,6 +192,10 @@ export function calculatePortfolio({
       "目標 Beta 必須介於 0～3。",
       "beta",
     );
+  }
+
+  if (targetBeta === "") {
+    addIssue("MISSING_TARGET_BETA", "請輸入目標 Beta。", "beta");
   }
 
   if (hasExplicitTargetBeta && !hasLeveragedRows && !hasOriginalRows && explicitTargetBeta > 0) {
@@ -219,7 +238,7 @@ export function calculatePortfolio({
     );
   }
 
-  if (targetLeveragedRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "leveraged")) {
+  if (targetLeveragedRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta, row.assetTypeHint) !== "leveraged")) {
     addIssue(
       "MISSING_LEVERAGED_POSITION",
       "槓桿目標比例大於 0 時，請新增至少一個槓桿標的。",
@@ -227,7 +246,7 @@ export function calculatePortfolio({
     );
   }
 
-  if (targetOriginalRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta) !== "original")) {
+  if (targetOriginalRatio > RATIO_TOLERANCE && validRows.every((row) => getAssetType(row.assetBeta, row.assetTypeHint) !== "original")) {
     addIssue(
       "MISSING_ORIGINAL_POSITION",
       "原形目標比例大於 0 時，請新增至少一個原形標的。",
@@ -291,7 +310,7 @@ export function calculatePortfolio({
 
   const recommendations = validRows.map((row) => {
     const currentWeight = totalAssetsTwd > 0 ? row.currentValueTwd / totalAssetsTwd : 0;
-    const assetType = getAssetType(row.assetBeta);
+    const assetType = getAssetType(row.assetBeta, row.assetTypeHint);
     const typeValueTwd = assetType === "leveraged" ? leveragedValueTwd : originalValueTwd;
     const currentSleeveWeight = typeValueTwd > 0 ? row.currentValueTwd / typeValueTwd : 0;
     const targetSleeveWeight = allocationModes[assetType] === "custom" && targetWeightTotals[assetType] > 0

@@ -1,4 +1,7 @@
 function isOriginalPosition(position) {
+  if (position?.assetBeta === "" || position?.assetBeta == null) {
+    return position?.assetTypeHint !== "leveraged";
+  }
   return Number(position?.assetBeta) <= 1;
 }
 

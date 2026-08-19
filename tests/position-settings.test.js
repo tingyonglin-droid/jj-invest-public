@@ -21,6 +21,16 @@ describe("position settings helpers", () => {
     });
   });
 
+  it("keeps a new holding in its selected sleeve while its multiplier is blank", () => {
+    const leveraged = { id: "new-leveraged", assetBeta: "", assetTypeHint: "leveraged" };
+    const original = { id: "new-original", assetBeta: 1, assetTypeHint: "original" };
+
+    assert.deepEqual(getPositionGroups([leveraged, original]), {
+      leveraged: [leveraged],
+      original: [original],
+    });
+  });
+
   it("validates a custom sleeve only when its weights total 100 percent", () => {
     assert.deepEqual(
       getPositionGroupTargetStatus({

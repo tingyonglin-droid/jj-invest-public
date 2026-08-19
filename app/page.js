@@ -111,7 +111,8 @@ const DEFAULT_STATE = {
       id: "position-1",
       tickerInput: "",
       shares: 0,
-      assetBeta: 2,
+      assetBeta: "",
+      assetTypeHint: "leveraged",
       targetWeightPct: 0,
     },
   ],
@@ -120,7 +121,7 @@ const DEFAULT_STATE = {
   cashEquivalentPositions: [],
   cashEquivalentMode: "auto",
   realCashTargetPct: 10,
-  targetBeta: 1.2,
+  targetBeta: "",
   leveragedTargetPct: 60,
   originalTargetPct: 0,
   tolerancePct: 10,
@@ -250,9 +251,14 @@ function normalizeStoredState(state) {
       const normalizedPosition = normalizeLegacyGhostPosition(position);
       return {
         ...normalizedPosition,
-        assetBeta: Number.isFinite(Number(normalizedPosition.assetBeta))
+        assetBeta: normalizedPosition.assetBeta === ""
+          ? ""
+          : Number.isFinite(Number(normalizedPosition.assetBeta))
           ? Number(normalizedPosition.assetBeta)
           : 2,
+        assetTypeHint: normalizedPosition.assetTypeHint || (
+          Number(normalizedPosition.assetBeta) > 1 ? "leveraged" : "original"
+        ),
         targetWeightPct: parseNumericInput(normalizedPosition.targetWeightPct ?? 0),
       };
     }),
@@ -896,17 +902,32 @@ export default function Home() {
   function updatePosition(id, field, value) {
     setFormState((current) => ({
       ...current,
-      positions: current.positions.map((position) =>
-        position.id === id
-          ? {
-              ...position,
-              [field]: field === "tickerInput" ? value : parseNumericInput(value),
-              ...(field === "tickerInput" && getTickerDefaultAssetBeta(value) > 1
-                ? { assetBeta: getTickerDefaultAssetBeta(value) }
+      positions: current.positions.map((position) => {
+        if (position.id !== id) {
+          return position;
+        }
+        if (field === "tickerInput") {
+          const detectedAssetBeta = getTickerDefaultAssetBeta(value);
+          return {
+            ...position,
+            tickerInput: value,
+            ...(detectedAssetBeta !== null
+              ? {
+                  assetBeta: detectedAssetBeta,
+                  assetBetaSource: "auto",
+                  assetTypeHint: detectedAssetBeta > 1 ? "leveraged" : "original",
+                }
+              : position.assetBetaSource === "auto"
+                ? { assetBeta: "", assetBetaSource: null }
                 : {}),
-            }
-          : position,
-      ),
+          };
+        }
+        return {
+          ...position,
+          [field]: parseNumericInput(value),
+          ...(field === "assetBeta" ? { assetBetaSource: "manual" } : {}),
+        };
+      }),
     }));
   }
 
@@ -991,7 +1012,8 @@ export default function Home() {
           id: `position-${Date.now()}`,
           tickerInput: "",
           shares: 0,
-          assetBeta,
+          assetBeta: assetBeta > 1 ? "" : 1,
+          assetTypeHint: assetBeta > 1 ? "leveraged" : "original",
           targetWeightPct: 0,
         },
       ],
@@ -2692,9 +2714,16 @@ function PositionSection({
                   max="3"
                   step="0.1"
                   value={position.assetBeta}
-                  aria-invalid={Number(position.assetBeta) < 1 || Number(position.assetBeta) > 3}
+                  aria-invalid={Boolean(position.tickerInput) && (
+                    position.assetBeta === "" ||
+                    Number(position.assetBeta) < 1 ||
+                    Number(position.assetBeta) > 3
+                  )}
                   onChange={(event) => onUpdatePosition(position.id, "assetBeta", event.target.value)}
                 />
+                {position.tickerInput && position.assetBeta === "" && (
+                  <small className="fieldError">請輸入曝險倍數。</small>
+                )}
               </label>
             )}
             {mode === "custom" && (
@@ -3068,6 +3097,7 @@ function SettingsAccordions({
                 min="0"
                 max="3"
                 value={formState.targetBeta}
+                placeholder="1.0 / 1.2 / 1.4 / 1.6"
                 onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
               />
             </label>

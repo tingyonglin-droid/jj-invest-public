@@ -420,4 +420,36 @@ describe("portfolio calculations", () => {
     assert.equal(result.isValid, false);
     assert.equal(result.issues.filter((issue) => issue.code === "INVALID_ASSET_BETA").length, 2);
   });
+
+  it("asks for a multiplier when an unknown leveraged ticker has none", () => {
+    const result = calculatePortfolio({
+      positions: [{
+        id: "unknown",
+        tickerInput: "UNKNOWN",
+        shares: 1,
+        assetBeta: "",
+        assetTypeHint: "leveraged",
+      }],
+      quotes: [{ ...quotes[1], inputTicker: "UNKNOWN", normalizedTicker: "UNKNOWN" }],
+      cashTwd: 0,
+      targetBeta: 1.2,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.issues.some(
+      (issue) => issue.code === "MISSING_ASSET_BETA" && issue.message === "UNKNOWN 請輸入曝險倍數。",
+    ), true);
+  });
+
+  it("requires users to enter a target beta when it is blank", () => {
+    const result = calculatePortfolio({
+      positions: [{ id: "double", tickerInput: "QLD", shares: 1, assetBeta: 2 }],
+      quotes: [quotes[1]],
+      cashTwd: 0,
+      targetBeta: "",
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.issues.some((issue) => issue.code === "MISSING_TARGET_BETA"), true);
+  });
 });
