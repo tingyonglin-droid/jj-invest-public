@@ -2752,6 +2752,43 @@ button.betaAction {
   min-width: 0;
 }
 
+.betaSetupSteps {
+  display: grid;
+  gap: 12px;
+}
+
+.betaSetupStep {
+  display: grid;
+  gap: 4px;
+}
+
+.betaSetupStep strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.betaSetupStep strong > span {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--primary-dark);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.betaSetupStep p {
+  margin: 0 0 0 30px;
+  color: rgba(95, 108, 100, 0.82);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
 .weightGuardSummary strong {
   display: grid;
   gap: 2px;

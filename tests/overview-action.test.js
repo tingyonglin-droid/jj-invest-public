@@ -63,7 +63,7 @@ describe("overview action", () => {
     );
   });
 
-  it("routes incomplete setup to holdings settings before rebalance", () => {
+  it("routes incomplete setup to beta settings before holdings", () => {
     assert.deepEqual(
       createOverviewAction(
         { isValid: true, needsRebalance: true, issues: [] },
@@ -74,7 +74,7 @@ describe("overview action", () => {
         label: "設定Beta參數/持股/現金→",
         tone: "setup",
         destination: "settings",
-        settingsPage: "positions",
+        settingsPage: "beta",
         ariaLabel: "設定 Beta 參數、持股與現金，前往設定頁",
       },
     );

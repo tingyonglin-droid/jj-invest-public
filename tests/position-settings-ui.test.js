@@ -65,11 +65,16 @@ test("beta guidance waits for a configured holding before showing calculated all
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
   assert.match(page, /const hasConfiguredPositions =/);
-  assert.match(page, /新增至少一檔原形或槓桿標的/);
+  assert.match(page, /請新增至少一檔槓桿或原形標的/);
   assert.match(page, /依目前持股推算配置/);
   assert.match(page, /positionGroups\.leveraged\.length > 0/);
   assert.match(page, /id: "position-1",\s*tickerInput: ""/s);
   assert.doesNotMatch(page, /className="weightGuardBeta"/);
+  assert.match(page, /hasConfiguredPositions && calculation\.errors\.length > 0/);
+  assert.match(
+    page,
+    /className="betaSetupStep"[\s\S]*?先設定目標 Beta[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股/s,
+  );
 });
 
 test("calculated allocation places its ratios on a separate line", async () => {

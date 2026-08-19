@@ -2784,7 +2784,7 @@ function SettingsAccordions({
         </nav>
 
         <div className="settingsBody">
-          {calculation.errors.length > 0 ? (
+          {hasConfiguredPositions && calculation.errors.length > 0 ? (
             <div className="settingsErrorSummary" role="alert">
               <strong>請修正以下設定</strong>
               <ul>
@@ -3014,9 +3014,15 @@ function SettingsAccordions({
             <>
           <div className={`weightGuard ${betaGuardIsValid ? "ok" : "error"}`}>
             {!hasConfiguredPositions ? (
-              <div className="weightGuardSummary">
-                <strong>先設定目標 Beta</strong>
-                <span>新增至少一檔原形或槓桿標的，系統會依曝險倍數推算持股與現金配置。</span>
+              <div className="betaSetupSteps" aria-label="首次設定步驟">
+                <div className="betaSetupStep">
+                  <strong><span>1</span>先設定目標 Beta</strong>
+                  <p>輸入你希望維持的市場曝險程度。</p>
+                </div>
+                <div className="betaSetupStep">
+                  <strong><span>2</span>接下來至持股頁新增持股</strong>
+                  <p>請新增至少一檔槓桿或原形標的。</p>
+                </div>
               </div>
             ) : betaGuardIsValid ? (
                 <div className="weightGuardSummary">

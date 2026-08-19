@@ -14,7 +14,7 @@ export function createOverviewAction(calculation, { setupComplete = true } = {})
       label: "設定Beta參數/持股/現金→",
       tone: "setup",
       destination: "settings",
-      settingsPage: "positions",
+      settingsPage: "beta",
       ariaLabel: "設定 Beta 參數、持股與現金，前往設定頁",
     };
   }
