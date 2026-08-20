@@ -10,11 +10,11 @@ export function createOverviewAction(calculation, { setupComplete = true } = {})
   if (!setupComplete) {
     return {
       kind: "setup",
-      label: "設定Beta參數/持股/現金→",
+      label: "開始設定 Beta／持股 →",
       tone: "setup",
       destination: "settings",
       settingsPage: "beta",
-      ariaLabel: "設定 Beta 參數、持股與現金，前往設定頁",
+      ariaLabel: "開始設定 Beta 與持股，前往設定頁",
     };
   }
 

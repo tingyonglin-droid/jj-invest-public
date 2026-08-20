@@ -75,9 +75,8 @@ test("beta guidance waits for a configured holding before showing calculated all
   assert.doesNotMatch(page, /className="weightGuardBeta"/);
   assert.match(
     page,
-    /className="betaSetupStep"[\s\S]*?先設定目標 Beta[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至現金頁填寫可用資金/s,
+    /className="betaSetupStep"[\s\S]*?先設定目標 Beta[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股[\s\S]*?className="betaSetupStep"[\s\S]*?填寫可用資金（選填）[\s\S]*?若有台幣、美金或類現金資產，請至現金頁填寫；目前已滿倉可略過。/s,
   );
-  assert.match(page, /若有類現金 ETF，也可一併新增/);
 });
 
 test("calculated allocation places its ratios on a separate line", async () => {
