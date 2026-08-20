@@ -508,4 +508,27 @@ describe("portfolio calculations", () => {
       && issue.message === "維持目前原形比例 100% 時，最高只能達到 Beta 1.00；請改用自訂目標比例。"
     ), true);
   });
+
+  it("ignores an orphaned original target after the last original holding was deleted", () => {
+    const result = calculatePortfolio({
+      positions: [{ id: "triple", tickerInput: "TQQQ", shares: 100, assetBeta: 3 }],
+      quotes: [{
+        ...quotes[1],
+        inputTicker: "TQQQ",
+        normalizedTicker: "TQQQ",
+        priceTwd: 100,
+      }],
+      cashTwd: 0,
+      targetBeta: 3,
+      originalAllocationMode: "custom",
+      originalTargetPct: 50,
+      tolerancePct: 10,
+    });
+
+    assert.equal(result.targetOriginalRatio, 0);
+    assert.equal(result.targetLeveragedRatio, 1);
+    assert.equal(result.maximumReachableBeta, 3);
+    assert.equal(result.issues.some((issue) => issue.code === "MISSING_ORIGINAL_POSITION"), false);
+    assert.equal(result.issues.some((issue) => issue.code === "TARGET_BETA_UNREACHABLE"), false);
+  });
 });

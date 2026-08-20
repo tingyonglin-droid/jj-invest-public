@@ -5,6 +5,7 @@ import {
   getPositionGroups,
   getPositionGroupTargetStatus,
   initializePositionTargetWeights,
+  removePositionFromSettings,
 } from "../src/lib/position-settings.js";
 
 describe("position settings helpers", () => {
@@ -74,5 +75,43 @@ describe("position settings helpers", () => {
       }),
       { totalPct: 100, isValid: false },
     );
+  });
+
+  it("clears the original target after removing the last original holding", () => {
+    const state = {
+      positions: [
+        { id: "triple", tickerInput: "TQQQ", assetBeta: 3 },
+        { id: "original", tickerInput: "QQQ", assetBeta: 1 },
+      ],
+      originalAllocationMode: "custom",
+      originalTargetPct: 50,
+      allocationModes: { leveraged: "auto", original: "custom" },
+    };
+
+    assert.deepEqual(removePositionFromSettings(state, "original"), {
+      ...state,
+      positions: [state.positions[0]],
+      originalAllocationMode: "current",
+      originalTargetPct: 0,
+      allocationModes: { leveraged: "auto", original: "auto" },
+    });
+  });
+
+  it("keeps the original target while another original holding remains", () => {
+    const state = {
+      positions: [
+        { id: "triple", assetBeta: 3 },
+        { id: "original-a", assetBeta: 1 },
+        { id: "original-b", assetBeta: 1 },
+      ],
+      originalAllocationMode: "custom",
+      originalTargetPct: 40,
+      allocationModes: { leveraged: "auto", original: "custom" },
+    };
+
+    assert.deepEqual(removePositionFromSettings(state, "original-a"), {
+      ...state,
+      positions: [state.positions[0], state.positions[2]],
+    });
   });
 });

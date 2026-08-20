@@ -171,7 +171,8 @@ export function calculatePortfolio({
   const explicitTargetBeta = toNumber(targetBeta);
   const hasLeveragedRows = validRows.some((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "leveraged");
   const hasOriginalRows = validRows.some((row) => getAssetType(row.assetBeta, row.assetTypeHint) === "original");
-  const usesCustomOriginalTarget = originalAllocationMode === "custom";
+  const usesCustomOriginalTarget = originalAllocationMode === "custom"
+    && hasConfiguredOriginalPosition;
   const customOriginalTargetIsValid = originalTargetPct !== ""
     && Number.isFinite(Number(originalTargetPct))
     && Number(originalTargetPct) >= 0

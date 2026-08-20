@@ -83,6 +83,7 @@ import {
   getPositionGroups,
   getPositionGroupTargetStatus,
   initializePositionTargetWeights,
+  removePositionFromSettings,
 } from "../src/lib/position-settings.js";
 import {
   getActionText,
@@ -1042,13 +1043,7 @@ export default function Home() {
   function removePosition(id) {
     const removedPosition = formState.positions.find((position) => position.id === id);
     const canRemove = formState.positions.length > 1 && removedPosition;
-    setFormState((current) => ({
-      ...current,
-      positions:
-        current.positions.length === 1
-          ? current.positions
-          : current.positions.filter((position) => position.id !== id),
-    }));
+    setFormState((current) => removePositionFromSettings(current, id));
     if (canRemove) {
       analyticsClient.trackHoldingDeleted({
         assetType: getAssetType(removedPosition.assetBeta),

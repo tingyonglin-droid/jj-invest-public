@@ -12,6 +12,29 @@ export function getPositionGroups(positions) {
   };
 }
 
+export function removePositionFromSettings(state, id) {
+  const removedPosition = state.positions.find((position) => position.id === id);
+  if (!removedPosition || state.positions.length === 1) {
+    return state;
+  }
+
+  const positions = state.positions.filter((position) => position.id !== id);
+  const removedLastOriginal = isOriginalPosition(removedPosition)
+    && !positions.some(isOriginalPosition);
+
+  return {
+    ...state,
+    positions,
+    ...(removedLastOriginal
+      ? {
+          originalAllocationMode: "current",
+          originalTargetPct: 0,
+          allocationModes: { ...state.allocationModes, original: "auto" },
+        }
+      : {}),
+  };
+}
+
 export function getPositionGroupTargetStatus({ mode, positions }) {
   const totalPct = positions.reduce(
     (sum, position) => sum + (Number(position.targetWeightPct) || 0),
