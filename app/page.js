@@ -1290,6 +1290,7 @@ export default function Home() {
               action={overviewAction}
               calculation={calculation}
               betaRail={betaRail}
+              hasTargetBeta={formState.targetBeta !== ""}
               onAction={handleOverviewAction}
               onOpenGlossary={() => setGlossaryTopic("beta")}
             />
@@ -1430,7 +1431,7 @@ function AppHeader() {
   );
 }
 
-function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
+function BetaCard({ action, calculation, betaRail, hasTargetBeta, onAction, onOpenGlossary }) {
   const betaSummary = createBetaSummary({
     currentBeta: calculation.currentBeta,
     targetBeta: calculation.targetBeta,
@@ -1465,7 +1466,7 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
         <div className="betaMetaGrid">
           <div>
             <span>目標設定</span>
-            <strong>{betaSummary.targetText}</strong>
+            <strong>{hasTargetBeta ? betaSummary.targetText : "尚未設定"}</strong>
           </div>
           <div>
             <span>與目標差距</span>
@@ -1484,8 +1485,12 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
           "--beta-current": `${betaRail.currentPct}%`,
         }}
       >
-        <span className="targetMarker" />
-        <span className="targetLabel">目標 {formatNumber(calculation.targetBeta)}</span>
+        {hasTargetBeta && (
+          <>
+            <span className="targetMarker" />
+            <span className="targetLabel">目標 {formatNumber(calculation.targetBeta)}</span>
+          </>
+        )}
         <span className="currentMarker" />
       </div>
 

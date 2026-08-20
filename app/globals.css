@@ -493,7 +493,7 @@ button.betaAction {
 .targetLabel {
   position: absolute;
   top: -29px;
-  left: var(--beta-target);
+  left: clamp(64px, var(--beta-target), calc(100% - 64px));
   max-width: min(128px, 42vw);
   padding: 4px 8px;
   border-radius: 999px;
