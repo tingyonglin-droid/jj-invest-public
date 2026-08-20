@@ -186,6 +186,10 @@ function formatNumber(value, digits = 2) {
   }).format(Number.isFinite(value) ? value : 0);
 }
 
+function formatBetaScaleTick(value) {
+  return numberDisplay.format(Number.isFinite(value) ? value : 0);
+}
+
 function formatPercent(ratio) {
   return percentDisplay.format(Number.isFinite(ratio) ? ratio : 0);
 }
@@ -1491,10 +1495,9 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
       </div>
 
       <div className="betaScale">
-        <span>{betaRail.scaleMin}</span>
-        <span>1</span>
-        <span>2</span>
-        <span>{betaRail.scaleMax}</span>
+        {betaRail.scaleTicks.map((tick) => (
+          <span key={tick}>{formatBetaScaleTick(tick)}</span>
+        ))}
       </div>
     </section>
   );
