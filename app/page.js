@@ -1493,6 +1493,7 @@ function BetaCard({ action, calculation, betaRail, onAction, onOpenGlossary }) {
       <div className="betaScale">
         <span>{betaRail.scaleMin}</span>
         <span>1</span>
+        <span>2</span>
         <span>{betaRail.scaleMax}</span>
       </div>
     </section>
