@@ -7,10 +7,11 @@ import {
 } from "../src/lib/overview-action.js";
 
 describe("overview action", () => {
-  it("requires quotes, a funded holding, and cash before setup is complete", () => {
+  it("requires quotes, a funded holding, and target beta but allows zero cash", () => {
     const baseState = {
       positions: [{ shares: 100 }],
-      cashTwd: 1000,
+      targetBeta: 1.2,
+      cashTwd: 0,
       cashUsd: 0,
       cashEquivalentPositions: [],
     };
@@ -28,7 +29,7 @@ describe("overview action", () => {
     );
     assert.equal(
       isPortfolioSetupComplete({
-        formState: { ...baseState, cashTwd: 0 },
+        formState: { ...baseState, targetBeta: "" },
         hasReceivedQuoteResponse: true,
       }),
       false,
@@ -44,7 +45,7 @@ describe("overview action", () => {
 
     assert.equal(
       isPortfolioSetupComplete({
-        formState: { positions, cashTwd: 0, cashUsd: 100, cashEquivalentPositions: [] },
+        formState: { positions, targetBeta: 1, cashTwd: 0, cashUsd: 100, cashEquivalentPositions: [] },
         hasReceivedQuoteResponse: true,
       }),
       true,
@@ -53,6 +54,7 @@ describe("overview action", () => {
       isPortfolioSetupComplete({
         formState: {
           positions,
+          targetBeta: 1,
           cashTwd: 0,
           cashUsd: 0,
           cashEquivalentPositions: [{ shares: 10 }],

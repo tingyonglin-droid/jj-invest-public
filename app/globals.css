@@ -399,6 +399,11 @@ button.betaAction {
   background: #fde6e2;
 }
 
+.betaAction.setup {
+  color: #963d35;
+  background: #fde6e2;
+}
+
 .betaTopline {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 0.58fr);

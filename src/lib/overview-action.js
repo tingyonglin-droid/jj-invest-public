@@ -1,10 +1,9 @@
 export function isPortfolioSetupComplete({ formState, hasReceivedQuoteResponse }) {
   const hasHolding = formState.positions?.some((position) => Number(position.shares) > 0);
-  const hasCash =
-    Number(formState.cashTwd) > 0 ||
-    Number(formState.cashUsd) > 0 ||
-    formState.cashEquivalentPositions?.some((position) => Number(position.shares) > 0);
-  return Boolean(hasReceivedQuoteResponse && hasHolding && hasCash);
+  const hasTargetBeta = formState.targetBeta !== ""
+    && formState.targetBeta != null
+    && Number.isFinite(Number(formState.targetBeta));
+  return Boolean(hasReceivedQuoteResponse && hasHolding && hasTargetBeta);
 }
 
 export function createOverviewAction(calculation, { setupComplete = true } = {}) {

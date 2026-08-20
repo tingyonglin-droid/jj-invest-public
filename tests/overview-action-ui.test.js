@@ -35,6 +35,13 @@ describe("overview action UI", () => {
     );
   });
 
+  it("uses a prominent red treatment for incomplete setup", () => {
+    assert.match(
+      cssSource,
+      /\.betaAction\.setup\s*\{[^}]*color:\s*#963d35;[^}]*background:\s*#fde6e2;/s,
+    );
+  });
+
   it("keeps the beta target label clear of the summary tiles", () => {
     assert.match(
       cssSource,
