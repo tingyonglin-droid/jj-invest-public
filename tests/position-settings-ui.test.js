@@ -107,7 +107,7 @@ test("beta steppers update settings from inside the settings panel scope", async
   );
 });
 
-test("beta guidance waits for a configured holding before showing calculated allocation", async () => {
+test("setup guidance stays outside the tabs until beta and a funded holding are complete", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
   assert.match(page, /const hasConfiguredPositions =/);
@@ -118,8 +118,11 @@ test("beta guidance waits for a configured holding before showing calculated all
   assert.doesNotMatch(page, /className="weightGuardBeta"/);
   assert.match(
     page,
-    /className="betaSetupStep"[\s\S]*?設定目標 Beta 與再平衡容忍度[\s\S]*?決定希望維持的市場曝險程度，以及偏離多少時需要再平衡。[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股[\s\S]*?className="betaSetupStep"[\s\S]*?填寫可用資金（選填）[\s\S]*?若有台幣、美金或類現金資產，請至現金頁填寫；目前已滿倉可略過。/s,
+    /setupGuide\.isVisible[\s\S]*?className="betaSetupSteps settingsSetupGuide"[\s\S]*?設定目標 Beta 與再平衡容忍度[\s\S]*?接下來至持股頁新增持股[\s\S]*?填寫可用資金（選填）[\s\S]*?className="settingsPanel settingsPagePanel"/s,
   );
+  assert.match(page, /setupGuide\.completedSteps\.beta \? "✓" : "1"/);
+  assert.match(page, /setupGuide\.completedSteps\.positions \? "✓" : "2"/);
+  assert.match(page, /setupGuide\.completedSteps\.cash \? "✓" : "3"/);
 });
 
 test("live allocation summary stays outside the tabs and emphasizes changing values", async () => {

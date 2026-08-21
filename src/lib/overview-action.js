@@ -6,6 +6,28 @@ export function isPortfolioSetupComplete({ formState, hasReceivedQuoteResponse }
   return Boolean(hasReceivedQuoteResponse && hasHolding && hasTargetBeta);
 }
 
+export function getSettingsSetupGuide(formState) {
+  const hasBetaSettings = [formState.targetBeta, formState.tolerancePct].every(
+    (value) => value !== "" && value != null && Number.isFinite(Number(value)) && Number(value) >= 0,
+  );
+  const hasFundedHolding = formState.positions?.some(
+    (position) => String(position.tickerInput || "").trim() && Number(position.shares) > 0,
+  );
+  const hasCash = Number(formState.cashTwd) > 0
+    || Number(formState.cashUsd) > 0
+    || formState.cashEquivalentPositions?.some((position) => Number(position.shares) > 0);
+  const completedSteps = {
+    beta: Boolean(hasBetaSettings),
+    positions: Boolean(hasFundedHolding),
+    cash: Boolean(hasCash),
+  };
+
+  return {
+    completedSteps,
+    isVisible: !completedSteps.beta || !completedSteps.positions,
+  };
+}
+
 export function createOverviewAction(calculation, { setupComplete = true } = {}) {
   if (!setupComplete) {
     return {

@@ -60,6 +60,7 @@ import {
 import { normalizeTicker } from "../src/lib/market-data.js";
 import {
   createOverviewAction,
+  getSettingsSetupGuide,
   isPortfolioSetupComplete,
 } from "../src/lib/overview-action.js";
 import { calculatePortfolio } from "../src/lib/portfolio.js";
@@ -2964,6 +2965,7 @@ function SettingsAccordions({
   const hasFundedOriginalPositions = hasConfiguredOriginalPositions && calculation.originalValueTwd > 0;
   const betaGuardIsValid = calculation.errors.length === 0;
   const hasLiveCalculation = hasConfiguredPositions && betaGuardIsValid;
+  const setupGuide = getSettingsSetupGuide(formState);
   const cashEquivalentStatus = getCashEquivalentTargetStatus({
     mode: formState.cashEquivalentMode,
     positions: formState.cashEquivalentPositions,
@@ -3036,6 +3038,23 @@ function SettingsAccordions({
           )}
         </div>
       </div>
+
+      {setupGuide.isVisible && (
+        <div className="betaSetupSteps settingsSetupGuide" aria-label="首次設定步驟">
+          <div className={`betaSetupStep ${setupGuide.completedSteps.beta ? "completed" : "pending"}`}>
+            <strong><span>{setupGuide.completedSteps.beta ? "✓" : "1"}</span>設定目標 Beta 與再平衡容忍度</strong>
+            <p>決定希望維持的市場曝險程度，以及偏離多少時需要再平衡。</p>
+          </div>
+          <div className={`betaSetupStep ${setupGuide.completedSteps.positions ? "completed" : "pending"}`}>
+            <strong><span>{setupGuide.completedSteps.positions ? "✓" : "2"}</span>接下來至持股頁新增持股</strong>
+            <p>請新增至少一檔槓桿或原形標的，並填寫持有股數。</p>
+          </div>
+          <div className={`betaSetupStep ${setupGuide.completedSteps.cash ? "completed" : "optional"}`}>
+            <strong><span>{setupGuide.completedSteps.cash ? "✓" : "3"}</span>填寫可用資金（選填）</strong>
+            <p>若有台幣、美金或類現金資產，請至現金頁填寫；目前已滿倉可略過。</p>
+          </div>
+        </div>
+      )}
 
       <div className="settingsPanel settingsPagePanel">
         <nav className="settingsSubTabs" aria-label="設定分類">
@@ -3281,22 +3300,6 @@ function SettingsAccordions({
 
           {activeSettingsPage === "beta" && (
             <>
-            {!hasConfiguredPositions && (
-              <div className="betaSetupSteps" aria-label="首次設定步驟">
-                <div className="betaSetupStep">
-                  <strong><span>1</span>設定目標 Beta 與再平衡容忍度</strong>
-                  <p>決定希望維持的市場曝險程度，以及偏離多少時需要再平衡。</p>
-                </div>
-                <div className="betaSetupStep">
-                  <strong><span>2</span>接下來至持股頁新增持股</strong>
-                  <p>請新增至少一檔槓桿或原形標的。</p>
-                </div>
-                <div className="betaSetupStep">
-                  <strong><span>3</span>填寫可用資金（選填）</strong>
-                  <p>若有台幣、美金或類現金資產，請至現金頁填寫；目前已滿倉可略過。</p>
-                </div>
-              </div>
-            )}
           <div className="positionEditor betaParameterGroup">
             <div className="positionTitle">
               <strong>Beta 與再平衡設定</strong>

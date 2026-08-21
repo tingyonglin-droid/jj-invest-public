@@ -3,10 +3,63 @@ import { describe, it } from "node:test";
 
 import {
   createOverviewAction,
+  getSettingsSetupGuide,
   isPortfolioSetupComplete,
 } from "../src/lib/overview-action.js";
 
 describe("overview action", () => {
+  it("shows setup progress until beta settings and a funded holding are complete", () => {
+    const emptyGuide = getSettingsSetupGuide({
+      positions: [{ tickerInput: "", shares: 0 }],
+      targetBeta: 1,
+      tolerancePct: 10,
+      cashTwd: 0,
+      cashUsd: 0,
+      cashEquivalentPositions: [],
+    });
+
+    assert.equal(emptyGuide.isVisible, true);
+    assert.deepEqual(emptyGuide.completedSteps, {
+      beta: true,
+      positions: false,
+      cash: false,
+    });
+
+    const completeGuide = getSettingsSetupGuide({
+      positions: [{ tickerInput: "QLD", shares: 10 }],
+      targetBeta: 1.2,
+      tolerancePct: 10,
+      cashTwd: 0,
+      cashUsd: 0,
+      cashEquivalentPositions: [],
+    });
+
+    assert.equal(completeGuide.isVisible, false);
+    assert.deepEqual(completeGuide.completedSteps, {
+      beta: true,
+      positions: true,
+      cash: false,
+    });
+  });
+
+  it("marks optional cash complete without requiring it to hide the guide", () => {
+    const guide = getSettingsSetupGuide({
+      positions: [{ tickerInput: "", shares: 0 }],
+      targetBeta: "",
+      tolerancePct: "",
+      cashTwd: 1000,
+      cashUsd: 0,
+      cashEquivalentPositions: [],
+    });
+
+    assert.equal(guide.isVisible, true);
+    assert.deepEqual(guide.completedSteps, {
+      beta: false,
+      positions: false,
+      cash: true,
+    });
+  });
+
   it("requires quotes, a funded holding, and target beta but allows zero cash", () => {
     const baseState = {
       positions: [{ shares: 100 }],

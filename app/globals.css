@@ -3006,6 +3006,13 @@ button.betaAction {
   gap: 12px;
 }
 
+.settingsSetupGuide {
+  border: 1px solid rgba(201, 77, 88, 0.22);
+  border-radius: 18px;
+  padding: 16px;
+  background: #fff0f1;
+}
+
 .betaSetupStep {
   display: grid;
   gap: 4px;
@@ -3031,6 +3038,23 @@ button.betaAction {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   flex: 0 0 22px;
+}
+
+.betaSetupStep.pending strong {
+  color: var(--danger);
+}
+
+.betaSetupStep.pending strong > span {
+  background: var(--danger);
+}
+
+.betaSetupStep.completed {
+  opacity: 0.72;
+}
+
+.betaSetupStep.optional strong > span {
+  color: var(--primary-dark);
+  background: rgba(95, 108, 100, 0.14);
 }
 
 .betaSetupStep p {
