@@ -25,6 +25,10 @@ const TICKER_PLACEHOLDERS = {
 const twdNumberFormatter = new Intl.NumberFormat("zh-TW", {
   maximumFractionDigits: 0,
 });
+const usdNumberFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 function formatTwdText(value) {
   return `NT$${twdNumberFormatter.format(value)}`;
@@ -107,9 +111,15 @@ export function createOperationListText(recommendations) {
     .filter((item) => item.action !== "none" && Math.abs(item.tradeAmountTwd) > 0.5)
     .map((item) => {
       const shares = getEstimatedShares(item.tradeAmountTwd, item.priceTwd);
-      return `${getTickerDisplayText(item.normalizedTicker)} ${getActionText(item.action)} ${formatTwdText(
-        Math.abs(item.tradeAmountTwd),
-      )}，約 ${shares.toLocaleString("zh-TW")} 股`;
+      const ticker = getTickerDisplayText(item.normalizedTicker);
+      const action = getActionText(item.action);
+      if (item.currency === "USD") {
+        const amountUsd = shares * Math.abs(Number(item.price) || 0);
+        return `${ticker} ${action} US$${usdNumberFormatter.format(amountUsd)}（約 ${formatTwdText(
+          Math.abs(item.tradeAmountTwd),
+        )}），${shares.toLocaleString("zh-TW")} 股`;
+      }
+      return `${ticker} ${action} ${formatTwdText(Math.abs(item.tradeAmountTwd))}，約 ${shares.toLocaleString("zh-TW")} 股`;
     });
 
   return ["JJ Invest System 操作清單", ...rows].join("\n");

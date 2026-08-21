@@ -50,7 +50,7 @@ describe("rebalance restore points", () => {
     const parsed = parseRebalanceRestorePoint(JSON.stringify(restorePoint));
 
     assert.equal(parsed.settings.cashTwd, 100000);
-    assert.equal(parsed.settings.cashUsd, 500);
+    assert.equal(parsed.settings.cashUsd, 499.7);
     assert.equal(parsed.settings.positions[0].shares, 1001);
     assert.equal(parsed.settings.positions[0].targetWeightPct, 100);
     assert.equal(parsed.settings.allocationModes.leveraged, "custom");

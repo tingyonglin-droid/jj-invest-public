@@ -19,6 +19,12 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(page, /槓桿/);
   assert.match(page, /原形/);
   assert.match(page, /現金/);
+  assert.match(page, /台幣現金/);
+  assert.match(page, /美元現金/);
+  assert.match(page, /leveragedNetAmountSettlementTwd/);
+  assert.match(page, /leveragedNetAmountUsd/);
+  assert.match(page, /市值 \{formatUsd/);
+  assert.match(page, /約 \{formatTwd\(item\.currentValueTwd\)\}/);
   assert.match(page, /淨買入/);
   assert.match(page, /淨賣出/);
   assert.match(page, /淨增加/);
@@ -68,6 +74,7 @@ test("operations page confirms apply and offers restore after rebalance", async 
   assert.match(page, /parseRebalanceRestorePoint/);
   assert.match(page, /window\.confirm/);
   assert.match(page, /套用再平衡結果/);
+  assert.match(page, /台幣現金與美元現金/);
   assert.match(page, />\s*復原\s*<\/button>/);
   assert.doesNotMatch(page, />一鍵再平衡</);
 });

@@ -72,7 +72,7 @@ describe("app backup", () => {
     const parsed = parseAppBackup(backupText);
 
     assert.equal(parsed.settings.cashTwd, 120001);
-    assert.equal(parsed.settings.cashUsd, 999);
+    assert.equal(parsed.settings.cashUsd, 999.4);
     assert.equal(parsed.settings.positions[0].shares, 1000);
     assert.equal(parsed.settings.positions[0].targetWeightPct, 100);
     assert.equal(parsed.settings.targetBeta, 1.2);

@@ -67,16 +67,18 @@ describe("cash-equivalent rebalance application", () => {
       positions: [{ id: "stock", shares: 10 }],
       cashEquivalentPositions: [{ id: "bond", shares: 10 }],
       cashTwd: 100,
+      cashUsd: 0,
       recommendations: [
-        { id: "stock", shares: 10, tradeAmountTwd: 50, priceTwd: 50, normalizedTicker: "00631L.TW" },
-        { id: "bond", shares: 10, tradeAmountTwd: -35, priceTwd: 20, normalizedTicker: "SGOV", assetType: "cashEquivalent" },
+        { id: "stock", shares: 10, tradeAmountTwd: 50, price: 50, priceTwd: 50, currency: "TWD", normalizedTicker: "00631L.TW" },
+        { id: "bond", shares: 10, tradeAmountTwd: -35, price: 20, priceTwd: 20, currency: "USD", normalizedTicker: "SGOV", assetType: "cashEquivalent" },
       ],
       precision: "shares",
     });
 
     assert.equal(result.positions[0].shares, 11);
     assert.equal(result.cashEquivalentPositions[0].shares, 8);
-    assert.equal(result.cashTwd, 90);
+    assert.equal(result.cashTwd, 50);
+    assert.equal(result.cashUsd, 40);
   });
 });
 

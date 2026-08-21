@@ -8,6 +8,15 @@ function toInteger(value) {
   return Number.isFinite(number) ? Math.round(number) : 0;
 }
 
+function toCurrencyAmount(value, digits = 0) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+  const factor = 10 ** digits;
+  return Math.round((number + Number.EPSILON) * factor) / factor;
+}
+
 function toNumber(value, fallback = 0) {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
@@ -99,7 +108,7 @@ export function normalizeBackupSettings(settings, fallbackSettings = {}) {
     cashEquivalentMode: source.cashEquivalentMode === "custom" ? "custom" : "auto",
     realCashTargetPct: toNumber(source.realCashTargetPct, fallback.realCashTargetPct ?? 10),
     cashTwd: toInteger(source.cashTwd),
-    cashUsd: toInteger(source.cashUsd),
+    cashUsd: toCurrencyAmount(source.cashUsd, 2),
     leveragedTargetPct,
     originalTargetPct,
     originalAllocationMode: source.originalAllocationMode === "custom" ? "custom" : "current",

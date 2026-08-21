@@ -84,14 +84,18 @@ describe("presentation helpers", () => {
       {
         normalizedTicker: "00631L.TW",
         action: "sell",
+        currency: "TWD",
         tradeAmountTwd: -10000,
+        price: 40,
         priceTwd: 40,
       },
       {
         normalizedTicker: "QLD",
         action: "buy",
-        tradeAmountTwd: 18500,
-        priceTwd: 3150,
+        currency: "USD",
+        tradeAmountTwd: 19200,
+        price: 300,
+        priceTwd: 9600,
       },
       {
         normalizedTicker: "00685L.TW",
@@ -106,7 +110,7 @@ describe("presentation helpers", () => {
       [
         "JJ Invest System 操作清單",
         "00631L 賣出 NT$10,000，約 250 股",
-        "QLD 買入 NT$18,500，約 6 股",
+        "QLD 買入 US$600.00（約 NT$19,200），2 股",
       ].join("\n"),
     );
   });

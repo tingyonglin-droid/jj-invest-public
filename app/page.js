@@ -69,6 +69,7 @@ import {
   getAppliedRebalanceSummary,
   getAppliedRebalanceShareDelta,
   getCashSleeveValueAfterStockTrades,
+  getMinimumCashBalances,
 } from "../src/lib/rebalance-apply.js";
 import {
   createRebalanceRestorePoint,
@@ -151,6 +152,10 @@ const twdPriceFormatter = new Intl.NumberFormat("zh-TW", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+const usdNumberFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 const numberDisplay = new Intl.NumberFormat("zh-TW", {
   maximumFractionDigits: 2,
@@ -167,6 +172,10 @@ function formatTwd(value) {
 
 function formatTwdPrice(value) {
   return `NT$${twdPriceFormatter.format(Number.isFinite(value) ? value : 0)}`;
+}
+
+function formatUsd(value) {
+  return `US$${usdNumberFormatter.format(Number.isFinite(value) ? value : 0)}`;
 }
 
 function formatQuotePrice(value, currency) {
@@ -208,18 +217,34 @@ function formatSignedPercent(ratio) {
   return `${safeRatio > 0 ? "+" : ""}${formatPercent(safeRatio)}`;
 }
 
-function formatNetTradeAmount(value) {
+function formatNetTradeAmount(value, currency = "TWD") {
   if (Math.abs(value) < 0.5) {
     return "不需調整";
   }
-  return `${value > 0 ? "淨買入" : "淨賣出"} ${formatTwd(Math.abs(value))}`;
+  const amount = currency === "USD" ? formatUsd(Math.abs(value)) : formatTwd(Math.abs(value));
+  return `${value > 0 ? "淨買入" : "淨賣出"} ${amount}`;
 }
 
-function formatCashDelta(value) {
+function NetTradeAmounts({ twd, usd }) {
+  const hasTwd = Math.abs(twd) >= 0.5;
+  const hasUsd = Math.abs(usd) >= 0.005;
+  if (!hasTwd && !hasUsd) {
+    return <strong>不需調整</strong>;
+  }
+  return (
+    <>
+      {hasTwd && <strong>{formatNetTradeAmount(twd, "TWD")}</strong>}
+      {hasUsd && <strong>{formatNetTradeAmount(usd, "USD")}</strong>}
+    </>
+  );
+}
+
+function formatCashDelta(value, currency = "TWD") {
   if (Math.abs(value) < 0.5) {
     return "無變化";
   }
-  return `${value > 0 ? "淨增加" : "淨減少"} ${formatTwd(Math.abs(value))}`;
+  const amount = currency === "USD" ? formatUsd(Math.abs(value)) : formatTwd(Math.abs(value));
+  return `${value > 0 ? "淨增加" : "淨減少"} ${amount}`;
 }
 
 function formatQuoteDate(date) {
@@ -247,7 +272,7 @@ function normalizeStoredState(state) {
   return {
     ...state,
     cashTwd: parseIntegerInput(state.cashTwd),
-    cashUsd: parseIntegerInput(state.cashUsd ?? 0),
+    cashUsd: parseNumericInput(state.cashUsd ?? 0),
     cashEquivalentMode: state.cashEquivalentMode === "custom" ? "custom" : "auto",
     realCashTargetPct: parseNumericInput(state.realCashTargetPct ?? 10),
     cashEquivalentPositions: (state.cashEquivalentPositions || []).map((position) => ({
@@ -540,16 +565,24 @@ export default function Home() {
         (sum, item) => sum + (!item.isSelected ? Math.max(item.desiredTradeAmountTwd, 0) : 0),
         0,
       );
-      const fundedRecommendations = createFundedRebalanceRecommendations({
+      const minimumCashBalances = getMinimumCashBalances({
+        targetRealCashTwd: targetRealCashTwd + excludedCashEquivalentReserveTwd,
+        cashTwd: formState.cashTwd,
+        cashUsd: formState.cashUsd,
+        usdTwd: quoteResult.fx.usdTwd,
+      });
+      const funded = createFundedRebalanceRecommendations({
         recommendations: [...stockResult.recommendations, ...cashEquivalentRecommendations],
         precision: rebalancePrecision,
-        cashTwd: calculation.realCashTwd,
-        minimumCashTwd: targetRealCashTwd + excludedCashEquivalentReserveTwd,
+        cashBalances: { TWD: formState.cashTwd, USD: formState.cashUsd },
+        minimumCashBalances,
         cashTargetStrategy: formState.cashEquivalentMode === "custom" ? "nearest" : "floor",
       });
       return {
         ...stockResult,
-        recommendations: fundedRecommendations,
+        recommendations: funded.recommendations,
+        warnings: [...stockResult.warnings, ...funded.warnings],
+        requiresSellFirstCurrencies: funded.requiresSellFirstCurrencies,
         targetRealCashTwd,
       };
     },
@@ -567,7 +600,9 @@ export default function Home() {
       formState.realCashTargetPct,
       calculation.cashEquivalentRecommendations,
       calculation.cashSleeveValueTwd,
-      calculation.realCashTwd,
+      formState.cashTwd,
+      formState.cashUsd,
+      quoteResult.fx.usdTwd,
     ],
   );
   const appliedRebalanceSummary = useMemo(
@@ -581,7 +616,8 @@ export default function Home() {
   const canApplyRebalance =
     calculation.isValid &&
     operationRebalance.recommendations.length > 0 &&
-    appliedRebalanceSummary.actionCount > 0;
+    appliedRebalanceSummary.actionCount > 0 &&
+    !operationRebalance.warnings.some((warning) => warning.includes("不支援的交易幣別"));
 
   const refreshQuotes = useCallback(async ({ isRetry = false } = {}) => {
     if (tickers.length === 0) {
@@ -940,7 +976,7 @@ export default function Home() {
         };
       }
       const isCashField = field === "cashTwd" || field === "cashUsd";
-      const nextValue = isCashField ? parseIntegerInput(value) : parseNumericInput(value);
+      const nextValue = field === "cashTwd" ? parseIntegerInput(value) : parseNumericInput(value);
 
       if (isCashField && cashChangeReason !== "fee") {
         const beforeCashValue = calculateCashTwdValue({
@@ -1117,7 +1153,7 @@ export default function Home() {
     }
 
     const confirmed = window.confirm(
-      `套用再平衡結果？\n\n這會更新持股股數與台幣現金，並先保留一份套用前資料供復原。\n\n共 ${appliedRebalanceSummary.actionCount} 筆操作。`,
+      `套用再平衡結果？\n\n這會更新持股股數、台幣現金與美元現金，並先保留一份套用前資料供復原。\n\n共 ${appliedRebalanceSummary.actionCount} 筆操作。`,
     );
     if (!confirmed) {
       return;
@@ -1134,15 +1170,11 @@ export default function Home() {
     }
 
     setFormState((current) => {
-      const currentCashTwd = calculateCashTwdValue({
-        cashTwd: current.cashTwd,
-        cashUsd: current.cashUsd,
-        usdTwd: quoteResult.fx.usdTwd,
-      });
       const result = applyRebalanceToState({
         positions: current.positions,
         cashEquivalentPositions: current.cashEquivalentPositions,
-        cashTwd: currentCashTwd,
+        cashTwd: current.cashTwd,
+        cashUsd: current.cashUsd,
         recommendations: operationRebalance.recommendations,
         precision: rebalancePrecision,
       });
@@ -1151,11 +1183,8 @@ export default function Home() {
         ...current,
         positions: result.positions,
         cashEquivalentPositions: result.cashEquivalentPositions,
-        cashTwd: result.cashTwd - calculateCashTwdValue({
-          cashTwd: 0,
-          cashUsd: current.cashUsd,
-          usdTwd: quoteResult.fx.usdTwd,
-        }),
+        cashTwd: result.cashTwd,
+        cashUsd: result.cashUsd,
       };
     });
     setRebalanceRestoreStatus(
@@ -2353,7 +2382,7 @@ function OperationsView({
   showTargetBetaReset,
   restoreStatus,
 }) {
-  const { recommendations, warnings } = operationRebalance;
+  const { recommendations, warnings, requiresSellFirstCurrencies = [] } = operationRebalance;
   const appliedAfterBeta = getAppliedAfterBeta({
     precision,
     recommendations,
@@ -2408,19 +2437,32 @@ function OperationsView({
         </div>
         <div>
           <span>槓桿</span>
-          <strong>{formatNetTradeAmount(appliedSummary.leveragedNetAmountTwd)}</strong>
+          <NetTradeAmounts
+            twd={appliedSummary.leveragedNetAmountSettlementTwd}
+            usd={appliedSummary.leveragedNetAmountUsd}
+          />
         </div>
         <div>
           <span>原形</span>
-          <strong>{formatNetTradeAmount(appliedSummary.originalNetAmountTwd)}</strong>
+          <NetTradeAmounts
+            twd={appliedSummary.originalNetAmountSettlementTwd}
+            usd={appliedSummary.originalNetAmountUsd}
+          />
         </div>
         <div>
           <span>類現金 ETF</span>
-          <strong>{formatNetTradeAmount(appliedSummary.cashEquivalentNetAmountTwd)}</strong>
+          <NetTradeAmounts
+            twd={appliedSummary.cashEquivalentNetAmountSettlementTwd}
+            usd={appliedSummary.cashEquivalentNetAmountUsd}
+          />
         </div>
         <div>
-          <span>現金</span>
-          <strong>{formatCashDelta(appliedSummary.cashDeltaTwd)}</strong>
+          <span>台幣現金</span>
+          <strong>{formatCashDelta(appliedSummary.cashDeltaTwd, "TWD")}</strong>
+        </div>
+        <div>
+          <span>美元現金</span>
+          <strong>{formatCashDelta(appliedSummary.cashDeltaUsd, "USD")}</strong>
         </div>
       </div>
       <div className="operationParameterCard">
@@ -2505,6 +2547,11 @@ function OperationsView({
           {warning}
         </div>
       ))}
+      {requiresSellFirstCurrencies.length > 0 && (
+        <div className="operationWarning" role="status">
+          部分買入需使用本次賣出所得，請先完成賣出再買入。
+        </div>
+      )}
       <HoldingList
         recommendations={recommendations}
         onToggleSelection={onToggleSelection}
@@ -2514,7 +2561,7 @@ function OperationsView({
       <div className="operationApplyFooter">
         <div>
           <span>確認清單後套用</span>
-          <p>會依上方精度更新持股股數與現金，套用前會自動保留復原點。</p>
+          <p>會依上方精度更新持股股數、台幣現金與美元現金，套用前會自動保留復原點。</p>
         </div>
         <div className="operationApplyActions">
           <button
@@ -2702,7 +2749,14 @@ function HoldingRow({ item, onToggleSelection, precision }) {
             )}
           </div>
           <span>{getPositionDisplayName(item.normalizedTicker, item.assetBeta)}</span>
-          <em>市值 {formatTwd(item.currentValueTwd)}</em>
+          {item.currency === "USD" ? (
+            <>
+              <em>市值 {formatUsd(Number(item.shares) * Number(item.price))}</em>
+              <em>約 {formatTwd(item.currentValueTwd)}</em>
+            </>
+          ) : (
+            <em>市值 {formatTwd(item.currentValueTwd)}</em>
+          )}
           <em>股價 {formatQuotePrice(item.price, item.currency)} · 更新 {formatQuoteDate(item.date)}</em>
         </div>
       </div>
@@ -2736,7 +2790,11 @@ function HoldingRow({ item, onToggleSelection, precision }) {
 
       <div className="holdingAction">
         <span className={`holdingActionLine ${displayedAction}`}>{actionSummaryText}</span>
-        <strong>{formatTwd(displayedTradeAmountTwd)}</strong>
+        <strong>
+          {item.currency === "USD"
+            ? `${formatUsd(estimatedShares * item.price)}（約 ${formatTwd(displayedTradeAmountTwd)}）`
+            : formatTwd(displayedTradeAmountTwd)}
+        </strong>
       </div>
     </article>
   );
@@ -3054,8 +3112,8 @@ function SettingsAccordions({
                   <input
                     type="number"
                     min="0"
-                    step="1"
-                    value={parseIntegerInput(formState.cashUsd)}
+                    step="0.01"
+                    value={parseNumericInput(formState.cashUsd)}
                     onChange={(event) => onUpdateSetting("cashUsd", event.target.value)}
                   />
                 </label>
