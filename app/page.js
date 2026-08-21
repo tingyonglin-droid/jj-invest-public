@@ -74,6 +74,7 @@ import {
   createRebalanceRestorePoint,
   parseRebalanceRestorePoint,
 } from "../src/lib/rebalance-restore.js";
+import { shouldResetTemporaryRebalanceTarget } from "../src/lib/rebalance-target-session.js";
 import {
   adjustOperationTargetBeta,
   createOperationRebalance,
@@ -396,6 +397,9 @@ export default function Home() {
   const quoteResultRef = useRef(emptyQuoteResult);
   const quoteRequestCoordinatorRef = useRef(createLatestQuoteRequestCoordinator());
   const retryControllerRef = useRef(null);
+  const previousTargetBetaRef = useRef(formState.targetBeta);
+  const rebalanceViewInactiveSinceRef = useRef(null);
+  const rebalanceBackgroundSinceRef = useRef(null);
   const analyticsClient = useMemo(
     () =>
       createAnalyticsClient({
@@ -479,6 +483,9 @@ export default function Home() {
   const effectiveRebalanceTargetBeta = rebalanceTargetBeta === ""
     ? defaultRebalanceTargetBeta
     : rebalanceTargetBeta;
+  const hasTemporaryRebalanceTarget = rebalanceTargetBetaOverride !== null
+    && rebalanceTargetBeta !== ""
+    && Math.abs(Number(rebalanceTargetBeta) - defaultRebalanceTargetBeta) > 0.0001;
   const operationRebalance = useMemo(
     () => {
       const stockResult = createOperationRebalance({
@@ -839,6 +846,38 @@ export default function Home() {
   }, [hydrated, refreshQuotes, status, tickers]);
 
   useEffect(() => {
+    if (Object.is(previousTargetBetaRef.current, formState.targetBeta)) {
+      return;
+    }
+
+    previousTargetBetaRef.current = formState.targetBeta;
+    setRebalanceTargetBetaOverride(null);
+  }, [formState.targetBeta]);
+
+  useEffect(() => {
+    function handleRebalanceTargetVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        rebalanceBackgroundSinceRef.current = Date.now();
+        return;
+      }
+
+      if (document.visibilityState === "visible") {
+        if (shouldResetTemporaryRebalanceTarget({
+          inactiveSince: rebalanceBackgroundSinceRef.current,
+        })) {
+          setRebalanceTargetBetaOverride(null);
+        }
+        rebalanceBackgroundSinceRef.current = null;
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleRebalanceTargetVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleRebalanceTargetVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!hydrated) {
       return undefined;
     }
@@ -1124,6 +1163,7 @@ export default function Home() {
         ? "已套用再平衡結果，可復原上一步。"
         : "已套用再平衡結果，但瀏覽器未允許建立復原點。",
     );
+    setRebalanceTargetBetaOverride(null);
   }
 
   function restorePreviousRebalance() {
@@ -1269,6 +1309,17 @@ export default function Home() {
       return;
     }
 
+    if (activeView === "operations") {
+      rebalanceViewInactiveSinceRef.current = Date.now();
+    } else if (nextView === "operations") {
+      if (shouldResetTemporaryRebalanceTarget({
+        inactiveSince: rebalanceViewInactiveSinceRef.current,
+      })) {
+        setRebalanceTargetBetaOverride(null);
+      }
+      rebalanceViewInactiveSinceRef.current = null;
+    }
+
     setActiveView(nextView);
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1340,10 +1391,12 @@ export default function Home() {
             onOpenGlossary={() => setGlossaryTopic("operations")}
             onPrecisionChange={setRebalancePrecision}
             onRestorePreviousRebalance={restorePreviousRebalance}
+            onResetTargetBeta={() => setRebalanceTargetBetaOverride(null)}
             onTargetBetaChange={updateRebalanceTargetBeta}
             onToggleSelection={toggleRebalanceSelection}
             precision={rebalancePrecision}
             rebalanceTargetBeta={rebalanceTargetBeta}
+            showTargetBetaReset={hasTemporaryRebalanceTarget}
             restoreStatus={rebalanceRestoreStatus}
           />
         )}
@@ -2292,10 +2345,12 @@ function OperationsView({
   onOpenGlossary,
   onPrecisionChange,
   onRestorePreviousRebalance,
+  onResetTargetBeta,
   onTargetBetaChange,
   onToggleSelection,
   precision,
   rebalanceTargetBeta,
+  showTargetBetaReset,
   restoreStatus,
 }) {
   const { recommendations, warnings } = operationRebalance;
@@ -2370,7 +2425,18 @@ function OperationsView({
       </div>
       <div className="operationParameterCard">
         <div className="operationParameterRow operationBetaField">
-          <span>再平衡到 Beta</span>
+          <div className="operationBetaLabel">
+            <span>再平衡到 Beta</span>
+            {showTargetBetaReset && (
+              <button
+                type="button"
+                className="operationBetaReset"
+                onClick={onResetTargetBeta}
+              >
+                回到目標 {formatNumber(calculation.targetBeta)}
+              </button>
+            )}
+          </div>
           <div className="operationBetaStepper">
             <button
               type="button"
