@@ -1867,7 +1867,7 @@ button.betaAction {
   line-height: 1.05;
 }
 
-.operationBetaReset span {
+.operationBetaStepper .operationBetaReset span {
   display: block;
   color: inherit;
   font-size: inherit;

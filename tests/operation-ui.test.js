@@ -146,6 +146,10 @@ test("rebalance target reset stays in the stepper and enables only for a tempora
     /\.operationBetaStepper\s*\{[^}]*grid-template-columns:\s*44px minmax\(88px, 120px\) 44px 54px;/s,
   );
   assert.match(styles, /\.operationBetaReset\s*\{[^}]*line-height:/s);
+  assert.match(
+    styles,
+    /\.operationBetaStepper \.operationBetaReset span\s*\{[^}]*font-size:\s*inherit;/s,
+  );
 });
 
 test("mobile rebalance precision keeps both choices on one row", async () => {
