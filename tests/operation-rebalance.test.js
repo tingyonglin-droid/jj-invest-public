@@ -5,6 +5,7 @@ import {
   adjustOperationTargetBeta,
   createOperationRebalance,
   getOperationRebalanceStatus,
+  normalizeOperationTargetBetaInput,
   normalizeSelectedRebalanceIds,
 } from "../src/lib/operation-rebalance.js";
 import {
@@ -85,6 +86,17 @@ describe("operation rebalance", () => {
     assert.equal(adjustOperationTargetBeta(1, -0.01), 0.99);
     assert.equal(adjustOperationTargetBeta(3, 0.01), 3);
     assert.equal(adjustOperationTargetBeta(0, -0.01), 0);
+  });
+
+  it("limits operation beta controls to the portfolio reachable maximum", () => {
+    assert.equal(adjustOperationTargetBeta(2.44, 0.01, 2.44), 2.44);
+    assert.equal(adjustOperationTargetBeta(2.43, 0.01, 2.44), 2.44);
+    assert.equal(normalizeOperationTargetBetaInput("2.58", 2.44), 2.44);
+  });
+
+  it("preserves an empty operation beta input while the user edits it", () => {
+    assert.equal(normalizeOperationTargetBetaInput("", 2.44), "");
+    assert.equal(normalizeOperationTargetBetaInput("2.2", 2.44), "2.2");
   });
 
   it("defaults every current holding to selected", () => {

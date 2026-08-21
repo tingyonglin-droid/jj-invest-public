@@ -78,6 +78,7 @@ import {
   adjustOperationTargetBeta,
   createOperationRebalance,
   getOperationRebalanceStatus,
+  normalizeOperationTargetBetaInput,
 } from "../src/lib/operation-rebalance.js";
 import {
   adjustBoundedSettingValue,
@@ -382,7 +383,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState("overview");
   const [settingsTargetPage, setSettingsTargetPage] = useState(null);
   const [glossaryTopic, setGlossaryTopic] = useState(null);
-  const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState("");
+  const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState(null);
   const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
   const [historyRange, setHistoryRange] = useState("1M");
   const [benchmarkDrawdown, setBenchmarkDrawdown] = useState(null);
@@ -465,15 +466,26 @@ export default function Home() {
     },
     [excludedRebalanceIds, recommendationIds],
   );
-  const rebalanceTargetBeta =
-    rebalanceTargetBetaOverride === "" ? calculation.targetBeta : rebalanceTargetBetaOverride;
+  const defaultRebalanceTargetBeta = Math.min(
+    calculation.targetBeta,
+    calculation.maximumReachableBeta,
+  );
+  const rebalanceTargetBeta = rebalanceTargetBetaOverride === null
+    ? defaultRebalanceTargetBeta
+    : normalizeOperationTargetBetaInput(
+        rebalanceTargetBetaOverride,
+        calculation.maximumReachableBeta,
+      );
+  const effectiveRebalanceTargetBeta = rebalanceTargetBeta === ""
+    ? defaultRebalanceTargetBeta
+    : rebalanceTargetBeta;
   const operationRebalance = useMemo(
     () => {
       const stockResult = createOperationRebalance({
         recommendations: calculation.recommendations,
         selectedIds: selectedRebalanceIds,
         totalAssetsTwd: calculation.totalAssetsTwd,
-        targetBeta: rebalanceTargetBeta,
+        targetBeta: effectiveRebalanceTargetBeta,
         originalTargetRatio: calculation.targetOriginalRatio,
         leveragedBeta: calculation.targetLeveragedBeta,
         precision: rebalancePrecision,
@@ -539,7 +551,7 @@ export default function Home() {
       calculation.targetOriginalRatio,
       calculation.targetLeveragedBeta,
       calculation.totalAssetsTwd,
-      rebalanceTargetBeta,
+      effectiveRebalanceTargetBeta,
       rebalancePrecision,
       selectedRebalanceIds,
       formState.allocationModes,
@@ -1179,7 +1191,9 @@ export default function Home() {
   }
 
   function updateRebalanceTargetBeta(value) {
-    setRebalanceTargetBetaOverride(parseNumericInput(value));
+    setRebalanceTargetBetaOverride(
+      normalizeOperationTargetBetaInput(value, calculation.maximumReachableBeta),
+    );
   }
 
   function toggleRebalanceSelection(id) {
@@ -2363,7 +2377,11 @@ function OperationsView({
               aria-label="降低再平衡 Beta 0.01"
               disabled={Number(rebalanceTargetBeta) <= 0}
               onClick={() => onTargetBetaChange(
-                adjustOperationTargetBeta(rebalanceTargetBeta, -0.01),
+                adjustOperationTargetBeta(
+                  rebalanceTargetBeta,
+                  -0.01,
+                  calculation.maximumReachableBeta,
+                ),
               )}
             >
               −
@@ -2371,7 +2389,7 @@ function OperationsView({
             <input
               type="number"
               min="0"
-              max="3"
+              max={calculation.maximumReachableBeta}
               step="0.01"
               value={rebalanceTargetBeta}
               onChange={(event) => onTargetBetaChange(event.target.value)}
@@ -2379,9 +2397,9 @@ function OperationsView({
             <button
               type="button"
               aria-label="提高再平衡 Beta 0.01"
-              disabled={Number(rebalanceTargetBeta) >= 3}
+              disabled={Number(rebalanceTargetBeta) >= calculation.maximumReachableBeta}
               onClick={() => onTargetBetaChange(
-                adjustOperationTargetBeta(rebalanceTargetBeta, 0.01),
+                adjustOperationTargetBeta(rebalanceTargetBeta, 0.01, calculation.maximumReachableBeta),
               )}
             >
               ＋

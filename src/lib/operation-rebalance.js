@@ -33,9 +33,31 @@ function getAssetType(assetBeta) {
   return toNumber(assetBeta) > 1 ? "leveraged" : "original";
 }
 
-export function adjustOperationTargetBeta(value, delta) {
-  const nextValue = Math.min(Math.max(toNumber(value) + toNumber(delta), 0), 3);
+export function adjustOperationTargetBeta(value, delta, maximumBeta = 3) {
+  const safeMaximum = Math.max(toNumber(maximumBeta, 3), 0);
+  const nextValue = Math.min(Math.max(toNumber(value) + toNumber(delta), 0), safeMaximum);
   return Math.round((nextValue + Number.EPSILON) * 100) / 100;
+}
+
+export function normalizeOperationTargetBetaInput(value, maximumBeta = 3) {
+  if (value === "") {
+    return "";
+  }
+
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "";
+  }
+
+  const safeMaximum = Math.max(toNumber(maximumBeta, 3), 0);
+  if (numericValue < 0) {
+    return 0;
+  }
+  if (numericValue > safeMaximum) {
+    return Math.round((safeMaximum + Number.EPSILON) * 100) / 100;
+  }
+
+  return typeof value === "string" ? value : numericValue;
 }
 
 export function getOperationRebalanceStatus(currentBeta, betaLower, betaUpper) {
