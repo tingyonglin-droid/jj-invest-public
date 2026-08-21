@@ -91,6 +91,36 @@ describe("supported ticker registry", () => {
     );
   });
 
+  it("supports the approved Taiwan-listed active ETFs as original holdings", () => {
+    const byTicker = new Map(registry.map((item) => [item.ticker, item]));
+    const activeEtfs = {
+      "00400A": "主動國泰動能高息",
+      "00403A": "主動統一升級50",
+      "00405A": "主動富邦台灣龍耀",
+      "00406A": "主動中信台灣收益",
+      "00407A": "主動凱基台灣",
+      "00980A": "主動野村臺灣優選",
+      "00981A": "主動統一台股增長",
+      "00982A": "主動群益台灣強棒",
+      "00984A": "主動安聯台灣高息",
+      "00985A": "主動野村台灣50",
+      "00988A": "主動統一全球創新",
+      "00990A": "主動元大AI新經濟",
+      "00991A": "主動復華未來50",
+      "00992A": "主動群益科技創新",
+      "00993A": "主動安聯台灣",
+      "00994A": "主動第一金台股優",
+    };
+
+    for (const [ticker, name] of Object.entries(activeEtfs)) {
+      const item = byTicker.get(ticker);
+      assert.equal(item?.name, name, `${ticker} should use its official TWSE short name`);
+      assert.equal(item?.category, "original", `${ticker} should be treated as an original holding`);
+      assert.equal(item?.market, "TWSE", `${ticker} should use the listed-market quote route`);
+      assert.deepEqual(item?.symbols, [`${ticker}.TW`]);
+    }
+  });
+
   it("generates the human-readable maintenance document from the registry", () => {
     const markdown = generateSupportedTickersMarkdown(registry);
     assert.match(markdown, /# 完整支援標的清單/);

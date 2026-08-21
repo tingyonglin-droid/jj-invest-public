@@ -2,7 +2,7 @@
 
 > 本文件由 `src/data/supported-tickers.json` 自動產生。App 的標的名稱也直接讀取同一份 JSON。
 
-目前共 63 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
+目前共 79 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
 
 ## 槓桿
 
@@ -62,6 +62,22 @@
 | 00923 | 群益台ESG低碳50 | TWSE | 00923.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | 00924 | 復華S&P500成長 | TWSE | 00924.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | 00935 | 野村臺灣新科技50 | TWSE | 00935.TW | TWSE → Yahoo Finance | 2026-08-11 |
+| 00400A | 主動國泰動能高息 | TWSE | 00400A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00403A | 主動統一升級50 | TWSE | 00403A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00405A | 主動富邦台灣龍耀 | TWSE | 00405A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00406A | 主動中信台灣收益 | TWSE | 00406A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00407A | 主動凱基台灣 | TWSE | 00407A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00980A | 主動野村臺灣優選 | TWSE | 00980A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00981A | 主動統一台股增長 | TWSE | 00981A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00982A | 主動群益台灣強棒 | TWSE | 00982A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00984A | 主動安聯台灣高息 | TWSE | 00984A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00985A | 主動野村台灣50 | TWSE | 00985A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00988A | 主動統一全球創新 | TWSE | 00988A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00990A | 主動元大AI新經濟 | TWSE | 00990A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00991A | 主動復華未來50 | TWSE | 00991A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00992A | 主動群益科技創新 | TWSE | 00992A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00993A | 主動安聯台灣 | TWSE | 00993A.TW | TWSE → Yahoo Finance | 2026-08-22 |
+| 00994A | 主動第一金台股優 | TWSE | 00994A.TW | TWSE → Yahoo Finance | 2026-08-22 |
 | SPY | SPDR S&P 500 ETF Trust | US | SPY | Yahoo Finance | 2026-08-11 |
 | IVV | iShares Core S&P 500 ETF | US | IVV | Yahoo Finance | 2026-08-11 |
 | VTI | Vanguard Total Stock Market ETF | US | VTI | Yahoo Finance | 2026-08-11 |
