@@ -144,6 +144,7 @@ export function createFundedRebalanceRecommendations({
       const delta = toNumber(appliedDeltas.get(item.id));
       return delta > 0 ? sum + delta * toNumber(item.price) : sum;
     }, 0);
+    const availableCashIncludingSales = startingCash + saleProceeds;
 
     if (requestedBuys > initialBuyBudget && saleProceeds > 0 && buyBudget > initialBuyBudget) {
       requiresSellFirstCurrencies.push(currency);
@@ -191,7 +192,10 @@ export function createFundedRebalanceRecommendations({
       remainingRequested -= unitsToRemove * unitCost;
     }
 
-    if (remainingRequested + 0.0001 < requestedBuys) {
+    if (
+      remainingRequested + 0.0001 < requestedBuys &&
+      requestedBuys > availableCashIncludingSales + 0.0001
+    ) {
       warnings.push(`${currency === "USD" ? "美元" : "台幣"}現金不足，已縮減買入數量。`);
     }
     buyBudget = Math.max(buyBudget - remainingRequested, 0);

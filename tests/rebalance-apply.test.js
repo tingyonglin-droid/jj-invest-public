@@ -188,6 +188,22 @@ describe("apply rebalance", () => {
     assert.ok(1000000 + summary.cashDeltaTwd >= 20000);
   });
 
+  it("does not report a currency shortage when buys fit available cash but are trimmed for the cash reserve", () => {
+    const funded = createFundedRebalanceRecommendations({
+      cashBalances: { TWD: 1000000, USD: 33000 },
+      minimumCashBalances: { TWD: 200000, USD: 6600 },
+      recommendations: [
+        { id: "tw-leveraged", normalizedTicker: "00631L.TW", shares: 0, assetBeta: 2, currency: "TWD", tradeAmountTwd: 390556, price: 34.84, priceTwd: 34.84 },
+        { id: "tw-original", normalizedTicker: "0050.TW", shares: 0, assetBeta: 1, currency: "TWD", tradeAmountTwd: 409914, price: 104.65, priceTwd: 104.65 },
+        { id: "us-leveraged", normalizedTicker: "QLD", shares: 0, assetBeta: 2, currency: "USD", tradeAmountTwd: 411303.744, price: 65.99, priceTwd: 2098.482 },
+        { id: "us-original", normalizedTicker: "QQQ", shares: 0, assetBeta: 1, currency: "USD", tradeAmountTwd: 408888.216, price: 617.91, priceTwd: 19649.538 },
+      ],
+    });
+
+    assert.doesNotMatch(funded.warnings.join(" "), /台幣現金不足/);
+    assert.doesNotMatch(funded.warnings.join(" "), /美元現金不足/);
+  });
+
   it("rounds all assets to shares in share precision mode", () => {
     assert.equal(getRebalanceShareDelta(recommendations[0], "shares"), 1150);
     assert.equal(getRebalanceShareDelta(recommendations[1], "shares"), -1);
