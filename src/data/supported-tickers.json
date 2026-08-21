@@ -229,6 +229,17 @@
     "verifiedAt": "2026-08-11"
   },
   {
+    "ticker": "QQQI",
+    "symbols": ["QQQI"],
+    "name": "NEOS Nasdaq-100 High Income ETF",
+    "category": "original",
+    "assetBeta": 1,
+    "market": "US",
+    "quoteSources": ["Yahoo Finance"],
+    "verified": true,
+    "verifiedAt": "2026-08-21"
+  },
+  {
     "ticker": "SMH",
     "symbols": ["SMH"],
     "name": "VanEck Semiconductor ETF",

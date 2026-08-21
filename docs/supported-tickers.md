@@ -2,7 +2,7 @@
 
 > 本文件由 `src/data/supported-tickers.json` 自動產生。App 的標的名稱也直接讀取同一份 JSON。
 
-目前共 62 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
+目前共 63 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
 
 ## 槓桿
 
@@ -38,6 +38,7 @@
 | 009816 | 凱基台灣TOP50 | TWSE | 009816.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | VOO | Vanguard S&P 500 ETF | US | VOO | Yahoo Finance | 2026-08-11 |
 | QQQ | Invesco QQQ Trust ETF | US | QQQ | Yahoo Finance | 2026-08-11 |
+| QQQI | NEOS Nasdaq-100 High Income ETF | US | QQQI | Yahoo Finance | 2026-08-21 |
 | SMH | VanEck Semiconductor ETF | US | SMH | Yahoo Finance | 2026-08-11 |
 | SOXX | iShares Semiconductor ETF | US | SOXX | Yahoo Finance | 2026-08-11 |
 | 0051 | 元大中型100 | TWSE | 0051.TW | TWSE → Yahoo Finance | 2026-08-11 |

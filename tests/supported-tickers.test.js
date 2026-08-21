@@ -75,6 +75,7 @@ describe("supported ticker registry", () => {
       BIL: "State Street SPDR Bloomberg 1-3 Month T-Bill ETF",
       IVV: "iShares Core S&P 500 ETF",
       QQQM: "Invesco NASDAQ 100 ETF",
+      QQQI: "NEOS Nasdaq-100 High Income ETF",
       SHV: "iShares 0-1 Year Treasury Bond ETF",
       SPUU: "Direxion Daily S&P 500 Bull 2X ETF",
       SPY: "SPDR S&P 500 ETF Trust",
