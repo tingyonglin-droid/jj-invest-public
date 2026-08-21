@@ -1969,6 +1969,39 @@ button.betaAction {
   }
 }
 
+@media (min-width: 421px) and (max-width: 480px) {
+  .operationBetaField {
+    grid-template-columns: minmax(105px, 0.75fr) minmax(0, 1.25fr);
+    gap: 8px;
+  }
+
+  .operationBetaField > span {
+    white-space: nowrap;
+  }
+
+  .operationPrecisionField {
+    grid-template-columns: minmax(112px, 0.8fr) minmax(0, 1.4fr);
+  }
+
+  .operationBetaStepper,
+  .operationPrecisionField .precisionControl {
+    justify-self: stretch;
+  }
+
+  .operationBetaStepper {
+    grid-template-columns: 38px minmax(0, 1fr) 38px 48px;
+    gap: 4px;
+  }
+
+  .operationBetaStepper button {
+    min-width: 0;
+  }
+
+  .operationBetaReset {
+    min-width: 48px;
+  }
+}
+
 .operationApplyFooter {
   display: grid;
   gap: 8px;

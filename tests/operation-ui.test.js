@@ -162,7 +162,7 @@ test("mobile rebalance precision keeps both choices on one row", async () => {
   );
   assert.match(
     styles,
-    /@media \(max-width: 420px\)[\s\S]*?\.operationPrecisionField\s*\{[^}]*grid-template-columns:/s,
+    /@media \(min-width: 421px\) and \(max-width: 480px\)[\s\S]*?\.operationPrecisionField\s*\{[^}]*grid-template-columns:/s,
   );
   assert.match(styles, /\.operationPrecisionLabel\s*\{[^}]*display:\s*grid;[^}]*gap:/s);
   assert.match(styles, /\.operationPrecisionLabel p\s*\{[^}]*font-size:\s*11px;/s);
