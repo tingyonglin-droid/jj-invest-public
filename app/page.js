@@ -565,14 +565,20 @@ export default function Home() {
         (sum, item) => sum + (!item.isSelected ? Math.max(item.desiredTradeAmountTwd, 0) : 0),
         0,
       );
+      const fundingRecommendations = [
+        ...stockResult.recommendations,
+        ...cashEquivalentRecommendations,
+      ];
       const minimumCashBalances = getMinimumCashBalances({
         targetRealCashTwd: targetRealCashTwd + excludedCashEquivalentReserveTwd,
         cashTwd: formState.cashTwd,
         cashUsd: formState.cashUsd,
         usdTwd: quoteResult.fx.usdTwd,
+        recommendations: fundingRecommendations,
+        precision: rebalancePrecision,
       });
       const funded = createFundedRebalanceRecommendations({
-        recommendations: [...stockResult.recommendations, ...cashEquivalentRecommendations],
+        recommendations: fundingRecommendations,
         precision: rebalancePrecision,
         cashBalances: { TWD: formState.cashTwd, USD: formState.cashUsd },
         minimumCashBalances,

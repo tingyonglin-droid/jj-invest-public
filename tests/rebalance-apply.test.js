@@ -42,6 +42,19 @@ describe("apply rebalance", () => {
     }), { TWD: 2133, USD: 133.34 });
   });
 
+  it("keeps the combined cash target in USD when selected Taiwan buys use the TWD balance", () => {
+    assert.deepEqual(getMinimumCashBalances({
+      targetRealCashTwd: 210448,
+      cashTwd: 201039,
+      cashUsd: 6869.43,
+      usdTwd: 31.82,
+      recommendations: [
+        { id: "tw-leveraged", normalizedTicker: "00631L.TW", currency: "TWD", tradeAmountTwd: 160980, price: 34.84, priceTwd: 34.84 },
+        { id: "tw-original", normalizedTicker: "0050.TW", currency: "TWD", tradeAmountTwd: 48196, price: 104.65, priceTwd: 104.65 },
+      ],
+    }), { TWD: 0, USD: 6613.7 });
+  });
+
   it("does not use excess TWD to fund a U.S. buy", () => {
     const funded = createFundedRebalanceRecommendations({
       cashBalances: { TWD: 1000000, USD: 100 },

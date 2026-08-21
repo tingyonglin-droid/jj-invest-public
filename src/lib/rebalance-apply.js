@@ -86,6 +86,8 @@ export function getMinimumCashBalances({
   cashTwd,
   cashUsd,
   usdTwd,
+  recommendations,
+  precision = "shares",
 }) {
   const target = Math.max(toNumber(targetRealCashTwd), 0);
   const twd = Math.max(toNumber(cashTwd), 0);
@@ -96,6 +98,33 @@ export function getMinimumCashBalances({
 
   if (fx <= 0 || usdValueTwd <= 0 || total <= 0) {
     return { TWD: roundSettlementMoney(target, "TWD"), USD: 0 };
+  }
+
+  if (Array.isArray(recommendations)) {
+    const projectedCash = recommendations.reduce(
+      (balances, recommendation) => {
+        const trade = getAppliedTradeAmounts(recommendation, precision);
+        if (trade.settlementCurrency) {
+          balances[trade.settlementCurrency] -= trade.amountLocal;
+        }
+        return balances;
+      },
+      { TWD: twd, USD: usd },
+    );
+    const projectedTwd = Math.max(projectedCash.TWD, 0);
+    const projectedUsdValueTwd = Math.max(projectedCash.USD, 0) * fx;
+    const projectedTotal = projectedTwd + projectedUsdValueTwd;
+
+    if (projectedTotal > 0) {
+      const targetTwd = roundSettlementMoney(
+        target * (projectedTwd / projectedTotal),
+        "TWD",
+      );
+      return {
+        TWD: targetTwd,
+        USD: roundSettlementMoney((target - targetTwd) / fx, "USD"),
+      };
+    }
   }
 
   const targetTwd = roundSettlementMoney(target * (twd / total), "TWD");
