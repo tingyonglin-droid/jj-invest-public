@@ -83,6 +83,16 @@ test("beta and rebalance tolerance share one stepper card above original allocat
   assert.match(styles, /\.numericStepper/);
 });
 
+test("beta steppers update settings from inside the settings panel scope", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const settingsPanel = page.slice(page.indexOf("function SettingsAccordions"));
+
+  assert.match(
+    settingsPanel,
+    /function adjustBetaSetting\(field, delta, options\)[\s\S]*?onUpdateSetting\([\s\S]*?field,[\s\S]*?adjustBoundedSettingValue/s,
+  );
+});
+
 test("beta guidance waits for a configured holding before showing calculated allocation", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 

@@ -950,13 +950,6 @@ export default function Home() {
     }));
   }
 
-  function adjustBetaSetting(field, delta, options) {
-    setFormState((current) => ({
-      ...current,
-      [field]: adjustBoundedSettingValue(current[field], delta, options),
-    }));
-  }
-
   function updateCashEquivalentPosition(id, field, value) {
     setFormState((current) => ({
       ...current,
@@ -2839,6 +2832,13 @@ function SettingsAccordions({
       return;
     }
     onUpdateSetting("originalAllocationMode", "current");
+  }
+
+  function adjustBetaSetting(field, delta, options) {
+    onUpdateSetting(
+      field,
+      adjustBoundedSettingValue(formState[field], delta, options),
+    );
   }
 
   return (
