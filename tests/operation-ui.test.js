@@ -131,6 +131,23 @@ test("rebalance parameters use compact rows and conventional stepper order", asy
   assert.match(styles, /\.operationParameterRow\s*\{[^}]*grid-template-columns:/s);
 });
 
+test("rebalance target reset stays in the stepper and enables only for a temporary target", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(
+    page,
+    /className="operationBetaStepper"[\s\S]*?className="operationBetaReset"[\s\S]*?disabled=\{!showTargetBetaReset\}/s,
+  );
+  assert.match(page, /aria-label=\{`回到目標 Beta/);
+  assert.match(page, />\s*回到\s*<span>目標<\/span>/s);
+  assert.match(
+    styles,
+    /\.operationBetaStepper\s*\{[^}]*grid-template-columns:\s*44px minmax\(88px, 120px\) 44px 54px;/s,
+  );
+  assert.match(styles, /\.operationBetaReset\s*\{[^}]*line-height:/s);
+});
+
 test("mobile rebalance precision keeps both choices on one row", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

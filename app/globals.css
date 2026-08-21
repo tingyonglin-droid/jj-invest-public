@@ -1841,26 +1841,36 @@ button.betaAction {
 
 .operationBetaStepper {
   display: grid;
-  grid-template-columns: 44px minmax(96px, 120px) 44px;
+  grid-template-columns: 44px minmax(88px, 120px) 44px 54px;
+  grid-template-areas: "minus value plus reset";
   gap: 6px;
 }
 
-.operationBetaLabel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.operationBetaStepper > :nth-child(1) {
+  grid-area: minus;
+}
+
+.operationBetaStepper > input {
+  grid-area: value;
+}
+
+.operationBetaStepper > :nth-child(3) {
+  grid-area: plus;
 }
 
 .operationBetaReset {
-  padding: 4px 0;
-  border: 0;
-  background: transparent;
+  grid-area: reset;
+  min-width: 54px;
+  padding: 3px 5px;
   color: var(--sage-deep);
   font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
+  line-height: 1.05;
+}
+
+.operationBetaReset span {
+  display: block;
+  color: inherit;
+  font-size: inherit;
 }
 
 .operationBetaStepper input {
@@ -1922,6 +1932,15 @@ button.betaAction {
     grid-template-columns: 1fr;
   }
 
+  .operationBetaField {
+    grid-template-columns: minmax(105px, 0.75fr) minmax(0, 1.25fr);
+    gap: 8px;
+  }
+
+  .operationBetaField > span {
+    white-space: nowrap;
+  }
+
   .operationPrecisionField {
     grid-template-columns: minmax(112px, 0.8fr) minmax(0, 1.4fr);
   }
@@ -1933,7 +1952,16 @@ button.betaAction {
   }
 
   .operationBetaStepper {
-    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    grid-template-columns: 38px minmax(0, 1fr) 38px 48px;
+    gap: 4px;
+  }
+
+  .operationBetaStepper button {
+    min-width: 0;
+  }
+
+  .operationBetaReset {
+    min-width: 48px;
   }
 
   .operationPrecisionField p {

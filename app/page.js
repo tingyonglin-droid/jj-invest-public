@@ -2425,18 +2425,7 @@ function OperationsView({
       </div>
       <div className="operationParameterCard">
         <div className="operationParameterRow operationBetaField">
-          <div className="operationBetaLabel">
-            <span>再平衡到 Beta</span>
-            {showTargetBetaReset && (
-              <button
-                type="button"
-                className="operationBetaReset"
-                onClick={onResetTargetBeta}
-              >
-                回到目標 {formatNumber(calculation.targetBeta)}
-              </button>
-            )}
-          </div>
+          <span>再平衡到 Beta</span>
           <div className="operationBetaStepper">
             <button
               type="button"
@@ -2469,6 +2458,16 @@ function OperationsView({
               )}
             >
               ＋
+            </button>
+            <button
+              type="button"
+              className="operationBetaReset"
+              aria-label={`回到目標 Beta ${formatNumber(calculation.targetBeta)}`}
+              disabled={!showTargetBetaReset}
+              onClick={onResetTargetBeta}
+            >
+              回到
+              <span>目標</span>
             </button>
           </div>
         </div>
