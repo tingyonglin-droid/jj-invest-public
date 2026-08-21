@@ -1042,7 +1042,7 @@ export default function Home() {
 
   function removePosition(id) {
     const removedPosition = formState.positions.find((position) => position.id === id);
-    const canRemove = formState.positions.length > 1 && removedPosition;
+    const canRemove = Boolean(removedPosition);
     setFormState((current) => removePositionFromSettings(current, id));
     if (canRemove) {
       analyticsClient.trackHoldingDeleted({
@@ -2692,7 +2692,6 @@ function PositionSection({
                 type="button"
                 className="textButton"
                 onClick={() => onRemovePosition(position.id)}
-                disabled={formState.positions.length === 1}
               >
                 移除
               </button>

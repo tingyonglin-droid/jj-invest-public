@@ -14,7 +14,7 @@ export function getPositionGroups(positions) {
 
 export function removePositionFromSettings(state, id) {
   const removedPosition = state.positions.find((position) => position.id === id);
-  if (!removedPosition || state.positions.length === 1) {
+  if (!removedPosition) {
     return state;
   }
 

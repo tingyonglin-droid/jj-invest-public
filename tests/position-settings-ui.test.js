@@ -14,6 +14,12 @@ test("holding settings expose independent automatic and custom allocation modes"
   assert.match(page, /initializePositionTargetWeights/);
 });
 
+test("holding settings allow the final holding to be removed", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.doesNotMatch(page, /disabled=\{formState\.positions\.length === 1\}/);
+});
+
 test("custom allocation renders target ratios in the rebalance list", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

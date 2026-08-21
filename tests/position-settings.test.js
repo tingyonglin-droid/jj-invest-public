@@ -97,6 +97,25 @@ describe("position settings helpers", () => {
     });
   });
 
+  it("removes the only original holding and clears its allocation settings", () => {
+    const state = {
+      positions: [
+        { id: "original", tickerInput: "", shares: "", assetBeta: 1 },
+      ],
+      originalAllocationMode: "custom",
+      originalTargetPct: 30,
+      allocationModes: { leveraged: "auto", original: "custom" },
+    };
+
+    assert.deepEqual(removePositionFromSettings(state, "original"), {
+      ...state,
+      positions: [],
+      originalAllocationMode: "current",
+      originalTargetPct: 0,
+      allocationModes: { leveraged: "auto", original: "auto" },
+    });
+  });
+
   it("keeps the original target while another original holding remains", () => {
     const state = {
       positions: [
