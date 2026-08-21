@@ -34,13 +34,16 @@ export function createOverviewAction(calculation, { setupComplete = true } = {})
   }
 
   if (calculation.needsRebalance) {
+    const shouldLowerExposure = Number(calculation.currentBeta) > Number(calculation.betaUpper);
+    const exposureAction = shouldLowerExposure ? "降低" : "增加";
+
     return {
       kind: "rebalance",
-      label: "需再平衡 →",
+      label: `建議${exposureAction}曝險 →`,
       tone: "rebalance",
       destination: "operations",
       settingsPage: null,
-      ariaLabel: "需再平衡，前往再平衡頁確認",
+      ariaLabel: `建議${exposureAction}曝險，前往再平衡頁確認`,
     };
   }
 

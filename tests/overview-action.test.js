@@ -98,16 +98,37 @@ describe("overview action", () => {
 
   it("routes an out-of-tolerance portfolio to rebalance confirmation", () => {
     assert.deepEqual(
-      createOverviewAction({ isValid: true, needsRebalance: true, issues: [] }),
+      createOverviewAction({
+        isValid: true,
+        needsRebalance: true,
+        currentBeta: 1.35,
+        betaLower: 1.08,
+        betaUpper: 1.32,
+        issues: [],
+      }),
       {
         kind: "rebalance",
-        label: "需再平衡 →",
+        label: "建議降低曝險 →",
         tone: "rebalance",
         destination: "operations",
         settingsPage: null,
-        ariaLabel: "需再平衡，前往再平衡頁確認",
+        ariaLabel: "建議降低曝險，前往再平衡頁確認",
       },
     );
+  });
+
+  it("recommends increasing exposure when beta is below tolerance", () => {
+    const action = createOverviewAction({
+      isValid: true,
+      needsRebalance: true,
+      currentBeta: 0.9,
+      betaLower: 1.08,
+      betaUpper: 1.32,
+      issues: [],
+    });
+
+    assert.equal(action.label, "建議增加曝險 →");
+    assert.equal(action.ariaLabel, "建議增加曝險，前往再平衡頁確認");
   });
 
   it("routes a missing holding error to holdings settings before rebalance", () => {

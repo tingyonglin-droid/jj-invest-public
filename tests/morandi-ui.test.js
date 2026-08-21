@@ -35,7 +35,7 @@ test("uses restrained Morandi states on the overview", () => {
   assert.match(styles, /\.marketBand\.deep\s*\{[^}]*var\(--risk-deep\)/s);
   assert.match(styles, /\.bottomTabBar button\.active\s*\{[^}]*var\(--action-selected\)/s);
   assert.match(styles, /\.betaAction\.balanced\s*\{[^}]*background:\s*#eef1ee;/s);
-  assert.match(styles, /\.betaAction\.rebalance\s*\{[^}]*background:\s*#f1ecdf;/s);
+  assert.match(styles, /\.betaAction\.rebalance\s*\{[^}]*color:\s*#963d35;[^}]*background:\s*#fde6e2;[^}]*font-size:\s*14px;/s);
 });
 
 test("public header uses the centered handwritten Betree wordmark", async () => {
