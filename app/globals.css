@@ -1858,7 +1858,7 @@ button.betaAction {
   grid-area: plus;
 }
 
-.operationBetaReset {
+.operationBetaStepper .operationBetaReset {
   grid-area: reset;
   min-width: 54px;
   padding: 3px 5px;
