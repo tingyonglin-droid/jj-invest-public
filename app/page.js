@@ -188,6 +188,11 @@ function formatNumber(value, digits = 2) {
   }).format(Number.isFinite(value) ? value : 0);
 }
 
+function getNumericStepperInputWidth(value) {
+  const displayValue = value === "" || value == null ? "0" : String(value);
+  return `${Math.max(displayValue.length, 1)}ch`;
+}
+
 function formatBetaScaleTick(value) {
   return numberDisplay.format(Number.isFinite(value) ? value : 0);
 }
@@ -3210,6 +3215,7 @@ function SettingsAccordions({
                     step="1"
                     value={formState.tolerancePct}
                     aria-label="再平衡容忍度百分比"
+                    style={{ width: getNumericStepperInputWidth(formState.tolerancePct) }}
                     onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
                   />
                   <span className="numericStepperSuffix" aria-hidden="true">%</span>
@@ -3287,6 +3293,7 @@ function SettingsAccordions({
                           step="5"
                           value={formState.originalTargetPct}
                           aria-label="原形目標比例百分比"
+                          style={{ width: getNumericStepperInputWidth(formState.originalTargetPct) }}
                           onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
                         />
                         <span className="numericStepperSuffix" aria-hidden="true">%</span>
@@ -3328,6 +3335,7 @@ function SettingsAccordions({
                         step="5"
                         value={formState.originalTargetPct}
                         aria-label="原形目標比例百分比"
+                        style={{ width: getNumericStepperInputWidth(formState.originalTargetPct) }}
                         onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
                       />
                       <span className="numericStepperSuffix" aria-hidden="true">%</span>

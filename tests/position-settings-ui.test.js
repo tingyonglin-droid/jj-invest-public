@@ -91,6 +91,9 @@ test("numeric steppers vertically center values and custom original allocation c
   assert.match(page, /adjustBetaSetting\("originalTargetPct", -5, \{ min: 0, max: 100, digits: 0, fallback: 0 \}\)/);
   assert.match(page, /adjustBetaSetting\("originalTargetPct", 5, \{ min: 0, max: 100, digits: 0, fallback: 0 \}\)/);
   assert.match(page, /aria-label="原形目標比例百分比"/);
+  assert.match(page, /style=\{\{ width: getNumericStepperInputWidth\(formState\.tolerancePct\) \}\}/);
+  assert.match(page, /style=\{\{ width: getNumericStepperInputWidth\(formState\.originalTargetPct\) \}\}/);
+  assert.match(page, /function getNumericStepperInputWidth\(value\)/);
   assert.match(styles, /\.numericStepperValue\.centered input[\s\S]*?text-align: center/);
 });
 
