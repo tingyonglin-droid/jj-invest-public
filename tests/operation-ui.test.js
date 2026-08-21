@@ -35,7 +35,7 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.doesNotMatch(page, /formatTwd\(summary\.totalAmountTwd\)/);
   assert.match(page, /是否納入本次再平衡/);
   assert.match(page, /className="holdingSelect"/);
-  assert.match(page, /不納入再平衡清單/);
+  assert.match(page, /getHoldingActionPresentation/);
   assert.doesNotMatch(page, /<h2>再平衡操作清單<\/h2>/);
   assert.doesNotMatch(page, /<span>納入本次再平衡<\/span>/);
   assert.match(page, /aria-label="降低再平衡 Beta 0\.01"/);
@@ -214,9 +214,10 @@ test("rebalance holding cards use warm white interiors and two-line trade advice
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(styles, /\.holdingRow\s*\{[^}]*background:\s*#ffffff;/s);
-  assert.match(page, /const actionSummaryText =/);
+  assert.match(page, /getHoldingActionPresentation\(\{/);
   assert.match(page, /className={`holdingActionLine \$\{displayedAction\}`}/);
-  assert.match(page, /\{actionSummaryText\}/);
+  assert.match(page, />\{actionSummaryText\}<\/span>/);
+  assert.match(page, /showAmount &&/);
   assert.doesNotMatch(page, /className={`actionPill/);
   assert.doesNotMatch(page, /<em>\{estimatedShares\.toLocaleString/);
   assert.match(styles, /\.holdingActionLine\s*\{[^}]*font-size:\s*14px;/s);

@@ -4,6 +4,13 @@ import {
 } from "./settlement.js";
 
 const TAIWAN_LOT_SIZE = 1000;
+const twdShortageFormatter = new Intl.NumberFormat("zh-TW", {
+  maximumFractionDigits: 0,
+});
+const usdShortageFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 function roundCash(value) {
   return Math.round(value + Number.EPSILON);
@@ -19,6 +26,13 @@ function roundSigned(value, unit) {
     return 0;
   }
   return Math.sign(value) * Math.round(Math.abs(value) / unit) * unit;
+}
+
+function formatCashShortage(value, currency) {
+  const rounded = roundSettlementMoney(value, currency);
+  return currency === "USD"
+    ? `US$${usdShortageFormatter.format(rounded)}`
+    : `NT$${twdShortageFormatter.format(rounded)}`;
 }
 
 export function isTaiwanTicker(normalizedTicker) {
@@ -225,7 +239,10 @@ export function createFundedRebalanceRecommendations({
       remainingRequested + 0.0001 < requestedBuys &&
       requestedBuys > availableCashIncludingSales + 0.0001
     ) {
-      warnings.push(`${currency === "USD" ? "美元" : "台幣"}現金不足，已縮減買入數量。`);
+      const shortage = requestedBuys - availableCashIncludingSales;
+      warnings.push(
+        `${currency === "USD" ? "美元" : "台幣"}現金尚差約 ${formatCashShortage(shortage, currency)}，已依可用資金調整買入數量。`,
+      );
     }
     buyBudget = Math.max(buyBudget - remainingRequested, 0);
   }

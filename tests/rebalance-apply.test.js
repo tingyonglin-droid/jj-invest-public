@@ -71,7 +71,31 @@ describe("apply rebalance", () => {
     });
 
     assert.equal(getAppliedRebalanceShareDelta(funded.recommendations[0]), 1);
-    assert.match(funded.warnings.join(" "), /美元現金不足/);
+    assert.match(
+      funded.warnings.join(" "),
+      /美元現金尚差約 US\$500\.00，已依可用資金調整買入數量。/,
+    );
+  });
+
+  it("shows the executable TWD funding shortfall in the warning", () => {
+    const funded = createFundedRebalanceRecommendations({
+      cashBalances: { TWD: 100, USD: 0 },
+      minimumCashBalances: { TWD: 0, USD: 0 },
+      recommendations: [{
+        id: "tw-buy",
+        normalizedTicker: "0050.TW",
+        shares: 0,
+        currency: "TWD",
+        price: 100,
+        priceTwd: 100,
+        tradeAmountTwd: 300,
+      }],
+    });
+
+    assert.equal(getAppliedRebalanceShareDelta(funded.recommendations[0]), 1);
+    assert.deepEqual(funded.warnings, [
+      "台幣現金尚差約 NT$200，已依可用資金調整買入數量。",
+    ]);
   });
 
   it("uses same-currency sale proceeds but never cross-currency proceeds", () => {

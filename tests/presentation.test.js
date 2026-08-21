@@ -10,6 +10,7 @@ import {
   getTickerBadgeText,
   getTickerDefaultAssetBeta,
   formatExposureMultiplier,
+  getHoldingActionPresentation,
 } from "../src/lib/presentation.js";
 
 describe("presentation helpers", () => {
@@ -135,5 +136,32 @@ describe("presentation helpers", () => {
       actionCount: 2,
       totalAmountTwd: 28500,
     });
+  });
+
+  it("hides zero trade amounts for unselected and unchanged holdings", () => {
+    assert.deepEqual(
+      getHoldingActionPresentation({ isSelected: false, action: "buy", estimatedShares: 10 }),
+      {
+        displayedAction: "none",
+        actionSummaryText: "不納入再平衡清單",
+        showAmount: false,
+      },
+    );
+    assert.deepEqual(
+      getHoldingActionPresentation({ isSelected: true, action: "none", estimatedShares: 0 }),
+      {
+        displayedAction: "none",
+        actionSummaryText: "不動作",
+        showAmount: false,
+      },
+    );
+    assert.deepEqual(
+      getHoldingActionPresentation({ isSelected: true, action: "buy", estimatedShares: 12 }),
+      {
+        displayedAction: "buy",
+        actionSummaryText: "買入 12 股",
+        showAmount: true,
+      },
+    );
   });
 });

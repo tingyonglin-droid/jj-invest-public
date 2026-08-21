@@ -92,6 +92,19 @@ export function getActionText(action) {
   return "不動作";
 }
 
+export function getHoldingActionPresentation({ isSelected, action, estimatedShares }) {
+  const displayedAction = !isSelected || estimatedShares === 0 ? "none" : action;
+  const actionText = isSelected ? getActionText(displayedAction) : "不納入再平衡清單";
+
+  return {
+    displayedAction,
+    actionSummaryText: displayedAction === "none"
+      ? actionText
+      : `${actionText} ${estimatedShares.toLocaleString("zh-TW")} 股`,
+    showAmount: displayedAction !== "none",
+  };
+}
+
 export function getOperationSummary(recommendations) {
   const actionableRows = recommendations.filter(
     (item) => item.action !== "none" && Math.abs(item.tradeAmountTwd) > 0.5,

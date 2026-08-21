@@ -90,9 +90,9 @@ import {
   removePositionFromSettings,
 } from "../src/lib/position-settings.js";
 import {
-  getActionText,
   getEstimatedShares,
   formatExposureMultiplier,
+  getHoldingActionPresentation,
   getPositionDisplayName,
   getTickerDefaultAssetBeta,
   getTickerDisplayText,
@@ -2720,11 +2720,15 @@ function HoldingGroup({ items, onToggleSelection, precision, title, tone, totalA
 
 function HoldingRow({ item, onToggleSelection, precision }) {
   const estimatedShares = Math.abs(getAppliedRebalanceShareDelta(item, precision));
-  const displayedAction = !item.isSelected || estimatedShares === 0 ? "none" : item.action;
-  const actionText = item.isSelected ? getActionText(displayedAction) : "不納入再平衡清單";
-  const actionSummaryText = displayedAction === "none"
-    ? actionText
-    : `${actionText} ${estimatedShares.toLocaleString("zh-TW")} 股`;
+  const {
+    displayedAction,
+    actionSummaryText,
+    showAmount,
+  } = getHoldingActionPresentation({
+    isSelected: item.isSelected,
+    action: item.action,
+    estimatedShares,
+  });
   const displayedTradeAmountTwd = estimatedShares * item.priceTwd;
   const currentPct = clampPercent(item.currentSleeveWeight);
   const afterSleeveWeight = item.appliedAfterSleeveWeight ?? item.afterSleeveWeight;
@@ -2796,11 +2800,13 @@ function HoldingRow({ item, onToggleSelection, precision }) {
 
       <div className="holdingAction">
         <span className={`holdingActionLine ${displayedAction}`}>{actionSummaryText}</span>
-        <strong>
-          {item.currency === "USD"
-            ? `${formatUsd(estimatedShares * item.price)}（約 ${formatTwd(displayedTradeAmountTwd)}）`
-            : formatTwd(displayedTradeAmountTwd)}
-        </strong>
+        {showAmount && (
+          <strong>
+            {item.currency === "USD"
+              ? `${formatUsd(estimatedShares * item.price)}（約 ${formatTwd(displayedTradeAmountTwd)}）`
+              : formatTwd(displayedTradeAmountTwd)}
+          </strong>
+        )}
       </div>
     </article>
   );
