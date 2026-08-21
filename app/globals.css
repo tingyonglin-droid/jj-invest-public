@@ -1863,7 +1863,7 @@ button.betaAction {
   min-width: 54px;
   padding: 3px 5px;
   color: var(--sage-deep);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.05;
 }
 
@@ -1871,6 +1871,7 @@ button.betaAction {
   display: block;
   color: inherit;
   font-size: inherit;
+  line-height: inherit;
 }
 
 .operationBetaStepper input {
@@ -1905,6 +1906,7 @@ button.betaAction {
   color: var(--muted);
   font-size: 14px;
   font-weight: 780;
+  line-height: 1.4;
 }
 
 .operationPrecisionField p,

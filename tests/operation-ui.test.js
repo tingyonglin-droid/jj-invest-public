@@ -146,6 +146,7 @@ test("rebalance target reset stays in the stepper and enables only for a tempora
     /\.operationBetaStepper\s*\{[^}]*grid-template-columns:\s*44px minmax\(88px, 120px\) 44px 54px;/s,
   );
   assert.match(styles, /\.operationBetaReset\s*\{[^}]*line-height:/s);
+  assert.match(styles, /\.operationBetaReset\s*\{[^}]*font-size:\s*11px;/s);
   assert.match(
     styles,
     /\.operationBetaStepper \.operationBetaReset span\s*\{[^}]*font-size:\s*inherit;/s,
@@ -169,6 +170,10 @@ test("mobile rebalance precision keeps both choices on one row", async () => {
     /@media \(min-width: 421px\) and \(max-width: 480px\)[\s\S]*?\.operationPrecisionField\s*\{[^}]*grid-template-columns:/s,
   );
   assert.match(styles, /\.operationPrecisionLabel\s*\{[^}]*display:\s*grid;[^}]*gap:/s);
+  assert.match(
+    styles,
+    /\.operationBetaField span,\s*\.operationPrecisionField span\s*\{[^}]*font-size:\s*14px;[^}]*font-weight:\s*780;[^}]*line-height:\s*1\.4;/s,
+  );
   assert.match(styles, /\.operationPrecisionLabel p\s*\{[^}]*font-size:\s*11px;/s);
   assert.match(styles, /\.operationPrecisionField \.precisionControl\s*\{[^}]*gap:\s*12px;/s);
   assert.match(
