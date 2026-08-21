@@ -66,7 +66,7 @@ test("beta parameters keep target beta fixed and present allocation as a result"
   assert.match(page, /targetBeta: 1/);
   assert.match(page, /Beta 是目標，持股是工具，現金是結果/);
   assert.doesNotMatch(page, /槓桿目標比例 %/);
-  assert.match(page, /原形目標比例 %/);
+  assert.match(page, /<span>原形目標比例<\/span>/);
 });
 
 test("beta and rebalance tolerance share one stepper card above original allocation", async () => {
@@ -81,6 +81,17 @@ test("beta and rebalance tolerance share one stepper card above original allocat
   assert.match(page, /className="numericStepperSuffix"[^>]*>%<\/span>/);
   assert.ok(page.indexOf("Beta 與再平衡設定") < page.indexOf("原形配置"));
   assert.match(styles, /\.numericStepper/);
+});
+
+test("numeric steppers vertically center values and custom original allocation changes by five percent", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(page, /className="numericStepperValue centered"[\s\S]*?value=\{formState\.targetBeta\}/);
+  assert.match(page, /adjustBetaSetting\("originalTargetPct", -5, \{ min: 0, max: 100, digits: 0, fallback: 0 \}\)/);
+  assert.match(page, /adjustBetaSetting\("originalTargetPct", 5, \{ min: 0, max: 100, digits: 0, fallback: 0 \}\)/);
+  assert.match(page, /aria-label="原形目標比例百分比"/);
+  assert.match(styles, /\.numericStepperValue\.centered input[\s\S]*?text-align: center/);
 });
 
 test("beta steppers update settings from inside the settings panel scope", async () => {

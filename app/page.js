@@ -3166,14 +3166,17 @@ function SettingsAccordions({
                 >
                   −
                 </button>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="3"
-                  value={formState.targetBeta}
-                  onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
-                />
+                <label className="numericStepperValue centered">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="3"
+                    value={formState.targetBeta}
+                    aria-label="目標 Beta"
+                    onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
+                  />
+                </label>
                 <button
                   type="button"
                   aria-label="目標 Beta 增加 0.1"
@@ -3263,17 +3266,40 @@ function SettingsAccordions({
                 {formState.originalAllocationMode === "current" ? (
                   <p className="hint">目前原形占總資產 {formatPercent(calculation.originalRatio)}。</p>
                 ) : (
-                  <label>
-                    <span>原形目標比例 %</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={formState.originalTargetPct}
-                      onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
-                    />
-                  </label>
+                  <div className="betaStepperSetting">
+                    <div className="betaStepperHeading">
+                      <span>原形目標比例</span>
+                      <small>每次 ±5%</small>
+                    </div>
+                    <div className="numericStepper">
+                      <button
+                        type="button"
+                        aria-label="原形目標比例減少 5%"
+                        onClick={() => adjustBetaSetting("originalTargetPct", -5, { min: 0, max: 100, digits: 0, fallback: 0 })}
+                      >
+                        −
+                      </button>
+                      <label className="numericStepperValue">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={formState.originalTargetPct}
+                          aria-label="原形目標比例百分比"
+                          onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
+                        />
+                        <span className="numericStepperSuffix" aria-hidden="true">%</span>
+                      </label>
+                      <button
+                        type="button"
+                        aria-label="原形目標比例增加 5%"
+                        onClick={() => adjustBetaSetting("originalTargetPct", 5, { min: 0, max: 100, digits: 0, fallback: 0 })}
+                      >
+                        ＋
+                      </button>
+                    </div>
+                  </div>
                 )}
               </>
             ) : (
@@ -3281,17 +3307,40 @@ function SettingsAccordions({
                 {originalTargetIssue && (
                   <p className="fieldError">{originalTargetIssue.message}</p>
                 )}
-                <label>
-                  <span>原形目標比例 %</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={formState.originalTargetPct}
-                    onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
-                  />
-                </label>
+                <div className="betaStepperSetting">
+                  <div className="betaStepperHeading">
+                    <span>原形目標比例</span>
+                    <small>每次 ±5%</small>
+                  </div>
+                  <div className="numericStepper">
+                    <button
+                      type="button"
+                      aria-label="原形目標比例減少 5%"
+                      onClick={() => adjustBetaSetting("originalTargetPct", -5, { min: 0, max: 100, digits: 0, fallback: 0 })}
+                    >
+                      −
+                    </button>
+                    <label className="numericStepperValue">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={formState.originalTargetPct}
+                        aria-label="原形目標比例百分比"
+                        onChange={(event) => onUpdateSetting("originalTargetPct", event.target.value)}
+                      />
+                      <span className="numericStepperSuffix" aria-hidden="true">%</span>
+                    </label>
+                    <button
+                      type="button"
+                      aria-label="原形目標比例增加 5%"
+                      onClick={() => adjustBetaSetting("originalTargetPct", 5, { min: 0, max: 100, digits: 0, fallback: 0 })}
+                    >
+                      ＋
+                    </button>
+                  </div>
+                </div>
               </>
             )}
           </div>

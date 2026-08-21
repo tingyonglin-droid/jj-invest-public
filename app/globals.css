@@ -2816,13 +2816,20 @@ button.betaAction {
 
 .numericStepperValue input {
   width: 58px;
+  height: 46px;
   padding: 0;
   border: 0;
   background: transparent;
+  line-height: 46px;
   text-align: right;
   font-size: 18px;
   font-weight: 720;
   appearance: textfield;
+}
+
+.numericStepperValue.centered input {
+  width: 100%;
+  text-align: center;
 }
 
 .numericStepperValue input::-webkit-inner-spin-button,
