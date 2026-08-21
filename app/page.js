@@ -80,6 +80,7 @@ import {
   getOperationRebalanceStatus,
 } from "../src/lib/operation-rebalance.js";
 import {
+  adjustBoundedSettingValue,
   getPositionGroups,
   getPositionGroupTargetStatus,
   initializePositionTargetWeights,
@@ -122,7 +123,7 @@ const DEFAULT_STATE = {
   cashEquivalentPositions: [],
   cashEquivalentMode: "auto",
   realCashTargetPct: 10,
-  targetBeta: "",
+  targetBeta: 1,
   originalAllocationMode: "current",
   leveragedTargetPct: 60,
   originalTargetPct: 0,
@@ -249,7 +250,9 @@ function normalizeStoredState(state) {
     })),
     originalTargetPct: parseNumericInput(state.originalTargetPct ?? DEFAULT_STATE.originalTargetPct),
     originalAllocationMode: state.originalAllocationMode === "custom" ? "custom" : "current",
-    targetBeta: parseNumericInput(state.targetBeta ?? DEFAULT_STATE.targetBeta),
+    targetBeta: parseNumericInput(
+      state.targetBeta === "" ? DEFAULT_STATE.targetBeta : state.targetBeta ?? DEFAULT_STATE.targetBeta,
+    ),
     allocationModes: {
       leveraged: modes.leveraged === "custom" ? "custom" : "auto",
       original: modes.original === "custom" ? "custom" : "auto",
@@ -944,6 +947,13 @@ export default function Home() {
           ...(field === "assetBeta" ? { assetBetaSource: "manual" } : {}),
         };
       }),
+    }));
+  }
+
+  function adjustBetaSetting(field, delta, options) {
+    setFormState((current) => ({
+      ...current,
+      [field]: adjustBoundedSettingValue(current[field], delta, options),
     }));
   }
 
@@ -3090,8 +3100,8 @@ function SettingsAccordions({
             {!hasConfiguredPositions ? (
               <div className="betaSetupSteps" aria-label="首次設定步驟">
                 <div className="betaSetupStep">
-                  <strong><span>1</span>先設定目標 Beta</strong>
-                  <p>輸入你希望維持的市場曝險程度。</p>
+                  <strong><span>1</span>設定目標 Beta 與再平衡容忍度</strong>
+                  <p>決定希望維持的市場曝險程度，以及偏離多少時需要再平衡。</p>
                 </div>
                 <div className="betaSetupStep">
                   <strong><span>2</span>接下來至持股頁新增持股</strong>
@@ -3141,24 +3151,78 @@ function SettingsAccordions({
           </div>
           <div className="positionEditor betaParameterGroup">
             <div className="positionTitle">
-              <strong>Beta 目標</strong>
+              <strong>Beta 與再平衡設定</strong>
             </div>
-            <label>
-              <span>目標 Beta</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="3"
-                value={formState.targetBeta}
-                placeholder="1.0 / 1.2 / 1.4 / 1.6"
-                onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
-              />
+            <div className="betaStepperSetting">
+              <div className="betaStepperHeading">
+                <span>目標 Beta</span>
+                <small>每次 ±0.1</small>
+              </div>
+              <div className="numericStepper">
+                <button
+                  type="button"
+                  aria-label="目標 Beta 減少 0.1"
+                  onClick={() => adjustBetaSetting("targetBeta", -0.1, { min: 0, max: 3, digits: 1, fallback: 1 })}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="3"
+                  value={formState.targetBeta}
+                  onChange={(event) => onUpdateSetting("targetBeta", event.target.value)}
+                />
+                <button
+                  type="button"
+                  aria-label="目標 Beta 增加 0.1"
+                  onClick={() => adjustBetaSetting("targetBeta", 0.1, { min: 0, max: 3, digits: 1, fallback: 1 })}
+                >
+                  ＋
+                </button>
+              </div>
               {formState.targetBeta === "" && (
                 <small className="fieldError">請輸入目標 Beta。</small>
               )}
-            </label>
-            <p className="hint">Beta 是目標，持股是工具，現金是結果；更換標的或曝險倍數不會改變目標。</p>
+            </div>
+            <div className="betaStepperSetting">
+              <div className="betaStepperHeading">
+                <span>再平衡容忍度</span>
+                <small>每次 ±1%</small>
+              </div>
+              <div className="numericStepper">
+                <button
+                  type="button"
+                  aria-label="再平衡容忍度減少 1%"
+                  onClick={() => adjustBetaSetting("tolerancePct", -1, { min: 0, max: 100, digits: 0, fallback: 10 })}
+                >
+                  −
+                </button>
+                <label className="numericStepperValue">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={formState.tolerancePct}
+                    aria-label="再平衡容忍度百分比"
+                    onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
+                  />
+                  <span className="numericStepperSuffix" aria-hidden="true">%</span>
+                </label>
+                <button
+                  type="button"
+                  aria-label="再平衡容忍度增加 1%"
+                  onClick={() => adjustBetaSetting("tolerancePct", 1, { min: 0, max: 100, digits: 0, fallback: 10 })}
+                >
+                  ＋
+                </button>
+              </div>
+            </div>
+            <p className="hint">
+              Beta 是目標，持股是工具，現金是結果；偏離目標超過容忍範圍時，首頁才會提醒進行再平衡。
+            </p>
           </div>
           <div className="positionEditor betaParameterGroup secondary">
             <div className="positionTitle">
@@ -3230,22 +3294,6 @@ function SettingsAccordions({
                 </label>
               </>
             )}
-          </div>
-          <div className="positionEditor betaParameterGroup secondary">
-            <div className="positionTitle">
-              <strong>再平衡容忍度</strong>
-            </div>
-            <label>
-              <span>容忍區間 %</span>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                value={formState.tolerancePct}
-                onChange={(event) => onUpdateSetting("tolerancePct", event.target.value)}
-              />
-            </label>
-            <p className="hint">Beta 偏離目標在這個範圍內時，首頁會顯示「無需操作」。</p>
           </div>
             </>
           )}

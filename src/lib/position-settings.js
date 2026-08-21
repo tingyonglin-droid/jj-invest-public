@@ -5,6 +5,19 @@ function isOriginalPosition(position) {
   return Number(position?.assetBeta) <= 1;
 }
 
+export function adjustBoundedSettingValue(value, delta, {
+  min,
+  max,
+  digits,
+  fallback = min,
+}) {
+  const numericValue = value === "" || !Number.isFinite(Number(value))
+    ? Number(fallback)
+    : Number(value);
+  const boundedValue = Math.min(Math.max(numericValue + Number(delta), min), max);
+  return Number(boundedValue.toFixed(digits));
+}
+
 export function getPositionGroups(positions) {
   return {
     leveraged: positions.filter((position) => !isOriginalPosition(position)),

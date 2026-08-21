@@ -63,11 +63,24 @@ test("beta parameters keep target beta fixed and present allocation as a result"
 
   assert.match(page, /<span>目標 Beta<\/span>/);
   assert.match(page, /onUpdateSetting\("targetBeta"/);
-  assert.match(page, /placeholder="1\.0 \/ 1\.2 \/ 1\.4 \/ 1\.6"/);
-  assert.match(page, /targetBeta: ""/);
+  assert.match(page, /targetBeta: 1/);
   assert.match(page, /Beta 是目標，持股是工具，現金是結果/);
   assert.doesNotMatch(page, /槓桿目標比例 %/);
   assert.match(page, /原形目標比例 %/);
+});
+
+test("beta and rebalance tolerance share one stepper card above original allocation", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(page, /<strong>Beta 與再平衡設定<\/strong>/);
+  assert.match(page, /adjustBetaSetting\("targetBeta", -0\.1/);
+  assert.match(page, /adjustBetaSetting\("targetBeta", 0\.1/);
+  assert.match(page, /adjustBetaSetting\("tolerancePct", -1/);
+  assert.match(page, /adjustBetaSetting\("tolerancePct", 1/);
+  assert.match(page, /className="numericStepperSuffix"[^>]*>%<\/span>/);
+  assert.ok(page.indexOf("Beta 與再平衡設定") < page.indexOf("原形配置"));
+  assert.match(styles, /\.numericStepper/);
 });
 
 test("beta guidance waits for a configured holding before showing calculated allocation", async () => {
@@ -81,7 +94,7 @@ test("beta guidance waits for a configured holding before showing calculated all
   assert.doesNotMatch(page, /className="weightGuardBeta"/);
   assert.match(
     page,
-    /className="betaSetupStep"[\s\S]*?先設定目標 Beta[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股[\s\S]*?className="betaSetupStep"[\s\S]*?填寫可用資金（選填）[\s\S]*?若有台幣、美金或類現金資產，請至現金頁填寫；目前已滿倉可略過。/s,
+    /className="betaSetupStep"[\s\S]*?設定目標 Beta 與再平衡容忍度[\s\S]*?決定希望維持的市場曝險程度，以及偏離多少時需要再平衡。[\s\S]*?className="betaSetupStep"[\s\S]*?接下來至持股頁新增持股[\s\S]*?className="betaSetupStep"[\s\S]*?填寫可用資金（選填）[\s\S]*?若有台幣、美金或類現金資產，請至現金頁填寫；目前已滿倉可略過。/s,
   );
 });
 

@@ -2750,6 +2750,92 @@ button.betaAction {
   background: #fbfcfd;
 }
 
+.betaStepperSetting {
+  display: grid;
+  gap: 8px;
+}
+
+.betaStepperSetting + .betaStepperSetting {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(224, 229, 235, 0.95);
+}
+
+.betaStepperHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.betaStepperHeading small {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.numericStepper {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) 50px;
+  gap: 8px;
+}
+
+.numericStepper > button,
+.numericStepper > input,
+.numericStepperValue {
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fbfaf8;
+}
+
+.numericStepper > button {
+  padding: 0;
+  color: var(--foreground);
+  font-size: 22px;
+  font-weight: 760;
+}
+
+.numericStepper > input {
+  width: 100%;
+  padding: 0 12px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 720;
+}
+
+.numericStepperValue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 12px;
+}
+
+.numericStepperValue input {
+  width: 58px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: right;
+  font-size: 18px;
+  font-weight: 720;
+  appearance: textfield;
+}
+
+.numericStepperValue input::-webkit-inner-spin-button,
+.numericStepperValue input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.numericStepperSuffix {
+  font-size: 18px;
+  font-weight: 720;
+}
+
 .weightGuard {
   display: grid;
   gap: 12px;

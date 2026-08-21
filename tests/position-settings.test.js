@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  adjustBoundedSettingValue,
   getPositionGroups,
   getPositionGroupTargetStatus,
   initializePositionTargetWeights,
@@ -9,6 +10,13 @@ import {
 } from "../src/lib/position-settings.js";
 
 describe("position settings helpers", () => {
+  it("adjusts beta and tolerance values by bounded steps", () => {
+    assert.equal(adjustBoundedSettingValue(1, 0.1, { min: 0, max: 3, digits: 1 }), 1.1);
+    assert.equal(adjustBoundedSettingValue(10, -1, { min: 0, max: 100, digits: 0 }), 9);
+    assert.equal(adjustBoundedSettingValue(3, 0.1, { min: 0, max: 3, digits: 1 }), 3);
+    assert.equal(adjustBoundedSettingValue("", -1, { min: 0, max: 100, digits: 0, fallback: 10 }), 9);
+  });
+
   it("groups holdings into leveraged and original sections by asset beta", () => {
     const positions = [
       { id: "tw-2x", assetBeta: 2 },
