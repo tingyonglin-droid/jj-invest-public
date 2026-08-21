@@ -105,6 +105,55 @@ export function parseYahooHistoricalPrices(payload, normalizedTicker) {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function parseTwseHistoricalDate(value) {
+  const match = String(value || "").match(/^(\d{3})\/(\d{2})\/(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  return `${Number(match[1]) + 1911}-${match[2]}-${match[3]}`;
+}
+
+export function parseTwseHistoricalPrices(payload) {
+  const fields = Array.isArray(payload?.fields) ? payload.fields : [];
+  const dateIndex = fields.indexOf("日期");
+  const closeIndex = fields.indexOf("收盤價");
+
+  if (dateIndex < 0 || closeIndex < 0 || !Array.isArray(payload?.data)) {
+    return [];
+  }
+
+  return payload.data
+    .map((row) => {
+      const date = parseTwseHistoricalDate(row?.[dateIndex]);
+      const price = parseTwseNumber(row?.[closeIndex]);
+      if (!date || !price) {
+        return null;
+      }
+
+      return {
+        date,
+        price,
+        currency: "TWD",
+        source: "TWSE",
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function mergeHistoricalPriceObservations(prices, officialPrices) {
+  const priceByDate = new Map();
+  [...(Array.isArray(prices) ? prices : []), ...(Array.isArray(officialPrices) ? officialPrices : [])]
+    .forEach((price) => {
+      if (price?.date && Number.isFinite(Number(price.price)) && Number(price.price) > 0) {
+        priceByDate.set(price.date, price);
+      }
+    });
+
+  return [...priceByDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export function alignHistoricalPricesToDates(prices, dates) {
   const sortedPrices = [...(Array.isArray(prices) ? prices : [])]
     .filter((price) => price?.date && Number.isFinite(Number(price.price)))
@@ -178,6 +227,50 @@ export async function fetchYahooHistoricalQuotes(normalizedTicker, { from, to })
 
   const prices = await fetchYahooHistoricalObservations(normalizedTicker, { from, to });
   return alignHistoricalPricesToDates(prices, dates);
+}
+
+async function fetchTwseMonthlyHistoricalObservations(normalizedTicker, dateText) {
+  const match = String(normalizedTicker || "").toUpperCase().match(TAIWAN_LISTED_TICKER_PATTERN);
+  if (!match || !/^\d{4}-\d{2}-\d{2}$/.test(String(dateText || ""))) {
+    return [];
+  }
+
+  const month = dateText.slice(0, 7).replace("-", "");
+  const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${month}01&stockNo=${encodeURIComponent(match[1])}`;
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+    },
+    next: {
+      revalidate: 900,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`TWSE 回應 ${response.status}`);
+  }
+
+  return parseTwseHistoricalPrices(await response.json());
+}
+
+export async function fetchHistoricalQuotes(normalizedTicker, { from, to }) {
+  const dates = createDateRange(from, to);
+  if (!dates.length) {
+    return [];
+  }
+
+  const yahooPrices = await fetchYahooHistoricalObservations(normalizedTicker, { from, to });
+  let officialPrices = [];
+  try {
+    officialPrices = await fetchTwseMonthlyHistoricalObservations(normalizedTicker, to);
+  } catch {
+    // Yahoo remains available when the official recent-month supplement is unavailable.
+  }
+
+  return alignHistoricalPricesToDates(
+    mergeHistoricalPriceObservations(yahooPrices, officialPrices),
+    dates,
+  );
 }
 
 function formatTwseDate(value) {

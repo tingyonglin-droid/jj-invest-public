@@ -1,5 +1,5 @@
 import {
-  fetchYahooHistoricalQuotes,
+  fetchHistoricalQuotes,
   normalizeTicker,
 } from "../../../src/lib/market-data.js";
 
@@ -39,12 +39,13 @@ export async function GET(request) {
     tickers.map(async (inputTicker) => {
       const normalizedTicker = normalizeTicker(inputTicker);
       try {
-        const prices = await fetchYahooHistoricalQuotes(normalizedTicker, { from, to });
+        const prices = await fetchHistoricalQuotes(normalizedTicker, { from, to });
+        const usesTwse = prices.some((price) => price.source === "TWSE");
         return {
           inputTicker,
           normalizedTicker,
           prices,
-          source: "Yahoo Finance",
+          source: usesTwse ? "TWSE／Yahoo Finance" : "Yahoo Finance",
           error: prices.some((price) => price.error) ? "部分日期缺少歷史收盤價。" : null,
         };
       } catch (error) {

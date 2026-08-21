@@ -4,6 +4,8 @@ import { describe, it } from "node:test";
 import {
   alignHistoricalPricesToDates,
   createDateRange,
+  mergeHistoricalPriceObservations,
+  parseTwseHistoricalPrices,
   parseYahooHistoricalPrices,
 } from "../src/lib/market-data.js";
 
@@ -57,6 +59,36 @@ describe("historical market data", () => {
     );
 
     assert.deepEqual(aligned.map((item) => item.price), [98, 98, 100, 101]);
+  });
+
+  it("parses official TWSE monthly closing prices", () => {
+    const prices = parseTwseHistoricalPrices({
+      fields: ["日期", "成交股數", "成交金額", "開盤價", "最高價", "最低價", "收盤價"],
+      data: [
+        ["115/08/19", "100", "1000", "103.05", "103.85", "102.70", "103.10"],
+        ["115/08/20", "100", "1000", "104.20", "104.25", "102.95", "103.80"],
+      ],
+    });
+
+    assert.deepEqual(prices.map(({ date, price, source }) => ({ date, price, source })), [
+      { date: "2026-08-19", price: 103.1, source: "TWSE" },
+      { date: "2026-08-20", price: 103.8, source: "TWSE" },
+    ]);
+  });
+
+  it("uses official TWSE prices to replace a missing Yahoo trading day", () => {
+    const merged = mergeHistoricalPriceObservations(
+      [{ date: "2026-08-19", price: 103.1, source: "Yahoo Finance" }],
+      [
+        { date: "2026-08-19", price: 103.1, source: "TWSE" },
+        { date: "2026-08-20", price: 103.8, source: "TWSE" },
+      ],
+    );
+
+    assert.deepEqual(merged.map(({ date, price, source }) => ({ date, price, source })), [
+      { date: "2026-08-19", price: 103.1, source: "TWSE" },
+      { date: "2026-08-20", price: 103.8, source: "TWSE" },
+    ]);
   });
 
   it("creates inclusive date ranges", () => {
