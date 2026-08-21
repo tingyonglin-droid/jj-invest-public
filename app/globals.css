@@ -2951,6 +2951,56 @@ button.betaAction {
   min-width: 0;
 }
 
+.settingsLiveSummary {
+  color: var(--muted);
+  background: #edf0ec;
+}
+
+.settingsLiveSummary .weightGuardSummary > strong {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.settingsLiveRatios,
+.settingsLiveDetails {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 5px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 690;
+  line-height: 1.5;
+}
+
+.settingsLiveRatios i,
+.settingsLiveDetails i {
+  color: rgba(122, 119, 114, 0.66);
+  font-style: normal;
+}
+
+.settingsLiveValue {
+  color: var(--primary-dark);
+  font-weight: 820;
+  font-variant-numeric: tabular-nums;
+}
+
+.settingsLiveSummary.error .settingsLiveValue {
+  color: var(--danger);
+}
+
+.settingsLiveSummary.error .settingsLiveIssue {
+  color: var(--danger);
+}
+
+.settingsLiveIssue {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.45;
+}
+
 .betaSetupSteps {
   display: grid;
   gap: 12px;

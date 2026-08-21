@@ -2893,6 +2893,7 @@ function SettingsAccordions({
   );
   const hasFundedOriginalPositions = hasConfiguredOriginalPositions && calculation.originalValueTwd > 0;
   const betaGuardIsValid = calculation.errors.length === 0;
+  const hasLiveCalculation = hasConfiguredPositions && betaGuardIsValid;
   const cashEquivalentStatus = getCashEquivalentTargetStatus({
     mode: formState.cashEquivalentMode,
     positions: formState.cashEquivalentPositions,
@@ -2909,11 +2910,6 @@ function SettingsAccordions({
   const originalTargetIssue = calculation.issues.find((issue) =>
     issue.code === "ORIGINAL_TARGET_REQUIRED" || issue.code === "INVALID_ORIGINAL_TARGET",
   );
-  const targetRealCashRatio = calculation.totalAssetsTwd > 0
-    ? calculation.targetRealCashTwd / calculation.totalAssetsTwd
-    : 0;
-  const targetCashEquivalentRatio = Math.max(calculation.afterCashRatio - targetRealCashRatio, 0);
-
   function setOriginalAllocationMode(mode) {
     if (mode === "custom") {
       onUpdateSetting("originalTargetPct", calculation.originalRatio * 100);
@@ -2937,6 +2933,37 @@ function SettingsAccordions({
             <p>參數設定</p>
           </div>
           <span>調整持股、現金與 Beta 試算條件</span>
+        </div>
+      </div>
+
+      <div className={`weightGuard settingsLiveSummary ${hasLiveCalculation ? "ok" : hasConfiguredPositions ? "error" : "pending"}`}>
+        <div className="weightGuardSummary">
+          <strong>即時試算配置</strong>
+          <div className="settingsLiveRatios">
+            <span>槓桿 <b className="settingsLiveValue">{hasLiveCalculation ? formatPercent(calculation.targetLeveragedRatio) : "—"}</b></span>
+            <i>/</i>
+            <span>原形 <b className="settingsLiveValue">{hasLiveCalculation ? formatPercent(calculation.targetOriginalRatio) : "—"}</b></span>
+            <i>/</i>
+            <span>現金 <b className="settingsLiveValue">{hasLiveCalculation ? formatPercent(calculation.afterCashRatio) : "—"}</b></span>
+          </div>
+          <div className="settingsLiveDetails">
+            <span>
+              槓桿曝險 <b className="settingsLiveValue">{hasLiveCalculation && hasConfiguredLeveragedPositions
+                ? formatExposureMultiplier(calculation.targetLeveragedBeta)
+                : "—"}</b>
+            </span>
+            <i>·</i>
+            <span>
+              可達 Beta <b className="settingsLiveValue">{hasLiveCalculation
+                ? `${formatNumber(calculation.minimumReachableBeta)}～${formatNumber(calculation.maximumReachableBeta)}`
+                : "—"}</b>
+            </span>
+          </div>
+          {!hasLiveCalculation && hasConfiguredPositions && (
+            <span className="settingsLiveIssue">
+              {betaBlockingIssue ? betaBlockingIssue.message : "請完成有待修正的設定。"}
+            </span>
+          )}
         </div>
       </div>
 
@@ -3184,8 +3211,7 @@ function SettingsAccordions({
 
           {activeSettingsPage === "beta" && (
             <>
-          <div className={`weightGuard ${betaGuardIsValid ? "ok" : "error"}`}>
-            {!hasConfiguredPositions ? (
+            {!hasConfiguredPositions && (
               <div className="betaSetupSteps" aria-label="首次設定步驟">
                 <div className="betaSetupStep">
                   <strong><span>1</span>設定目標 Beta 與再平衡容忍度</strong>
@@ -3200,43 +3226,7 @@ function SettingsAccordions({
                   <p>若有台幣、美金或類現金資產，請至現金頁填寫；目前已滿倉可略過。</p>
                 </div>
               </div>
-            ) : betaGuardIsValid ? (
-                <div className="weightGuardSummary">
-                  <strong>
-                    <span>依目前持股推算配置</span>
-                    <span className="weightGuardRatios">
-                      槓桿 {formatPercent(calculation.targetLeveragedRatio)} / 原形{" "}
-                      {formatPercent(calculation.targetOriginalRatio)} / 現金{" "}
-                      {formatPercent(calculation.afterCashRatio)}
-                    </span>
-                  </strong>
-                  <span>
-                    {hasConfiguredLeveragedPositions
-                      ? `槓桿平均 ${formatExposureMultiplier(calculation.targetLeveragedBeta)}；`
-                      : ""}
-                    {hasConfiguredLeveragedPositions && hasOriginalPositions
-                      ? formState.originalAllocationMode === "custom"
-                        ? "原形使用自訂目標比例。"
-                        : "原形持股維持目前比例。"
-                      : "剩餘資產保留為現金。"}
-                  </span>
-                  {formState.cashEquivalentPositions.length > 0 && (
-                    <span>
-                      現金部位包含：真實現金 {formatPercent(targetRealCashRatio)}／類現金標的{" "}
-                      {formatPercent(targetCashEquivalentRatio)}
-                    </span>
-                  )}
-                  <span>
-                    目前可達 Beta：{formatNumber(calculation.minimumReachableBeta)}～
-                    {formatNumber(calculation.maximumReachableBeta)}
-                  </span>
-                </div>
-            ) : (
-              <span>
-                {betaBlockingIssue ? betaBlockingIssue.message : "完成下方設定後，將顯示推算配置。"}
-              </span>
             )}
-          </div>
           <div className="positionEditor betaParameterGroup">
             <div className="positionTitle">
               <strong>Beta 與再平衡設定</strong>

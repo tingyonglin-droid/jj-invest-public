@@ -112,7 +112,7 @@ test("beta guidance waits for a configured holding before showing calculated all
 
   assert.match(page, /const hasConfiguredPositions =/);
   assert.match(page, /請新增至少一檔槓桿或原形標的/);
-  assert.match(page, /依目前持股推算配置/);
+  assert.match(page, /即時試算配置/);
   assert.match(page, /positionGroups\.leveraged\.length > 0/);
   assert.match(page, /id: "position-1",\s*tickerInput: ""/s);
   assert.doesNotMatch(page, /className="weightGuardBeta"/);
@@ -122,13 +122,19 @@ test("beta guidance waits for a configured holding before showing calculated all
   );
 });
 
-test("calculated allocation places its ratios on a separate line", async () => {
+test("live allocation summary stays outside the tabs and emphasizes changing values", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(
     page,
-    /<strong>\s*<span>依目前持股推算配置<\/span>\s*<span className="weightGuardRatios">/s,
+    /className="settingsIntro"[\s\S]*?className=\{`weightGuard settingsLiveSummary[\s\S]*?<strong>即時試算配置<\/strong>[\s\S]*?className="settingsPanel settingsPagePanel"/s,
   );
+  assert.match(page, /槓桿曝險/);
+  assert.match(page, /className="settingsLiveValue"/);
+  assert.match(page, /hasLiveCalculation \? formatPercent\(calculation\.targetLeveragedRatio\) : "—"/);
+  assert.match(styles, /\.settingsLiveValue\s*\{[^}]*color:\s*var\(--primary-dark\);[^}]*font-weight:/s);
+  assert.match(styles, /\.settingsLiveSummary\.error \.settingsLiveValue\s*\{[^}]*color:\s*var\(--danger\);/s);
 });
 
 test("beta settings configure original allocation without a redundant leveraged card", async () => {
@@ -139,16 +145,13 @@ test("beta settings configure original allocation without a redundant leveraged 
   assert.match(page, /自訂目標比例/);
   assert.match(page, /尚未新增原形標的/);
   assert.doesNotMatch(page, /<strong>槓桿配置<\/strong>/);
-  assert.match(page, /目前可達 Beta/);
-  assert.match(page, /現金部位包含/);
-  assert.match(page, /完成下方設定後，將顯示推算配置/);
+  assert.match(page, /可達 Beta/);
   assert.match(page, /betaBlockingIssue \? betaBlockingIssue\.message/);
   assert.match(page, /className="fieldError">\{originalTargetIssue\.message\}/);
   assert.match(
     page,
     /originalTargetIssue && \([\s\S]*?originalTargetIssue\.message/s,
   );
-  assert.match(page, /原形使用自訂目標比例/);
   assert.match(page, /className="settingsTabErrorDot"/);
   assert.doesNotMatch(page, /className="settingsErrorSummary"/);
 });
