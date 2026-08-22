@@ -72,6 +72,7 @@ describe("supported ticker registry", () => {
       "00923": "群益台ESG低碳50",
       "00924": "復華S&P500成長",
       "00935": "野村臺灣新科技50",
+      BOXX: "Alpha Architect 1-3 Month Box ETF",
       BIL: "State Street SPDR Bloomberg 1-3 Month T-Bill ETF",
       IVV: "iShares Core S&P 500 ETF",
       QQQM: "Invesco NASDAQ 100 ETF",
@@ -89,6 +90,14 @@ describe("supported ticker registry", () => {
       Object.fromEntries(Object.keys(approvedNames).map((ticker) => [ticker, byTicker.get(ticker)])),
       approvedNames,
     );
+  });
+
+  it("treats BOXX as a US cash-equivalent holding", () => {
+    const boxx = registry.find((item) => item.ticker === "BOXX");
+
+    assert.equal(boxx?.category, "cashEquivalent");
+    assert.equal(boxx?.market, "US");
+    assert.deepEqual(boxx?.symbols, ["BOXX"]);
   });
 
   it("supports the approved Taiwan-listed active ETFs as original holdings", () => {

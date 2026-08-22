@@ -19,7 +19,7 @@ const TICKER_BADGES = {
 const TICKER_PLACEHOLDERS = {
   leveraged: "00631L / 00685L / QLD / SOXL",
   original: "0050 / 006208 / VOO / QQQ",
-  cashEquivalent: "00865B / 00859B / SGOV / BSV",
+  cashEquivalent: "00865B / 00859B / SGOV / BOXX",
 };
 
 const twdNumberFormatter = new Intl.NumberFormat("zh-TW", {

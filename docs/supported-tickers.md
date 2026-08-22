@@ -2,7 +2,7 @@
 
 > 本文件由 `src/data/supported-tickers.json` 自動產生。App 的標的名稱也直接讀取同一份 JSON。
 
-目前共 84 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
+目前共 85 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
 
 ## 槓桿
 
@@ -100,6 +100,7 @@
 | BSV | Vanguard Short-Term Bond ETF | US | BSV | Yahoo Finance | 2026-08-11 |
 | SHV | iShares 0-1 Year Treasury Bond ETF | US | SHV | Yahoo Finance | 2026-08-11 |
 | BIL | State Street SPDR Bloomberg 1-3 Month T-Bill ETF | US | BIL | Yahoo Finance | 2026-08-11 |
+| BOXX | Alpha Architect 1-3 Month Box ETF | US | BOXX | Yahoo Finance | 2026-08-22 |
 | USFR | WisdomTree Floating Rate Treasury Fund | US | USFR | Yahoo Finance | 2026-08-11 |
 | TFLO | iShares Treasury Floating Rate Bond ETF | US | TFLO | Yahoo Finance | 2026-08-11 |
 

@@ -33,6 +33,7 @@ describe("presentation helpers", () => {
     assert.equal(getPositionDisplayName("VOO", 1), "Vanguard S&P 500 ETF");
     assert.equal(getPositionDisplayName("QQQ", 1), "Invesco QQQ Trust ETF");
     assert.equal(getPositionDisplayName("QQQI", 1), "NEOS Nasdaq-100 High Income ETF");
+    assert.equal(getPositionDisplayName("BOXX", 0), "Alpha Architect 1-3 Month Box ETF");
     assert.equal(getPositionDisplayName("SMH", 1), "VanEck Semiconductor ETF");
     assert.equal(getPositionDisplayName("SOXX", 1), "iShares Semiconductor ETF");
     assert.equal(getPositionDisplayName("USD", 2), "ProShares Ultra Semiconductors");
@@ -65,7 +66,7 @@ describe("presentation helpers", () => {
   it("shows asset-specific ticker examples in settings", () => {
     assert.equal(getTickerPlaceholder("leveraged"), "00631L / 00685L / QLD / SOXL");
     assert.equal(getTickerPlaceholder("original"), "0050 / 006208 / VOO / QQQ");
-    assert.equal(getTickerPlaceholder("cashEquivalent"), "00865B / 00859B / SGOV / BSV");
+    assert.equal(getTickerPlaceholder("cashEquivalent"), "00865B / 00859B / SGOV / BOXX");
   });
 
   it("creates compact badge text from tickers", () => {
