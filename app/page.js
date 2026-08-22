@@ -2487,7 +2487,14 @@ function OperationsView({
     && operationRebalance.isValid === false
     ? warnings[0]
     : "";
-  const displayedWarnings = swapSellError
+  const hasValidSwapSelection = rebalanceMode !== "swap"
+    || Boolean(swapSellId && swapBuyId && operationRebalance.isValid);
+  const swapPendingMessage = swapSellId && swapBuyId
+    ? "請修正互換標的後試算"
+    : "尚未選擇互換標的";
+  const displayedWarnings = rebalanceMode === "swap" && (!swapSellId || !swapBuyId)
+    ? []
+    : swapSellError
     ? []
     : swapBuyError
       ? warnings.filter((warning) => warning !== swapBuyError)
@@ -2652,7 +2659,14 @@ function OperationsView({
           </div>
           <div className="operationBetaAfter">
             <span>再平衡後 Beta</span>
-            <strong>{formatNumber(appliedAfterBeta)}</strong>
+            {hasValidSwapSelection ? (
+              <strong>{formatNumber(appliedAfterBeta)}</strong>
+            ) : (
+              <>
+                <strong>—</strong>
+                <small>{swapSellError || swapBuyError ? "修正互換標的後試算" : "選擇互換標的後試算"}</small>
+              </>
+            )}
           </div>
           <div>
             <span>目標 Beta</span>
@@ -2665,7 +2679,8 @@ function OperationsView({
       </div>
       <div className="operationTradeSummaryCard">
         <h3>預估資金變化</h3>
-        <div className="operationTradeSummaryList">
+        {hasValidSwapSelection ? (
+          <div className="operationTradeSummaryList">
           <div className="operationTradeSummaryRow">
             <span>槓桿</span>
             <NetTradeAmounts
@@ -2711,7 +2726,10 @@ function OperationsView({
               {formatCashDelta(appliedSummary.cashDeltaUsd, "USD")}
             </strong>
           </div>
-        </div>
+          </div>
+        ) : (
+          <div className="operationPendingState">{swapPendingMessage}</div>
+        )}
       </div>
       <div className="operationParameterCard">
         <div className="operationParameterRow operationPrecisionField">
@@ -2753,15 +2771,22 @@ function OperationsView({
           部分買入需使用本次賣出所得，請先完成賣出再買入。
         </div>
       )}
-      <HoldingList
-        rebalanceMode={rebalanceMode}
-        swapBuyId={swapBuyId}
-        swapSellId={swapSellId}
-        recommendations={recommendations}
-        onToggleSelection={onToggleSelection}
-        precision={precision}
-        totalAssetsTwd={operationRebalance.totalAssetsTwd}
-      />
+      {hasValidSwapSelection ? (
+        <HoldingList
+          rebalanceMode={rebalanceMode}
+          swapBuyId={swapBuyId}
+          swapSellId={swapSellId}
+          recommendations={recommendations}
+          onToggleSelection={onToggleSelection}
+          precision={precision}
+          totalAssetsTwd={operationRebalance.totalAssetsTwd}
+        />
+      ) : (
+        <section className="operationPendingCard" aria-live="polite">
+          <strong>{swapPendingMessage}</strong>
+          <span>完成有效的賣出與買入標的後，這裡才會顯示持股調整清單。</span>
+        </section>
+      )}
       <div className="operationApplyFooter">
         <div>
           <span>確認清單後套用</span>

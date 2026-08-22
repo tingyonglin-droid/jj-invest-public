@@ -2002,6 +2002,40 @@ button.betaAction {
   display: grid;
 }
 
+.operationPendingState,
+.operationPendingCard {
+  display: grid;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 720;
+  line-height: 1.5;
+  place-items: center;
+  text-align: center;
+}
+
+.operationPendingState {
+  min-height: 76px;
+}
+
+.operationPendingCard {
+  gap: 5px;
+  min-height: 120px;
+  padding: 20px;
+  border: 1px dashed rgba(110, 129, 116, 0.35);
+  border-radius: 18px;
+  background: #f7f9f8;
+}
+
+.operationPendingCard strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.operationPendingCard span {
+  max-width: 380px;
+  font-size: 13px;
+}
+
 .operationTradeSummaryRow {
   display: grid;
   grid-template-columns: minmax(92px, 0.7fr) minmax(0, 1.5fr);

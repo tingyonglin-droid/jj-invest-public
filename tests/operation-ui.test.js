@@ -70,6 +70,16 @@ test("asset swap uses progressive disclosure and explicit trade roles", async ()
   assert.match(styles, /min-height:\s*44px/);
 });
 
+test("asset swap hides calculated results until both valid holdings are selected", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+
+  assert.match(page, /hasValidSwapSelection/);
+  assert.match(page, /選擇互換標的後試算/);
+  assert.match(page, /尚未選擇互換標的/);
+  assert.match(page, /請修正互換標的後試算/);
+  assert.match(page, /<strong>—<\/strong>/);
+});
+
 test("rebalance summary labels unchanged sleeves as no adjustment needed", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
