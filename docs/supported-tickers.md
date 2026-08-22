@@ -2,7 +2,7 @@
 
 > 本文件由 `src/data/supported-tickers.json` 自動產生。App 的標的名稱也直接讀取同一份 JSON。
 
-目前共 79 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
+目前共 84 檔已驗證標的。驗證代表名稱與即時股價均可正常顯示。
 
 ## 槓桿
 
@@ -27,6 +27,8 @@
 | 00647L | 元大S&P500正2 | TWSE | 00647L.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | 00670L | 富邦NASDAQ正2 | TWSE | 00670L.TW | TWSE → Yahoo Finance | 2026-08-11 |
 | SPUU | Direxion Daily S&P 500 Bull 2X ETF | US | SPUU | Yahoo Finance | 2026-08-11 |
+| AVGX | Defiance Daily Target 2X Long AVGO ETF | US | AVGX | Yahoo Finance | 2026-08-22 |
+| TSLL | Direxion Daily TSLA Bull 2X ETF | US | TSLL | Yahoo Finance | 2026-08-22 |
 
 ## 原形
 
@@ -83,6 +85,9 @@
 | VTI | Vanguard Total Stock Market ETF | US | VTI | Yahoo Finance | 2026-08-11 |
 | VT | Vanguard Total World Stock ETF | US | VT | Yahoo Finance | 2026-08-11 |
 | QQQM | Invesco NASDAQ 100 ETF | US | QQQM | Yahoo Finance | 2026-08-11 |
+| DRAM | Roundhill Memory ETF | US | DRAM | Yahoo Finance | 2026-08-22 |
+| EUV | Corgi Lithography & Semiconductor Photonics ETF | US | EUV | Yahoo Finance | 2026-08-22 |
+| IBIT | iShares Bitcoin Trust ETF | US | IBIT | Yahoo Finance | 2026-08-22 |
 
 ## 類現金
 

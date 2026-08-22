@@ -121,6 +121,45 @@ describe("supported ticker registry", () => {
     }
   });
 
+  it("supports the approved US leveraged and original ETFs with verified metadata", () => {
+    const byTicker = new Map(registry.map((item) => [item.ticker, item]));
+    const approvedEtfs = {
+      AVGX: {
+        name: "Defiance Daily Target 2X Long AVGO ETF",
+        category: "leveraged",
+        assetBeta: 2,
+      },
+      TSLL: {
+        name: "Direxion Daily TSLA Bull 2X ETF",
+        category: "leveraged",
+        assetBeta: 2,
+      },
+      DRAM: {
+        name: "Roundhill Memory ETF",
+        category: "original",
+      },
+      EUV: {
+        name: "Corgi Lithography & Semiconductor Photonics ETF",
+        category: "original",
+      },
+      IBIT: {
+        name: "iShares Bitcoin Trust ETF",
+        category: "original",
+      },
+    };
+
+    for (const [ticker, expected] of Object.entries(approvedEtfs)) {
+      const item = byTicker.get(ticker);
+      assert.equal(item?.name, expected.name, `${ticker} should use its official name`);
+      assert.equal(item?.category, expected.category, `${ticker} should use the correct category`);
+      assert.equal(item?.market, "US", `${ticker} should use the US quote route`);
+      assert.deepEqual(item?.symbols, [ticker]);
+      if (expected.assetBeta) {
+        assert.equal(item?.assetBeta, expected.assetBeta, `${ticker} should infer its leverage`);
+      }
+    }
+  });
+
   it("generates the human-readable maintenance document from the registry", () => {
     const markdown = generateSupportedTickersMarkdown(registry);
     assert.match(markdown, /# 完整支援標的清單/);
