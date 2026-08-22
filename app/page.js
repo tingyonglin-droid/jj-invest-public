@@ -84,6 +84,10 @@ import {
   normalizeOperationTargetBetaInput,
 } from "../src/lib/operation-rebalance.js";
 import {
+  createAssetSwapRebalance,
+  getOriginalTargetPctAfterAssetSwap,
+} from "../src/lib/asset-swap.js";
+import {
   adjustBoundedSettingValue,
   getPositionGroups,
   getPositionGroupTargetStatus,
@@ -435,6 +439,9 @@ export default function Home() {
   const [glossaryTopic, setGlossaryTopic] = useState(null);
   const [rebalanceTargetBetaOverride, setRebalanceTargetBetaOverride] = useState(null);
   const [excludedRebalanceIds, setExcludedRebalanceIds] = useState([]);
+  const [rebalanceMode, setRebalanceMode] = useState("standard");
+  const [swapSellId, setSwapSellId] = useState("");
+  const [swapBuyId, setSwapBuyId] = useState("");
   const [historyRange, setHistoryRange] = useState("1M");
   const [benchmarkDrawdown, setBenchmarkDrawdown] = useState(null);
   const [backupStatus, setBackupStatus] = useState("");
@@ -537,6 +544,16 @@ export default function Home() {
     && Math.abs(Number(rebalanceTargetBeta) - defaultRebalanceTargetBeta) > 0.0001;
   const operationRebalance = useMemo(
     () => {
+      if (rebalanceMode === "swap") {
+        return createAssetSwapRebalance({
+          recommendations: calculation.recommendations,
+          sellId: swapSellId,
+          buyId: swapBuyId,
+          totalAssetsTwd: calculation.totalAssetsTwd,
+          targetBeta: effectiveRebalanceTargetBeta,
+          precision: rebalancePrecision,
+        });
+      }
       const stockResult = createOperationRebalance({
         recommendations: calculation.recommendations,
         selectedIds: selectedRebalanceIds,
@@ -633,6 +650,9 @@ export default function Home() {
       formState.cashTwd,
       formState.cashUsd,
       quoteResult.fx.usdTwd,
+      rebalanceMode,
+      swapSellId,
+      swapBuyId,
     ],
   );
   const appliedRebalanceSummary = useMemo(
@@ -1215,6 +1235,15 @@ export default function Home() {
         cashEquivalentPositions: result.cashEquivalentPositions,
         cashTwd: result.cashTwd,
         cashUsd: result.cashUsd,
+        ...(rebalanceMode === "swap" && current.originalAllocationMode === "custom"
+          ? {
+              originalTargetPct: getOriginalTargetPctAfterAssetSwap({
+                recommendations: operationRebalance.recommendations,
+                totalAssetsTwd: calculation.totalAssetsTwd,
+                precision: rebalancePrecision,
+              }),
+            }
+          : {}),
       };
     });
     setRebalanceRestoreStatus(
@@ -1446,6 +1475,12 @@ export default function Home() {
             calculation={calculation}
             hasRestorePoint={hasRebalanceRestorePoint}
             operationRebalance={operationRebalance}
+            rebalanceMode={rebalanceMode}
+            onRebalanceModeChange={setRebalanceMode}
+            swapBuyId={swapBuyId}
+            swapSellId={swapSellId}
+            onSwapBuyChange={setSwapBuyId}
+            onSwapSellChange={setSwapSellId}
             onApplyRebalance={applyOneClickRebalance}
             onOpenGlossary={() => setGlossaryTopic("operations")}
             onPrecisionChange={setRebalancePrecision}
@@ -2400,6 +2435,12 @@ function OperationsView({
   calculation,
   hasRestorePoint,
   operationRebalance,
+  rebalanceMode,
+  onRebalanceModeChange,
+  swapBuyId,
+  swapSellId,
+  onSwapBuyChange,
+  onSwapSellChange,
   onApplyRebalance,
   onOpenGlossary,
   onPrecisionChange,
@@ -2413,6 +2454,15 @@ function OperationsView({
   restoreStatus,
 }) {
   const { recommendations, warnings, requiresSellFirstCurrencies = [] } = operationRebalance;
+  const sellOptions = calculation.recommendations.filter(
+    (item) => Number(item.shares) > 0 && item.assetType !== "cashEquivalent",
+  );
+  const selectedSell = sellOptions.find((item) => String(item.id) === String(swapSellId));
+  const buyOptions = calculation.recommendations.filter(
+    (item) => item.assetType !== "cashEquivalent"
+      && String(item.id) !== String(swapSellId)
+      && (!selectedSell || item.currency === selectedSell.currency),
+  );
   const appliedAfterBeta = getAppliedAfterBeta({
     precision,
     recommendations,
@@ -2497,7 +2547,71 @@ function OperationsView({
             </button>
           </div>
         </div>
+        <div className="rebalanceModeControl" role="radiogroup" aria-label="再平衡方式">
+          <button
+            type="button"
+            className={rebalanceMode === "standard" ? "active" : ""}
+            onClick={() => onRebalanceModeChange("standard")}
+          >
+            一般再平衡
+          </button>
+          <button
+            type="button"
+            className={rebalanceMode === "swap" ? "active" : ""}
+            onClick={() => onRebalanceModeChange("swap")}
+          >
+            標的互換
+          </button>
+        </div>
       </div>
+      {rebalanceMode === "swap" && (
+        <section className="assetSwapCard" aria-labelledby="asset-swap-title">
+          <div>
+            <h3 id="asset-swap-title">選擇互換標的</h3>
+            <p>同幣別一賣一買，其他持股不調整；零股差額會留在該幣別現金。</p>
+          </div>
+          <div className="assetSwapFields">
+            <label>
+              <span>賣出來源</span>
+              <select value={swapSellId} onChange={(event) => {
+                const nextSellId = event.target.value;
+                const nextSell = calculation.recommendations.find(
+                  (item) => String(item.id) === String(nextSellId),
+                );
+                const currentBuy = calculation.recommendations.find(
+                  (item) => String(item.id) === String(swapBuyId),
+                );
+                onSwapSellChange(nextSellId);
+                if (
+                  nextSellId === swapBuyId
+                  || (nextSell && currentBuy && nextSell.currency !== currentBuy.currency)
+                ) {
+                  onSwapBuyChange("");
+                }
+              }}>
+                <option value="">請選擇持有標的</option>
+                {sellOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {getTickerDisplayText(item.normalizedTicker)} · {formatExposureMultiplier(item.assetBeta)} · {item.currency}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="assetSwapArrow" aria-hidden="true">→</span>
+            <label>
+              <span>買入目的</span>
+              <select value={swapBuyId} onChange={(event) => onSwapBuyChange(event.target.value)}>
+                <option value="">請選擇同幣別標的</option>
+                {buyOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {getTickerDisplayText(item.normalizedTicker)} · {formatExposureMultiplier(item.assetBeta)} · {item.currency}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </section>
+      )}
       <div className="operationBetaSummaryCard">
         <h3>Beta 變化</h3>
         <div className="operationBetaFlow">
@@ -2609,6 +2723,9 @@ function OperationsView({
         </div>
       )}
       <HoldingList
+        rebalanceMode={rebalanceMode}
+        swapBuyId={swapBuyId}
+        swapSellId={swapSellId}
         recommendations={recommendations}
         onToggleSelection={onToggleSelection}
         precision={precision}
@@ -2661,7 +2778,7 @@ function getAppliedAfterBeta({ recommendations, totalAssetsTwd, precision }) {
   }, 0);
 }
 
-function HoldingList({ recommendations, onToggleSelection, precision, totalAssetsTwd }) {
+function HoldingList({ recommendations, onToggleSelection, precision, rebalanceMode, swapBuyId, swapSellId, totalAssetsTwd }) {
   const leveragedRecommendations = recommendations.filter(
     (item) => item.assetType !== "cashEquivalent" && getHoldingAssetType(item.assetBeta) === "leveraged",
   );
@@ -2677,6 +2794,9 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
       <div className="holdingGroups">
         <HoldingGroup
           items={leveragedRecommendations}
+          rebalanceMode={rebalanceMode}
+          swapBuyId={swapBuyId}
+          swapSellId={swapSellId}
           onToggleSelection={onToggleSelection}
           precision={precision}
           tone="leveraged"
@@ -2685,6 +2805,9 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
         />
         <HoldingGroup
           items={originalRecommendations}
+          rebalanceMode={rebalanceMode}
+          swapBuyId={swapBuyId}
+          swapSellId={swapSellId}
           onToggleSelection={onToggleSelection}
           precision={precision}
           tone="original"
@@ -2694,6 +2817,9 @@ function HoldingList({ recommendations, onToggleSelection, precision, totalAsset
         {cashEquivalentRecommendations.length > 0 && (
           <HoldingGroup
             items={cashEquivalentRecommendations}
+            rebalanceMode={rebalanceMode}
+            swapBuyId={swapBuyId}
+            swapSellId={swapSellId}
             onToggleSelection={onToggleSelection}
             precision={precision}
             tone="cash"
@@ -2713,7 +2839,7 @@ function getHoldingAssetType(assetBeta) {
   return Number(assetBeta) > 1 ? "leveraged" : "original";
 }
 
-function HoldingGroup({ items, onToggleSelection, precision, title, tone, totalAssetsTwd }) {
+function HoldingGroup({ items, onToggleSelection, precision, rebalanceMode, swapBuyId, swapSellId, title, tone, totalAssetsTwd }) {
   if (items.length === 0) {
     return null;
   }
@@ -2758,6 +2884,9 @@ function HoldingGroup({ items, onToggleSelection, precision, title, tone, totalA
         {itemsWithAppliedAfterWeight.map((item) => (
           <HoldingRow
             item={item}
+            rebalanceMode={rebalanceMode}
+            swapBuyId={swapBuyId}
+            swapSellId={swapSellId}
             key={item.id}
             onToggleSelection={onToggleSelection}
             precision={precision}
@@ -2768,7 +2897,7 @@ function HoldingGroup({ items, onToggleSelection, precision, title, tone, totalA
   );
 }
 
-function HoldingRow({ item, onToggleSelection, precision }) {
+function HoldingRow({ item, onToggleSelection, precision, rebalanceMode, swapBuyId, swapSellId }) {
   const estimatedShares = Math.abs(getAppliedRebalanceShareDelta(item, precision));
   const {
     displayedAction,
@@ -2791,14 +2920,24 @@ function HoldingRow({ item, onToggleSelection, precision }) {
   return (
     <article className={`holdingRow ${item.isSelected ? "" : "unselected"}`}>
       <div className="holdingAsset">
-        <label className="holdingSelect">
-          <input
-            type="checkbox"
-            checked={item.isSelected}
-            onChange={() => onToggleSelection(item.id)}
-            aria-label={`${displayTicker} 是否納入本次再平衡`}
-          />
-        </label>
+        {rebalanceMode === "swap" ? (
+          <span className={`assetSwapRole ${String(item.id) === String(swapSellId) ? "sell" : String(item.id) === String(swapBuyId) ? "buy" : "idle"}`}>
+            {String(item.id) === String(swapSellId)
+              ? "賣出來源"
+              : String(item.id) === String(swapBuyId)
+                ? "買入目的"
+                : "不參與互換"}
+          </span>
+        ) : (
+          <label className="holdingSelect">
+            <input
+              type="checkbox"
+              checked={item.isSelected}
+              onChange={() => onToggleSelection(item.id)}
+              aria-label={`${displayTicker} 是否納入本次再平衡`}
+            />
+          </label>
+        )}
         <div className="holdingIdentity">
           <div className="holdingTickerLine">
             <strong>{displayTicker}</strong>

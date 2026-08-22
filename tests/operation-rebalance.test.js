@@ -8,6 +8,7 @@ import {
   normalizeOperationTargetBetaInput,
   normalizeSelectedRebalanceIds,
 } from "../src/lib/operation-rebalance.js";
+import * as assetSwapModule from "../src/lib/asset-swap.js";
 import {
   applyRebalanceToState,
   getAppliedRebalanceShareDelta,
@@ -68,6 +69,117 @@ function getAppliedBeta(recommendationsToApply, totalAssetsTwd, precision) {
 }
 
 describe("operation rebalance", () => {
+  it("swaps one same-currency holding into another to move Beta", () => {
+    assert.equal(typeof assetSwapModule.createAssetSwapRebalance, "function");
+    const rows = [
+      {
+        id: "qld",
+        normalizedTicker: "QLD",
+        shares: 100,
+        assetBeta: 2,
+        currency: "USD",
+        price: 100,
+        priceTwd: 3200,
+        currentValueTwd: 320000,
+      },
+      {
+        id: "qqqi",
+        normalizedTicker: "QQQI",
+        shares: 100,
+        assetBeta: 1,
+        currency: "USD",
+        price: 50,
+        priceTwd: 1600,
+        currentValueTwd: 160000,
+      },
+    ];
+
+    const result = assetSwapModule.createAssetSwapRebalance({
+      recommendations: rows,
+      sellId: "qld",
+      buyId: "qqqi",
+      totalAssetsTwd: 480000,
+      targetBeta: 1.25,
+      precision: "shares",
+    });
+
+    assert.equal(result.isValid, true);
+    assert.equal(result.recommendations.find((item) => item.id === "qld").action, "sell");
+    assert.equal(result.recommendations.find((item) => item.id === "qqqi").action, "buy");
+    assert.equal(result.recommendations.filter((item) => item.isSelected).length, 2);
+    const soldUsd = Math.abs(result.recommendations[0].tradeAmountTwd) / 32;
+    const boughtUsd = result.recommendations[1].tradeAmountTwd / 32;
+    assert.ok(boughtUsd <= soldUsd);
+    assert.ok(Math.abs(result.appliedAfterBeta - 1.25) < 0.01);
+  });
+
+  it("rejects an asset swap across settlement currencies", () => {
+    const result = assetSwapModule.createAssetSwapRebalance({
+      recommendations: [
+        { id: "qld", shares: 10, assetBeta: 2, currency: "USD", price: 100, priceTwd: 3200, currentValueTwd: 32000 },
+        { id: "0050", shares: 100, assetBeta: 1, currency: "TWD", price: 50, priceTwd: 50, currentValueTwd: 5000 },
+      ],
+      sellId: "qld",
+      buyId: "0050",
+      totalAssetsTwd: 37000,
+      targetBeta: 1.5,
+      precision: "shares",
+    });
+
+    assert.equal(result.isValid, false);
+    assert.match(result.warnings.join(" "), /相同幣別/);
+    assert.equal(result.recommendations.every((item) => item.action === "none"), true);
+  });
+
+  it("can increase Beta by swapping an original holding into a leveraged holding", () => {
+    const result = assetSwapModule.createAssetSwapRebalance({
+      recommendations: [
+        { id: "qqqi", shares: 200, assetBeta: 1, currency: "USD", price: 50, priceTwd: 1600, currentValueTwd: 320000 },
+        { id: "qld", shares: 50, assetBeta: 2, currency: "USD", price: 100, priceTwd: 3200, currentValueTwd: 160000 },
+      ],
+      sellId: "qqqi",
+      buyId: "qld",
+      totalAssetsTwd: 480000,
+      targetBeta: 1.75,
+      precision: "shares",
+    });
+
+    assert.equal(result.isValid, true);
+    assert.ok(result.recommendations.find((item) => item.id === "qqqi").tradeAmountTwd < 0);
+    assert.ok(result.recommendations.find((item) => item.id === "qld").tradeAmountTwd > 0);
+    assert.ok(Math.abs(result.appliedAfterBeta - 1.75) < 0.01);
+  });
+
+  it("reports the maximum applied Beta when the source holding is insufficient", () => {
+    const result = assetSwapModule.createAssetSwapRebalance({
+      recommendations: [
+        { id: "qld", shares: 1, assetBeta: 2, currency: "USD", price: 100, priceTwd: 3200, currentValueTwd: 3200 },
+        { id: "qqqi", shares: 100, assetBeta: 1, currency: "USD", price: 50, priceTwd: 1600, currentValueTwd: 160000 },
+      ],
+      sellId: "qld",
+      buyId: "qqqi",
+      totalAssetsTwd: 163200,
+      targetBeta: 0.9,
+      precision: "shares",
+    });
+
+    assert.equal(result.isValid, true);
+    assert.equal(result.isReachable, false);
+    assert.match(result.warnings.join(" "), /最多可達 Beta/);
+  });
+
+  it("synchronizes a custom original target to the allocation after a swap", () => {
+    const result = assetSwapModule.getOriginalTargetPctAfterAssetSwap({
+      recommendations: [
+        { assetBeta: 2, currentValueTwd: 60000, tradeAmountTwd: -20000, priceTwd: 100, shares: 600, normalizedTicker: "QLD" },
+        { assetBeta: 1, currentValueTwd: 20000, tradeAmountTwd: 20000, priceTwd: 50, shares: 400, normalizedTicker: "QQQI" },
+      ],
+      totalAssetsTwd: 100000,
+      precision: "shares",
+    });
+
+    assert.equal(result, 40);
+  });
   it("classifies the current beta against the inclusive target tolerance range", () => {
     assert.deepEqual(getOperationRebalanceStatus(0.89, 0.9, 1.1), {
       label: "需增加 Beta",

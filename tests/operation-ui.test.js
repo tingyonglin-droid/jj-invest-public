@@ -50,6 +50,21 @@ test("operations page exposes target beta and selectable holdings", async () => 
   assert.match(styles, /\.operationHeaderRow/);
 });
 
+test("asset swap uses progressive disclosure and explicit trade roles", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(page, /一般再平衡/);
+  assert.match(page, /標的互換/);
+  assert.match(page, /rebalanceMode === "swap"/);
+  assert.match(page, /選擇互換標的/);
+  assert.match(page, /賣出來源/);
+  assert.match(page, /買入目的/);
+  assert.match(page, /不參與互換/);
+  assert.match(styles, /\.assetSwapCard/);
+  assert.match(styles, /min-height:\s*44px/);
+});
+
 test("rebalance summary labels unchanged sleeves as no adjustment needed", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 

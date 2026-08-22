@@ -1783,6 +1783,121 @@ button.betaAction {
   background: var(--card-soft);
 }
 
+.rebalanceModeControl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(17, 24, 33, 0.08);
+}
+
+.rebalanceModeControl button {
+  min-height: 44px;
+  border: 1px solid rgba(17, 24, 33, 0.12);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 780;
+}
+
+.rebalanceModeControl button.active {
+  border-color: #a99e91;
+  background: #ded7ce;
+  color: var(--ink);
+}
+
+.assetSwapCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(110, 129, 116, 0.3);
+  border-radius: 18px;
+  background: #f5f8f5;
+}
+
+.assetSwapCard h3,
+.assetSwapCard p {
+  margin: 0;
+}
+
+.assetSwapCard h3 {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.assetSwapCard p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.assetSwapFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 10px;
+}
+
+.assetSwapFields label {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.assetSwapFields select {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(17, 24, 33, 0.14);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.assetSwapArrow {
+  display: grid;
+  width: 32px;
+  height: 48px;
+  color: #6e8174;
+  font-size: 20px;
+  font-weight: 850;
+  place-items: center;
+}
+
+.assetSwapRole {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.assetSwapRole.sell { color: #b33f4b; background: #fff0f1; }
+.assetSwapRole.buy { color: #137b59; background: #e9f7f1; }
+.assetSwapRole.idle { color: var(--muted); background: #eef2f1; }
+
+@media (max-width: 520px) {
+  .assetSwapFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .assetSwapArrow {
+    width: 100%;
+    height: 24px;
+    transform: rotate(90deg);
+  }
+}
+
 .operationBetaSummaryCard,
 .operationTradeSummaryCard {
   display: grid;
