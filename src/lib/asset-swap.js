@@ -162,7 +162,12 @@ export function createAssetSwapRebalance({
   const isReachable = best.distance < BETA_TOLERANCE;
   const warnings = [];
   if (!isReachable) {
-    warnings.push(`賣出標的持股不足或交易單位限制，本次互換最多可達 Beta ${best.applied.toFixed(2)}。`);
+    const sourceIsInsufficient = idealSellUnits > maxSellUnits;
+    warnings.push(
+      sourceIsInsufficient
+        ? `賣出標的持股不足，本次互換最高可達 Beta ${best.applied.toFixed(2)}。`
+        : `因交易單位限制，最接近目標的實際 Beta 為 ${best.applied.toFixed(2)}。`,
+    );
   }
 
   return {

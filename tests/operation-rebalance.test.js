@@ -225,7 +225,27 @@ describe("operation rebalance", () => {
 
     assert.equal(result.isValid, true);
     assert.equal(result.isReachable, false);
-    assert.match(result.warnings.join(" "), /最多可達 Beta/);
+    assert.match(result.warnings.join(" "), /賣出標的持股不足.*最高可達 Beta/);
+  });
+
+  it("reports the closest applied Beta when whole-share trading causes rounding", () => {
+    const result = assetSwapModule.createAssetSwapRebalance({
+      recommendations: [
+        { id: "qqq", shares: 40, assetBeta: 1, currency: "USD", priceTwd: 22701.65, currentValueTwd: 908066 },
+        { id: "qld", shares: 160, assetBeta: 2, currency: "USD", priceTwd: 2848.84, currentValueTwd: 455815 },
+        { id: "soxl", shares: 40, assetBeta: 3, currency: "USD", priceTwd: 3837.5, currentValueTwd: 153500 },
+      ],
+      sellId: "qqq",
+      buyId: "soxl",
+      totalAssetsTwd: 1899221,
+      targetBeta: 1.5,
+      precision: "shares",
+    });
+
+    assert.equal(result.isValid, true);
+    assert.equal(result.isReachable, false);
+    assert.match(result.warnings.join(" "), /交易單位限制.*最接近目標的實際 Beta 為 1\.51/);
+    assert.doesNotMatch(result.warnings.join(" "), /持股不足|最高可達/);
   });
 
   it("synchronizes a custom original target to the allocation after a swap", () => {
