@@ -62,6 +62,20 @@ export function getAssetSwapBuyOptions({
   });
 }
 
+export function getAssetSwapSellOptions({
+  recommendations,
+  currentBeta,
+  targetBeta,
+}) {
+  const direction = number(targetBeta) - number(currentBeta);
+  return recommendations.filter((item) => {
+    if (number(item.shares) <= 0 || item.assetType === "cashEquivalent") return false;
+    if (direction < 0) return number(item.assetBeta) > 1;
+    if (direction > 0) return number(item.assetBeta) <= 1;
+    return false;
+  });
+}
+
 function betaAfter(recommendations, totalAssetsTwd, precision) {
   if (totalAssetsTwd <= 0) return 0;
   return recommendations.reduce((sum, item) => {

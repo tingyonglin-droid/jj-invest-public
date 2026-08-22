@@ -163,6 +163,34 @@ describe("operation rebalance", () => {
     assert.deepEqual(options.map((item) => item.id), ["qld", "tqqq"]);
   });
 
+  it("offers only funded leveraged sources when reducing Beta", () => {
+    const options = assetSwapModule.getAssetSwapSellOptions({
+      recommendations: [
+        { id: "qld", shares: 10, assetBeta: 2 },
+        { id: "tqqq-empty", shares: 0, assetBeta: 3 },
+        { id: "qqqi", shares: 10, assetBeta: 1 },
+      ],
+      currentBeta: 1.5,
+      targetBeta: 1.2,
+    });
+
+    assert.deepEqual(options.map((item) => item.id), ["qld"]);
+  });
+
+  it("offers only funded original sources when increasing Beta", () => {
+    const options = assetSwapModule.getAssetSwapSellOptions({
+      recommendations: [
+        { id: "qqqi", shares: 10, assetBeta: 1 },
+        { id: "qld", shares: 10, assetBeta: 2 },
+        { id: "qqq-empty", shares: 0, assetBeta: 1 },
+      ],
+      currentBeta: 0.8,
+      targetBeta: 1.2,
+    });
+
+    assert.deepEqual(options.map((item) => item.id), ["qqqi"]);
+  });
+
   it("can increase Beta by swapping an original holding into a leveraged holding", () => {
     const result = assetSwapModule.createAssetSwapRebalance({
       recommendations: [

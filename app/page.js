@@ -86,6 +86,7 @@ import {
 import {
   createAssetSwapRebalance,
   getAssetSwapBuyOptions,
+  getAssetSwapSellOptions,
   getOriginalTargetPctAfterAssetSwap,
 } from "../src/lib/asset-swap.js";
 import {
@@ -2455,28 +2456,42 @@ function OperationsView({
   restoreStatus,
 }) {
   const { recommendations, warnings, requiresSellFirstCurrencies = [] } = operationRebalance;
-  const sellOptions = calculation.recommendations.filter(
-    (item) => Number(item.shares) > 0 && item.assetType !== "cashEquivalent",
-  );
+  const effectiveSelectionTargetBeta = rebalanceTargetBeta === ""
+    ? calculation.targetBeta
+    : Number(rebalanceTargetBeta);
+  const sellOptions = getAssetSwapSellOptions({
+    recommendations: calculation.recommendations,
+    currentBeta: calculation.currentBeta,
+    targetBeta: effectiveSelectionTargetBeta,
+  });
   const buyOptions = getAssetSwapBuyOptions({
     recommendations: calculation.recommendations.filter(
       (item) => item.assetType !== "cashEquivalent",
     ),
     sellId: swapSellId,
     currentBeta: calculation.currentBeta,
-    targetBeta: rebalanceTargetBeta === ""
-      ? calculation.targetBeta
-      : Number(rebalanceTargetBeta),
+    targetBeta: effectiveSelectionTargetBeta,
   });
-  const swapFieldError = rebalanceMode === "swap"
+  const isSellSelectionInvalid = rebalanceMode === "swap"
+    && swapSellId
+    && !sellOptions.some((item) => String(item.id) === String(swapSellId));
+  const swapSellError = isSellSelectionInvalid
+    ? effectiveSelectionTargetBeta < calculation.currentBeta
+      ? "降低 Beta 時，賣出標的必須是目前持有的槓桿標的。"
+      : "增加 Beta 時，賣出標的必須是目前持有的原形標的。"
+    : "";
+  const swapBuyError = rebalanceMode === "swap"
+    && !swapSellError
     && swapSellId
     && swapBuyId
     && operationRebalance.isValid === false
     ? warnings[0]
     : "";
-  const displayedWarnings = swapFieldError
-    ? warnings.filter((warning) => warning !== swapFieldError)
-    : warnings;
+  const displayedWarnings = swapSellError
+    ? []
+    : swapBuyError
+      ? warnings.filter((warning) => warning !== swapBuyError)
+      : warnings;
   const appliedAfterBeta = getAppliedAfterBeta({
     precision,
     recommendations,
@@ -2585,8 +2600,8 @@ function OperationsView({
             <p>同幣別一賣一買，其他持股不調整；零股差額會留在該幣別現金。</p>
           </div>
           <div className="assetSwapFields">
-            <label>
-              <span>賣出來源</span>
+            <label className={swapSellError ? "assetSwapFieldError" : ""}>
+              <span>賣出標的</span>
               <select value={swapSellId} onChange={(event) => {
                 const nextSellId = event.target.value;
                 const nextSell = calculation.recommendations.find(
@@ -2610,10 +2625,11 @@ function OperationsView({
                   </option>
                 ))}
               </select>
+              {swapSellError && <p role="alert">{swapSellError}</p>}
             </label>
             <span className="assetSwapArrow" aria-hidden="true">→</span>
-            <label className={swapFieldError ? "assetSwapFieldError" : ""}>
-              <span>買入目的</span>
+            <label className={swapBuyError ? "assetSwapFieldError" : ""}>
+              <span>買入標的</span>
               <select value={swapBuyId} onChange={(event) => onSwapBuyChange(event.target.value)}>
                 <option value="">請選擇同幣別標的</option>
                 {buyOptions.map((item) => (
@@ -2622,7 +2638,7 @@ function OperationsView({
                   </option>
                 ))}
               </select>
-              {swapFieldError && <p role="alert">{swapFieldError}</p>}
+              {swapBuyError && <p role="alert">{swapBuyError}</p>}
             </label>
           </div>
         </section>
@@ -2938,9 +2954,9 @@ function HoldingRow({ item, onToggleSelection, precision, rebalanceMode, swapBuy
         {rebalanceMode === "swap" ? (
           <span className={`assetSwapRole ${String(item.id) === String(swapSellId) ? "sell" : String(item.id) === String(swapBuyId) ? "buy" : "idle"}`}>
             {String(item.id) === String(swapSellId)
-              ? "賣出來源"
+              ? "賣出標的"
               : String(item.id) === String(swapBuyId)
-                ? "買入目的"
+                ? "買入標的"
                 : "不參與互換"}
           </span>
         ) : (
