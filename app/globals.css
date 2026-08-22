@@ -1774,6 +1774,7 @@ button.betaAction {
   }
 }
 
+.operationBetaControlCard,
 .operationParameterCard {
   display: grid;
   gap: 16px;
@@ -1782,36 +1783,149 @@ button.betaAction {
   background: var(--card-soft);
 }
 
-.operationSummaryGrid {
+.operationBetaSummaryCard,
+.operationTradeSummaryCard {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.operationSummaryGrid > div {
-  display: grid;
-  align-content: start;
-  gap: 4px;
-  min-height: 84px;
-  padding: 12px;
+  gap: 12px;
+  padding: 16px;
   border: 1px solid rgba(17, 24, 33, 0.07);
-  border-radius: 16px;
+  border-radius: 18px;
   background: #ffffff;
 }
 
-.operationSummaryGrid span,
-.operationSummaryGrid small {
+.operationBetaSummaryCard h3,
+.operationTradeSummaryCard h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 840;
+}
+
+.operationBetaFlow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid rgba(17, 24, 33, 0.07);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.operationBetaFlow > div {
+  position: relative;
+  display: grid;
+  min-height: 100px;
+  padding: 12px 8px;
+  text-align: center;
+  align-content: center;
+  gap: 4px;
+}
+
+.operationBetaFlow > div + div {
+  border-left: 1px solid rgba(17, 24, 33, 0.07);
+}
+
+.operationBetaFlow > div:not(:last-child)::after {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: -11px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f4f2ee;
+  color: var(--muted);
+  content: "→";
+  font-size: 12px;
+  font-weight: 800;
+  place-items: center;
+  transform: translateY(-50%);
+}
+
+.operationBetaFlow .operationBetaAfter {
+  background: #eef5f8;
+}
+
+.operationBetaFlow span,
+.operationBetaFlow small {
   color: var(--muted);
   font-size: 11px;
   font-weight: 720;
   line-height: 1.4;
 }
 
-.operationSummaryGrid strong {
+.operationBetaFlow strong {
   color: var(--ink);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 840;
   line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.operationBetaAfter strong {
+  color: #315f91;
+}
+
+.operationTradeSummaryList {
+  display: grid;
+}
+
+.operationTradeSummaryRow {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.7fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 0;
+}
+
+.operationTradeSummaryRow + .operationTradeSummaryRow {
+  border-top: 1px solid rgba(17, 24, 33, 0.08);
+}
+
+.operationTradeSummaryRow > span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.operationTradeSummaryRow > strong,
+.operationTradeAmounts {
+  justify-self: end;
+  min-width: 0;
+  text-align: right;
+}
+
+.operationTradeSummaryRow strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 820;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.operationTradeSummaryRow strong.buy {
+  color: #b33f4b;
+}
+
+.operationTradeSummaryRow strong.sell {
+  color: #137b59;
+}
+
+.operationTradeAmounts {
+  display: grid;
+  gap: 2px;
+}
+
+.operationTradeAmounts strong span {
+  margin-right: 6px;
+  color: inherit;
+  font: inherit;
+}
+
+.operationTradeAmounts small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .operationParameterRow {
@@ -1923,13 +2037,31 @@ button.betaAction {
   line-height: 1.35;
 }
 
-@media (max-width: 640px) {
-  .operationSummaryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 420px) {
+  .operationBetaSummaryCard,
+  .operationTradeSummaryCard {
+    padding: 14px;
+  }
+
+  .operationBetaFlow > div {
+    min-height: 94px;
+    padding: 10px 5px;
+  }
+
+  .operationBetaFlow strong {
+    font-size: 16px;
+  }
+
+  .operationBetaFlow span,
+  .operationBetaFlow small {
+    font-size: 10px;
+  }
+
+  .operationTradeSummaryRow {
+    grid-template-columns: minmax(78px, 0.6fr) minmax(0, 1.6fr);
+    gap: 8px;
+  }
+
   .operationParameterRow {
     grid-template-columns: 1fr;
   }

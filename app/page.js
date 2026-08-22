@@ -226,17 +226,32 @@ function formatNetTradeAmount(value, currency = "TWD") {
   return `${value > 0 ? "淨買入" : "淨賣出"} ${amount}`;
 }
 
-function NetTradeAmounts({ twd, usd }) {
+function NetTradeAmounts({ twd, usd, usdTwdEquivalent = 0 }) {
   const hasTwd = Math.abs(twd) >= 0.5;
   const hasUsd = Math.abs(usd) >= 0.005;
   if (!hasTwd && !hasUsd) {
     return <strong>不需調整</strong>;
   }
   return (
-    <>
-      {hasTwd && <strong>{formatNetTradeAmount(twd, "TWD")}</strong>}
-      {hasUsd && <strong>{formatNetTradeAmount(usd, "USD")}</strong>}
-    </>
+    <div className="operationTradeAmounts">
+      {hasTwd && (
+        <strong className={twd > 0 ? "buy" : "sell"}>
+          <span>台股</span>
+          {formatNetTradeAmount(twd, "TWD")}
+        </strong>
+      )}
+      {hasUsd && (
+        <>
+          <strong className={usd > 0 ? "buy" : "sell"}>
+            <span>美股</span>
+            {formatNetTradeAmount(usd, "USD")}
+          </strong>
+          {Math.abs(usdTwdEquivalent) >= 0.5 && (
+            <small>約 {formatTwd(Math.abs(usdTwdEquivalent))}</small>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -246,6 +261,14 @@ function formatCashDelta(value, currency = "TWD") {
   }
   const amount = currency === "USD" ? formatUsd(Math.abs(value)) : formatTwd(Math.abs(value));
   return `${value > 0 ? "淨增加" : "淨減少"} ${amount}`;
+}
+
+function getCashDeltaTone(value, currency = "TWD") {
+  const threshold = currency === "USD" ? 0.005 : 0.5;
+  if (Math.abs(value) < threshold) {
+    return undefined;
+  }
+  return value > 0 ? "sell" : "buy";
 }
 
 function formatQuoteDate(date) {
@@ -2426,53 +2449,7 @@ function OperationsView({
           <strong>{rebalanceStatus.label}</strong>
         </div>
       </div>
-      <div className="operationSummaryGrid">
-        <div>
-          <span>目標 Beta</span>
-          <strong>{formatNumber(calculation.targetBeta)}</strong>
-          <small>
-            容忍區間 {formatNumber(calculation.betaLower)}–{formatNumber(calculation.betaUpper)}
-          </small>
-        </div>
-        <div>
-          <span>目前 Beta</span>
-          <strong>{formatNumber(calculation.currentBeta)}</strong>
-        </div>
-        <div>
-          <span>再平衡後 Beta</span>
-          <strong>{formatNumber(appliedAfterBeta)}</strong>
-        </div>
-        <div>
-          <span>槓桿</span>
-          <NetTradeAmounts
-            twd={appliedSummary.leveragedNetAmountSettlementTwd}
-            usd={appliedSummary.leveragedNetAmountUsd}
-          />
-        </div>
-        <div>
-          <span>原形</span>
-          <NetTradeAmounts
-            twd={appliedSummary.originalNetAmountSettlementTwd}
-            usd={appliedSummary.originalNetAmountUsd}
-          />
-        </div>
-        <div>
-          <span>類現金 ETF</span>
-          <NetTradeAmounts
-            twd={appliedSummary.cashEquivalentNetAmountSettlementTwd}
-            usd={appliedSummary.cashEquivalentNetAmountUsd}
-          />
-        </div>
-        <div>
-          <span>台幣現金</span>
-          <strong>{formatCashDelta(appliedSummary.cashDeltaTwd, "TWD")}</strong>
-        </div>
-        <div>
-          <span>美元現金</span>
-          <strong>{formatCashDelta(appliedSummary.cashDeltaUsd, "USD")}</strong>
-        </div>
-      </div>
-      <div className="operationParameterCard">
+      <div className="operationBetaControlCard">
         <div className="operationParameterRow operationBetaField">
           <span>再平衡到 Beta</span>
           <div className="operationBetaStepper">
@@ -2520,6 +2497,78 @@ function OperationsView({
             </button>
           </div>
         </div>
+      </div>
+      <div className="operationBetaSummaryCard">
+        <h3>Beta 變化</h3>
+        <div className="operationBetaFlow">
+          <div>
+            <span>目前 Beta</span>
+            <strong>{formatNumber(calculation.currentBeta)}</strong>
+          </div>
+          <div className="operationBetaAfter">
+            <span>再平衡後 Beta</span>
+            <strong>{formatNumber(appliedAfterBeta)}</strong>
+          </div>
+          <div>
+            <span>目標 Beta</span>
+            <strong>{formatNumber(calculation.targetBeta)}</strong>
+            <small>
+              容忍區間 {formatNumber(calculation.betaLower)}–{formatNumber(calculation.betaUpper)}
+            </small>
+          </div>
+        </div>
+      </div>
+      <div className="operationTradeSummaryCard">
+        <h3>預估資金變化</h3>
+        <div className="operationTradeSummaryList">
+          <div className="operationTradeSummaryRow">
+            <span>槓桿</span>
+            <NetTradeAmounts
+              twd={appliedSummary.leveragedNetAmountSettlementTwd}
+              usd={appliedSummary.leveragedNetAmountUsd}
+              usdTwdEquivalent={
+                appliedSummary.leveragedNetAmountTwd
+                - appliedSummary.leveragedNetAmountSettlementTwd
+              }
+            />
+          </div>
+          <div className="operationTradeSummaryRow">
+            <span>原形</span>
+            <NetTradeAmounts
+              twd={appliedSummary.originalNetAmountSettlementTwd}
+              usd={appliedSummary.originalNetAmountUsd}
+              usdTwdEquivalent={
+                appliedSummary.originalNetAmountTwd
+                - appliedSummary.originalNetAmountSettlementTwd
+              }
+            />
+          </div>
+          <div className="operationTradeSummaryRow">
+            <span>類現金 ETF</span>
+            <NetTradeAmounts
+              twd={appliedSummary.cashEquivalentNetAmountSettlementTwd}
+              usd={appliedSummary.cashEquivalentNetAmountUsd}
+              usdTwdEquivalent={
+                appliedSummary.cashEquivalentNetAmountTwd
+                - appliedSummary.cashEquivalentNetAmountSettlementTwd
+              }
+            />
+          </div>
+          <div className="operationTradeSummaryRow">
+            <span>台幣現金</span>
+            <strong className={getCashDeltaTone(appliedSummary.cashDeltaTwd, "TWD")}>
+              {formatCashDelta(appliedSummary.cashDeltaTwd, "TWD")}
+            </strong>
+          </div>
+          <div className="operationTradeSummaryRow">
+            <span>美元現金</span>
+            <strong className={getCashDeltaTone(appliedSummary.cashDeltaUsd, "USD")}>
+              {formatCashDelta(appliedSummary.cashDeltaUsd, "USD")}
+            </strong>
+          </div>
+        </div>
+      </div>
+      <div className="operationParameterCard">
         <div className="operationParameterRow operationPrecisionField">
           <div className="operationPrecisionLabel">
             <span>台股交易精度</span>

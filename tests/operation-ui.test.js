@@ -66,6 +66,32 @@ test("operations page places precision in parameters and apply action after the 
   assert.ok(page.indexOf("<HoldingList") < page.indexOf("operationApplyFooter"));
 });
 
+test("rebalance controls and results follow the approved compact information hierarchy", async () => {
+  const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  const betaControl = page.indexOf('className="operationBetaControlCard"');
+  const betaSummary = page.indexOf('className="operationBetaSummaryCard"');
+  const tradeSummary = page.indexOf('className="operationTradeSummaryCard"');
+  const precision = page.indexOf('className="operationParameterCard"');
+
+  assert.ok(betaControl >= 0);
+  assert.ok(betaControl < betaSummary);
+  assert.ok(betaSummary < tradeSummary);
+  assert.ok(tradeSummary < precision);
+  assert.match(page, /<h3>Beta 變化<\/h3>/);
+  assert.match(page, /className="operationBetaFlow"/);
+  assert.match(page, /<h3>預估資金變化<\/h3>/);
+  assert.match(page, /className="operationTradeSummaryList"/);
+  assert.match(page, />台股<\/span>/);
+  assert.match(page, />美股<\/span>/);
+  assert.match(page, /約 \{formatTwd/);
+  assert.match(page, /className=\{getCashDeltaTone\(appliedSummary\.cashDeltaTwd, "TWD"\)\}/);
+  assert.match(page, /className=\{getCashDeltaTone\(appliedSummary\.cashDeltaUsd, "USD"\)\}/);
+  assert.match(styles, /\.operationTradeSummaryRow\s*\{[^}]*grid-template-columns:/s);
+  assert.match(styles, /\.operationBetaFlow\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
+});
+
 test("operations page confirms apply and offers restore after rebalance", async () => {
   const page = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
 
