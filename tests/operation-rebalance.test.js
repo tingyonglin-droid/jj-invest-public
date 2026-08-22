@@ -170,6 +170,41 @@ describe("operation rebalance", () => {
     assert.ok(result.correctedTargetBeta > 2);
   });
 
+  it("treats selected leveraged holdings as reachable when applied beta hits the target", () => {
+    const result = createOperationRebalance({
+      recommendations: [
+        {
+          ...recommendations[0],
+          shares: 400,
+          price: 100,
+          priceTwd: 100,
+          currentValueTwd: 40000,
+        },
+        {
+          ...recommendations[2],
+          shares: 300,
+          price: 100,
+          priceTwd: 100,
+          currentValueTwd: 30000,
+        },
+      ],
+      selectedIds: ["leveraged-a"],
+      totalAssetsTwd: 100000,
+      targetBeta: 1.2,
+      originalTargetRatio: 0.2,
+      leveragedBeta: 2,
+      precision: "shares",
+      allocationModes: { leveraged: "auto", original: "auto" },
+    });
+
+    const original = result.recommendations.find((item) => item.id === "original-a");
+
+    assert.equal(result.appliedAfterBeta, 1.2);
+    assert.equal(result.isReachable, true);
+    assert.doesNotMatch(result.warnings.join(" "), /無法完全達成指定 Beta/);
+    assert.equal(original.tradeAmountTwd, 0);
+  });
+
   it("buys every selected holding in a sleeve when that sleeve needs more exposure", () => {
     const result = createOperationRebalance({
       recommendations: [

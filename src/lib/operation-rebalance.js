@@ -5,6 +5,8 @@ const RATIO_PRECISION = 10000;
 const SMART_SEARCH_STEP = 0.001;
 const SMART_SEARCH_MIN = 0;
 const SMART_SEARCH_MAX = 3;
+const APPLIED_BETA_TOLERANCE = 0.005;
+const UNREACHABLE_BETA_WARNING = "目前勾選範圍無法完全達成指定 Beta。";
 
 function toNumber(value, fallback = 0) {
   const number = Number(value);
@@ -236,15 +238,33 @@ function createSmartOperationRebalance({
     }
   }
 
-  return bestResult ?? createOperationRebalanceForTarget({
-    recommendations,
-    selectedIds,
-    totalAssetsTwd,
-    targetBeta,
-    originalTargetRatio,
-    leveragedBeta,
-    allocationModes,
-  });
+  if (!bestResult) {
+    return createOperationRebalanceForTarget({
+      recommendations,
+      selectedIds,
+      totalAssetsTwd,
+      targetBeta,
+      originalTargetRatio,
+      leveragedBeta,
+      allocationModes,
+    });
+  }
+
+  const isReachable = Math.abs(bestResult.appliedAfterBeta - desiredBeta)
+    < APPLIED_BETA_TOLERANCE;
+  const warnings = bestResult.warnings.filter(
+    (warning) => warning !== UNREACHABLE_BETA_WARNING,
+  );
+
+  if (!isReachable) {
+    warnings.push(UNREACHABLE_BETA_WARNING);
+  }
+
+  return {
+    ...bestResult,
+    isReachable,
+    warnings,
+  };
 }
 
 function calculateAppliedTradeAmount({ recommendations, precision }) {
@@ -363,7 +383,7 @@ function createOperationRebalanceForTarget({
   });
 
   if (!isReachable) {
-    warnings.push("目前勾選範圍無法完全達成指定 Beta。");
+    warnings.push(UNREACHABLE_BETA_WARNING);
   }
 
   const nextRecommendations = recommendations.map((item) => {
