@@ -85,6 +85,7 @@ import {
 } from "../src/lib/operation-rebalance.js";
 import {
   createAssetSwapRebalance,
+  getAssetSwapBuyOptions,
   getOriginalTargetPctAfterAssetSwap,
 } from "../src/lib/asset-swap.js";
 import {
@@ -2457,12 +2458,25 @@ function OperationsView({
   const sellOptions = calculation.recommendations.filter(
     (item) => Number(item.shares) > 0 && item.assetType !== "cashEquivalent",
   );
-  const selectedSell = sellOptions.find((item) => String(item.id) === String(swapSellId));
-  const buyOptions = calculation.recommendations.filter(
-    (item) => item.assetType !== "cashEquivalent"
-      && String(item.id) !== String(swapSellId)
-      && (!selectedSell || item.currency === selectedSell.currency),
-  );
+  const buyOptions = getAssetSwapBuyOptions({
+    recommendations: calculation.recommendations.filter(
+      (item) => item.assetType !== "cashEquivalent",
+    ),
+    sellId: swapSellId,
+    currentBeta: calculation.currentBeta,
+    targetBeta: rebalanceTargetBeta === ""
+      ? calculation.targetBeta
+      : Number(rebalanceTargetBeta),
+  });
+  const swapFieldError = rebalanceMode === "swap"
+    && swapSellId
+    && swapBuyId
+    && operationRebalance.isValid === false
+    ? warnings[0]
+    : "";
+  const displayedWarnings = swapFieldError
+    ? warnings.filter((warning) => warning !== swapFieldError)
+    : warnings;
   const appliedAfterBeta = getAppliedAfterBeta({
     precision,
     recommendations,
@@ -2598,7 +2612,7 @@ function OperationsView({
               </select>
             </label>
             <span className="assetSwapArrow" aria-hidden="true">→</span>
-            <label>
+            <label className={swapFieldError ? "assetSwapFieldError" : ""}>
               <span>買入目的</span>
               <select value={swapBuyId} onChange={(event) => onSwapBuyChange(event.target.value)}>
                 <option value="">請選擇同幣別標的</option>
@@ -2608,6 +2622,7 @@ function OperationsView({
                   </option>
                 ))}
               </select>
+              {swapFieldError && <p role="alert">{swapFieldError}</p>}
             </label>
           </div>
         </section>
@@ -2712,7 +2727,7 @@ function OperationsView({
           </div>
         </div>
       </div>
-      {warnings.map((warning) => (
+      {displayedWarnings.map((warning) => (
         <div className="operationWarning" role="status" key={warning}>
           {warning}
         </div>

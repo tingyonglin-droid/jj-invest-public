@@ -1863,6 +1863,24 @@ button.betaAction {
   font-size: 14px;
 }
 
+.assetSwapFieldError select {
+  border-color: #c85b63;
+  background: #fff8f8;
+  box-shadow: 0 0 0 2px rgba(200, 91, 99, 0.1);
+}
+
+.assetSwapFieldError > span,
+.assetSwapFieldError p {
+  color: #a93642;
+}
+
+.assetSwapFieldError p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.5;
+}
+
 .assetSwapArrow {
   display: grid;
   width: 32px;

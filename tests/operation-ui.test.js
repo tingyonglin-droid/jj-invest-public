@@ -61,7 +61,10 @@ test("asset swap uses progressive disclosure and explicit trade roles", async ()
   assert.match(page, /賣出來源/);
   assert.match(page, /買入目的/);
   assert.match(page, /不參與互換/);
+  assert.match(page, /assetSwapFieldError/);
+  assert.match(page, /role="alert"/);
   assert.match(styles, /\.assetSwapCard/);
+  assert.match(styles, /\.assetSwapFieldError/);
   assert.match(styles, /min-height:\s*44px/);
 });
 

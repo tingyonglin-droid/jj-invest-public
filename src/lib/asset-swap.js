@@ -44,6 +44,24 @@ function portfolioBeta(recommendations, totalAssetsTwd) {
   );
 }
 
+export function getAssetSwapBuyOptions({
+  recommendations,
+  sellId,
+  currentBeta,
+  targetBeta,
+}) {
+  const sell = recommendations.find((item) => String(item.id) === String(sellId));
+  if (!sell) return [];
+
+  const direction = number(targetBeta) - number(currentBeta);
+  return recommendations.filter((item) => {
+    if (String(item.id) === String(sell.id) || item.currency !== sell.currency) return false;
+    if (direction < 0) return number(item.assetBeta) < number(sell.assetBeta);
+    if (direction > 0) return number(item.assetBeta) > number(sell.assetBeta);
+    return false;
+  });
+}
+
 function betaAfter(recommendations, totalAssetsTwd, precision) {
   if (totalAssetsTwd <= 0) return 0;
   return recommendations.reduce((sum, item) => {

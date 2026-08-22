@@ -131,6 +131,38 @@ describe("operation rebalance", () => {
     assert.equal(result.recommendations.every((item) => item.action === "none"), true);
   });
 
+  it("offers only same-currency lower-beta destinations when reducing Beta", () => {
+    const options = assetSwapModule.getAssetSwapBuyOptions({
+      recommendations: [
+        { id: "qld", assetBeta: 2, currency: "USD" },
+        { id: "qqqi", assetBeta: 1, currency: "USD" },
+        { id: "tqqq", assetBeta: 3, currency: "USD" },
+        { id: "0050", assetBeta: 1, currency: "TWD" },
+      ],
+      sellId: "qld",
+      currentBeta: 1.5,
+      targetBeta: 1.2,
+    });
+
+    assert.deepEqual(options.map((item) => item.id), ["qqqi"]);
+  });
+
+  it("offers only same-currency higher-beta destinations when increasing Beta", () => {
+    const options = assetSwapModule.getAssetSwapBuyOptions({
+      recommendations: [
+        { id: "qqqi", assetBeta: 1, currency: "USD" },
+        { id: "qld", assetBeta: 2, currency: "USD" },
+        { id: "tqqq", assetBeta: 3, currency: "USD" },
+        { id: "00631l", assetBeta: 2, currency: "TWD" },
+      ],
+      sellId: "qqqi",
+      currentBeta: 0.8,
+      targetBeta: 1.2,
+    });
+
+    assert.deepEqual(options.map((item) => item.id), ["qld", "tqqq"]);
+  });
+
   it("can increase Beta by swapping an original holding into a leveraged holding", () => {
     const result = assetSwapModule.createAssetSwapRebalance({
       recommendations: [
